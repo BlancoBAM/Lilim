@@ -1,0 +1,97 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════
+# Lilim Unified Server — Starts both OI + ZeroClaw
+# ═══════════════════════════════════════════════════════════
+# This script starts the complete Lilim system:
+#   1. Open Interpreter (Python brain) — FastAPI on :8000
+#   2. ZeroClaw (Rust runtime) — Gateway on :42617
+#
+# Usage:
+#   lilim-serve                  # Start full stack
+#   LILIM_PORT=9000 lilim-serve  # Custom OI port
+#   lilim-serve --oi-only        # OI only (no ZeroClaw)
+
+set -euo pipefail
+
+# ── Configuration ─────────────────────────────────────────
+LILIM_PORT="${LILIM_PORT:-8000}"
+LILIM_PROFILE="${LILIM_PROFILE:-/etc/lilith/lilim-profile.py}"
+LILIM_VENV="${LILIM_VENV:-/usr/lib/lilim/venv}"
+LILIM_INSTALL="${LILIM_INSTALL:-/usr/lib/lilim}"
+ZEROCLAW_CONFIG="${ZEROCLAW_CONFIG:-/etc/lilith/zeroclaw.toml}"
+ZEROCLAW_BIN="${ZEROCLAW_BIN:-/usr/bin/zeroclaw}"
+
+OI_ONLY=false
+if [[ "${1:-}" == "--oi-only" ]]; then
+    OI_ONLY=true
+fi
+
+# ── Cleanup on exit ──────────────────────────────────────
+cleanup() {
+    echo "[Lilim] Shutting down..." >&2
+    # Kill child processes
+    if [[ -n "${OI_PID:-}" ]]; then
+        kill "$OI_PID" 2>/dev/null || true
+        wait "$OI_PID" 2>/dev/null || true
+    fi
+    if [[ -n "${ZC_PID:-}" ]]; then
+        kill "$ZC_PID" 2>/dev/null || true
+        wait "$ZC_PID" 2>/dev/null || true
+    fi
+    echo "[Lilim] Stopped." >&2
+}
+trap cleanup EXIT INT TERM
+
+# ── Activate Python venv if present ──────────────────────
+if [ -d "$LILIM_VENV" ]; then
+    source "$LILIM_VENV/bin/activate"
+fi
+
+# ── Start Open Interpreter (Python brain) ────────────────
+echo "[Lilim] Starting Open Interpreter on port ${LILIM_PORT}..." >&2
+
+python3 -c "
+import sys
+sys.path.insert(0, '${LILIM_INSTALL}')
+
+from interpreter import interpreter
+
+# Load the Lilim profile
+profile_path = '${LILIM_PROFILE}'
+try:
+    with open(profile_path) as f:
+        exec(f.read())
+    print(f'[Lilim] Loaded profile from: {profile_path}', file=sys.stderr)
+except FileNotFoundError:
+    print(f'[Lilim] WARNING: Profile not found at {profile_path}, using defaults', file=sys.stderr)
+except Exception as e:
+    print(f'[Lilim] ERROR loading profile: {e}', file=sys.stderr)
+
+# Start the FastAPI server
+interpreter.server(port=${LILIM_PORT})
+" &
+OI_PID=$!
+echo "[Lilim] OI server PID: ${OI_PID}" >&2
+
+# ── Start ZeroClaw (Rust runtime) ────────────────────────
+if [[ "$OI_ONLY" == "false" ]] && [[ -x "$ZEROCLAW_BIN" ]]; then
+    echo "[Lilim] Starting ZeroClaw gateway..." >&2
+
+    "$ZEROCLAW_BIN" gateway \
+        --config "$ZEROCLAW_CONFIG" \
+        2>&1 | sed 's/^/[ZeroClaw] /' >&2 &
+    ZC_PID=$!
+    echo "[Lilim] ZeroClaw gateway PID: ${ZC_PID}" >&2
+elif [[ "$OI_ONLY" == "false" ]]; then
+    echo "[Lilim] WARNING: ZeroClaw binary not found at ${ZEROCLAW_BIN}, running OI only" >&2
+fi
+
+# ── Wait for processes ───────────────────────────────────
+echo "[Lilim] 🔥 System ready." >&2
+echo "[Lilim]   OI server:  http://127.0.0.1:${LILIM_PORT}" >&2
+if [[ -n "${ZC_PID:-}" ]]; then
+    echo "[Lilim]   Gateway:    http://127.0.0.1:42617" >&2
+fi
+
+wait -n "$OI_PID" ${ZC_PID:+"$ZC_PID"} 2>/dev/null || true
+echo "[Lilim] A process exited, shutting down..." >&2

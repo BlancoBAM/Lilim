@@ -1,0 +1,81 @@
+# ═══════════════════════════════════════════════════════════════
+# Lilim — ZeroClaw Configuration for Lilith Linux
+# ═══════════════════════════════════════════════════════════════
+# This configures the ZeroClaw runtime backbone that powers
+# Lilim's scheduling, iPhone gateway, browser control, and
+# sandboxed execution.
+
+api_key = ""  # Set via: zeroclaw onboard, or ZEROCLAW_API_KEY env var
+default_provider = "openrouter"
+default_model = "anthropic/claude-sonnet-4-6"
+default_temperature = 0.7
+
+# ── Memory ────────────────────────────────────────────────────
+[memory]
+backend = "sqlite"
+auto_save = true
+embedding_provider = "none"
+vector_weight = 0.7
+keyword_weight = 0.3
+
+# ── Gateway (iPhone + Remote Access) ──────────────────────────
+[gateway]
+port = 42617
+host = "127.0.0.1"
+require_pairing = true
+allow_public_bind = false
+
+# ── Autonomy & Sandboxing ────────────────────────────────────
+[autonomy]
+level = "supervised"          # "readonly", "supervised", "full"
+workspace_only = false
+allowed_commands = [
+    # System info (safe reads)
+    "ls", "cat", "grep", "find", "head", "tail", "wc", "file", "which",
+    "df", "free", "top", "htop", "uname", "uptime", "whoami", "id",
+    "ip", "ss", "ping", "dig", "nslookup", "traceroute",
+    # Service management
+    "systemctl", "journalctl",
+    # Package management (supervised)
+    "apt", "apt-get", "dpkg",
+    # Development
+    "python3", "pip", "cargo", "git", "npm", "node",
+    # Lilim ecosystem
+    "lilith-tts", "zeroclaw",
+]
+forbidden_paths = ["/root", "/proc", "/sys", "~/.ssh", "~/.gnupg", "~/.aws"]
+allowed_roots = ["~/"]
+
+# ── Runtime ───────────────────────────────────────────────────
+[runtime]
+kind = "native"
+
+# ── Browser Control ──────────────────────────────────────────
+[browser]
+enabled = true
+allowed_domains = ["*"]       # Restrict in production if needed
+backend = "agent_browser"
+native_headless = true
+
+# ── Tunnel (for iPhone remote access) ────────────────────────
+[tunnel]
+provider = "none"             # Set to "cloudflare" or "tailscale"
+
+# ── Identity ─────────────────────────────────────────────────
+[identity]
+format = "aieos"
+aieos_path = "/etc/lilith/lilim-identity.json"
+
+# ── Secrets ──────────────────────────────────────────────────
+[secrets]
+encrypt = true
+
+# ── Cron / Scheduling ───────────────────────────────────────
+# Managed via: zeroclaw cron add/add-at/add-every/list/remove
+# No config needed — the cron system uses ZeroClaw's memory backend
+
+# ── Heartbeat (optional keep-alive check) ────────────────────
+[heartbeat]
+enabled = false
+interval_minutes = 60
+message = "System health check"

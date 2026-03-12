@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════
+# Lilim Model Routing Configuration
+# ═══════════════════════════════════════════════════════
+# Controls how Lilim routes requests between local and
+# remote models for optimal speed/quality/cost balance.
+
+[routing]
+# "auto" = smart routing based on complexity
+# "local-only" = always use local model (offline mode)
+# "remote-only" = always use remote models
+strategy = "auto"
+
+# Local model via Ollama (fast, free, private)
+local_model = "ollama/qwen3:4b"
+
+# Complexity threshold: 0.0-1.0
+# Above this score, requests route to remote models
+complexity_threshold = 0.6
+
+# Daily spending cap in USD (prevents runaway costs)
+budget_limit_daily = 5.00
+
+# ── Remote model tiers ─────────────────────────────────
+[routing.remote_models]
+# Quick tasks that need accuracy (short answers, small code)
+fast = "gpt-4o-mini"
+
+# Standard complex tasks (long generation, research)
+balanced = "gpt-4o"
+
+# Deep reasoning and code analysis
+reasoning = "claude-sonnet-4-20250514"
+
+# ── Category → Tier mapping ───────────────────────────
+# Override which tier each task category uses by default.
+# The complexity score can still upgrade a "local" task
+# to remote if it exceeds the threshold.
+[routing.categories]
+conversation = "local"
+simple_qa = "local"
+tutoring = "local"
+system_admin = "local"
+scheduling = "local"
+file_management = "local"
+code_generation = "remote.fast"
+code_debugging = "remote.reasoning"
+research = "remote.balanced"

@@ -1,0 +1,247 @@
+# Lilim AI Assistant Configuration - Multi-Model Architecture
+# Lilith Linux - Intelligent Routing System
+
+# ═══════════════════════════════════════════════════════════
+# Local Model Configuration
+# ═══════════════════════════════════════════════════════════
+models:
+  local:
+    # Router Model (Fast, Lightweight - Query Analysis)
+    router:
+      enabled: true
+      model_path: "/var/lib/lilith/models/qwen2-0.5b"
+      model_type: "gguf"  # gguf, safetensors, onnx
+      timeout_ms: 500
+      max_tokens: 256
+      temperature: 0.3
+      
+    # Main Agentic Model (Primary Reasoning + Tools)
+    main:
+      enabled: true
+      model_path: "/var/lib/lilith/models/qwen3-vl-4b"
+      model_type: "gguf"
+      timeout_ms: 5000
+      max_tokens: 2048
+      temperature: 0.7
+      ctx_size: 4096
+      gpu_layers: 35  # Adjust based on VRAM
+      
+    # TTS Model (Voice Synthesis)
+    tts:
+      enabled: true
+      engine: "neutts"  # neutts-nano-q4-gguf
+      model_path: "/var/lib/lilith/models/neutts-nano-q4-gguf"
+      voice: "default"
+      speed: 1.0
+      pitch: 1.0
+      sample_rate: 22050
+
+# ═══════════════════════════════════════════════════════════
+# System Integration (Hotkeys, Tray, Screen Reading)
+# ═══════════════════════════════════════════════════════════
+system:
+  # Global hotkeys
+  hotkeys:
+    toggle_ui: "Ctrl+L"           # Show/hide Lilim window
+    tts_screen_reader: "Ctrl+Shift+M"  # TTS read screen content
+    
+  # System tray
+  tray:
+    enabled: true
+    always_visible: true
+    icon_path: "/usr/share/icons/hicolor/256x256/apps/lilith-ai.png"
+    
+  # Screen reading capabilities
+  screen_reader:
+    capture_browser: true      # Full HTML page content
+    capture_terminal: true     # Terminal stdout
+    accessibility_api: true    # Use system accessibility APIs
+    max_content_size: 50000    # Characters limit per capture
+
+# ═══════════════════════════════════════════════════════════
+# Online Provider Configuration (Fallback & Specialized)
+# ═══════════════════════════════════════════════════════════
+providers:
+  online:
+    # OpenAI Provider
+    - name: "openai"
+      enabled: true
+      api_url: "https://api.openai.com/v1/chat/completions"
+      auth_type: "bearer"  # bearer, api-key, custom, none
+      api_key_env: "OPENAI_API_KEY"
+      model: "gpt-4o-mini"
+      priority: 1
+      timeout_s: 30
+      max_tokens: 4096
+      temperature: 0.7
+      
+    # Anthropic Provider
+    - name: "anthropic"
+      enabled: true
+      api_url: "https://api.anthropic.com/v1/messages"
+      auth_type: "custom"
+      api_key_env: "ANTHROPIC_API_KEY"
+      model: "claude-3-5-sonnet-20241022"
+      priority: 2
+      timeout_s: 30
+      max_tokens: 4096
+      custom_headers:
+        x-api-key: "${ANTHROPIC_API_KEY}"
+        anthropic-version: "2023-06-01"
+      
+    # Remote Ollama Instance (Example)
+    - name: "ollama-remote"
+      enabled: false
+      api_url: "http://remote-server:11434/api/generate"
+      auth_type: "none"
+      model: "llama3.1:70b"
+      priority: 3
+      timeout_s: 60
+      stream: true
+      
+    # Custom API Provider (Generic)
+    - name: "custom-provider"
+      enabled: false
+      api_url: "https://custom.example.com/v1/completions"
+      auth_type: "api-key"
+      api_key_env: "CUSTOM_API_KEY"
+      model: "custom-model-v1"
+      priority: 4
+      timeout_s: 30
+      custom_headers:
+        X-Custom-Header: "value"
+        X-Api-Version: "1.0"
+
+# ═══════════════════════════════════════════════════════════
+# Intelligent Routing Configuration
+# ═══════════════════════════════════════════════════════════
+routing:
+  # Complexity thresholds (0.0-1.0)
+  complexity_threshold:
+    trivial: 0.2     # Router handles directly
+    simple: 0.5      # Local main model
+    moderate: 0.7    # Local main with tools
+    complex: 0.9     # Online fallback preferred
+    
+  # Performance requirements
+  max_local_latency_ms: 5000
+  prefer_local: true
+  
+  # Task-specific routing rules
+  task_routes:
+    # Local-preferred tasks
+    coding: "local"
+    medical_lookup: "local"
+    linux_troubleshooting: "local"
+    academic: "local"
+    vision: "local"  # Qwen3-VL capability
+    
+    # Online-preferred tasks
+    creative_writing: "online"
+    latest_news: "online"
+    complex_reasoning: "online"
+    
+    # Special handling
+    voice_response: "tts"
+    
+  # Online fallback conditions
+  fallback_triggers:
+    - slow_local_response: true      # >max_local_latency_ms
+    - high_complexity: true          # >complexity_threshold.complex
+    - low_rag_relevance: true       # <0.3 and complex query
+    - requires_latest_info: true     # Time-sensitive queries
+    - local_model_unavailable: true
+
+# ═══════════════════════════════════════════════════════════
+# RAG (Retrieval-Augmented Generation) Configuration
+# ═══════════════════════════════════════════════════════════
+rag:
+  vector_index: "/var/lib/lilith/rag_index"
+  keyword_index: "/var/lib/lilith/keyword_index"
+  max_results: 5
+  min_similarity: 0.3
+  
+  # RAG influence on routing
+  high_relevance_threshold: 0.8  # If RAG score >0.8, prefer local
+  use_rag_for_routing: true
+
+# ═══════════════════════════════════════════════════════════
+# Memory / Conversation History
+# ═══════════════════════════════════════════════════════════
+memory:
+  db_path: "/var/lib/lilith/memory.db"
+  max_history_messages: 20
+  session_timeout: 7200
+  
+  # Context window management
+  context_strategy: "sliding"  # sliding, summarize, truncate
+  max_context_tokens: 3072
+
+# ═══════════════════════════════════════════════════════════
+# Agent / Tool Execution
+# ═══════════════════════════════════════════════════════════
+agent:
+  enable_web_search: true
+  enable_file_search: true
+  enable_terminal: true
+  yolo_mode: false
+  
+  allowed_commands:
+    - "ls"
+    - "cat"
+    - "grep"
+    - "find"
+    - "systemctl status"
+    - "journalctl"
+    - "apt search"
+  
+  max_web_results: 5
+  max_search_depth: 5
+  tool_timeout_s: 30
+
+# ═══════════════════════════════════════════════════════════
+# Server Configuration
+# ═══════════════════════════════════════════════════════════
+server:
+  host: "127.0.0.1"
+  port: 8080
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://localhost:8080"
+    - "tauri://localhost"  # For Tauri desktop app
+
+# ═══════════════════════════════════════════════════════════
+# Personality Configuration
+# ═══════════════════════════════════════════════════════════
+personality:
+  responses_yaml_path: "/usr/share/lilith/lilim-responses.yaml"
+  theme_intensity: 0.15
+  sarcasm_level: 0.25
+  
+  # Apply personality regardless of executor model
+  always_apply: true
+
+# ═══════════════════════════════════════════════════════════
+# Logging Configuration
+# ═══════════════════════════════════════════════════════════
+logging:
+  level: "info"  # trace, debug, info, warn, error
+  file: "/var/log/lilith/lilim.log"
+  log_queries: true
+  log_responses: false
+  log_routing_decisions: true  # NEW: Track which model handled query
+
+# ═══════════════════════════════════════════════════════════
+# Performance Tuning
+# ═══════════════════════════════════════════════════════════
+performance:
+  query_timeout: 30
+  rag_timeout: 5
+  max_concurrent_queries: 10
+  enable_cache: true
+  cache_ttl: 300
+  
+  # Model warmup (preload on startup)
+  warmup_models: true
+  warmup_timeout_s: 60
+

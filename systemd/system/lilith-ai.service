@@ -1,0 +1,53 @@
+[Unit]
+Description=Lilim AI Assistant — Unified OI + ZeroClaw Runtime
+Documentation=file:///usr/share/doc/lilith-ai/USER_MANUAL.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lilith
+Group=lilith
+ExecStart=/usr/bin/lilim-serve
+WorkingDirectory=/var/lib/lilith
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=90
+TimeoutStopSec=30
+
+# Environment Configuration
+Environment=LILIM_PORT=8000
+Environment=LILIM_PROFILE=/etc/lilith/lilim-profile.py
+Environment=LILIM_VENV=/usr/lib/lilim/venv
+Environment=LILIM_INSTALL=/usr/lib/lilim
+Environment=ZEROCLAW_CONFIG=/etc/lilith/zeroclaw.toml
+Environment=ZEROCLAW_BIN=/usr/bin/zeroclaw
+Environment=PYTHONUNBUFFERED=1
+Environment=HOME=/var/lib/lilith
+
+# Security Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/lilith /var/log/lilith /tmp
+ReadOnlyPaths=/etc/lilith /usr/lib/lilim
+InaccessiblePaths=/root
+
+# Additional Security
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+LockPersonality=yes
+# NOTE: MemoryDenyWriteExecute removed — Python + Rust model inference requires JIT
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+# Resource Limits (for 8GB RAM system — both OI + ZeroClaw)
+MemoryMax=4G
+MemoryHigh=3G
+CPUQuota=80%
+TasksMax=1024
+
+[Install]
+WantedBy=multi-user.target
