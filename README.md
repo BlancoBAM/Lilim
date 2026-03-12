@@ -275,7 +275,7 @@ Lilim's architecture and capabilities were heavily inspired by and built upon se
 - **[Rowboat](https://github.com/rowboatlabs/rowboat)** — Inspiration for the local Markdown-vault persistent memory system.
 - **[Promptomatix](https://github.com/SalesforceAIResearch/promptomatix)** — Inspiration for the automatic, transparent prompt enhancement and classification layer.
 - **[Plano](https://github.com/katanemo/plano)** — Inspiration for the intelligent, complexity-based model routing layer.
-
+- **[Cortex Mem](https://github.com/sopaco/cortex-mem)** - Updated Rust based memory layer for Lilim.
 ## License
 
 This project is licensed under **AGPL-3.0** (inherited from Open Interpreter and ZeroClaw).
