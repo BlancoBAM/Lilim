@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
+
 jobs:
   build-deb:
     runs-on: ubuntu-latest
@@ -22,5 +26,6 @@ jobs:
           artifacts: dist/*.deb
           tag: v${{ github.run_number }}
           name: Lilim Release ${{ github.run_number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false

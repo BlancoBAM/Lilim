@@ -33,5 +33,5 @@ Description: Lilim component for production-ready Open Interpreter-based AI assi
  This package includes the production-ready Lilim runtime components and their launcher.
 CTRL
 
-dpkg-deb --build "$DEB_ROOT" "$DEB_OUTPUT/$DEB_NAME"
+dpkg-deb --root-owner-group --build "$DEB_ROOT" "$DEB_OUTPUT/$DEB_NAME"
 echo "DEB built at $DEB_OUTPUT/$DEB_NAME"
