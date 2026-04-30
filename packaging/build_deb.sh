@@ -14,12 +14,51 @@ set -x
 rm -rf "$DEB_ROOT"/ || true
 mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
 
-## Copy a minimal launcher script (example)
-cat > "$DEB_ROOT/usr/local/bin/lilim-run" <<'EOS'
+## Build real runtime binary into the package (require it to be present)
+ZEROCLAW_BIN="${ROOT_DIR:-$(pwd)}/zeroclaw/target/release/zeroclaw"
+if [ -x "$ZEROCLAW_BIN" ]; then
+  mkdir -p "$DEB_ROOT/usr/bin"
+  cp "$ZEROCLAW_BIN" "$DEB_ROOT/usr/bin/zeroclaw"
+  chmod +x "$DEB_ROOT/usr/bin/zeroclaw"
+else
+  echo "ERROR: zeroclaw binary not found at $ZEROCLAW_BIN; please build zeroclaw before packaging" >&2
+  exit 1
+fi
+
+# Desktop UI assets (if present)
+if [ -d "$ROOT_DIR/lilim_desktop/dist" ]; then
+  mkdir -p "$DEB_ROOT/usr/share/lilim-desktop"
+  cp -r "$ROOT_DIR/lilim_desktop/dist/." "$DEB_ROOT/usr/share/lilim-desktop/"
+fi
+if [ -d "$ROOT_DIR/lilim_desktop/build" ]; then
+  mkdir -p "$DEB_ROOT/usr/share/lilim-desktop"
+  cp -r "$ROOT_DIR/lilim_desktop/build/." "$DEB_ROOT/usr/share/lilim-desktop/"
+fi
+
+## Desktop launcher and desktop file
+if [ -d "$DEB_ROOT/usr/share/lilim-desktop" ]; then
+  mkdir -p "$DEB_ROOT/usr/share/applications"
+  cat > "$DEB_ROOT/usr/share/applications/lilim-desktop.desktop" <<'DES'
+[Desktop Entry]
+Name=Lilim Desktop Chat
+Comment=Desktop chat UI for Lilim
+Exec=/usr/bin/lilim-desktop
+Icon=lilim
+Type=Application
+Categories=Utility;
+DES
+  cat > "$DEB_ROOT/usr/bin/lilim-desktop" <<'DESBIN'
 #!/usr/bin/env bash
-echo "Lilim runtime entrypoint (deb package placeholder)"
-EOS
-chmod +x "$DEB_ROOT/usr/local/bin/lilim-run"
+if [ -d "/usr/share/lilim-desktop" ]; then
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open http://127.0.0.1:8000/ || true
+  else
+    echo "Lilim Desktop UI available at /usr/share/lilim-desktop"
+  fi
+fi
+DESBIN
+  chmod +x "$DEB_ROOT/usr/bin/lilim-desktop"
+fi
 
 # Debian control file
 cat > "$DEB_ROOT/DEBIAN/control" <<'CTRL'
