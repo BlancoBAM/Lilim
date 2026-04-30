@@ -10,11 +10,11 @@ echo "Building Debian package into $DEB_OUTPUT/$DEB_NAME"
 mkdir -p "$DEB_ROOT" "$DEB_OUTPUT"
 
 set -x
-# Ensure a minimal Debian layout exists
-sudo rm -rf "$DEB_ROOT"/ || true
+# Ensure a clean Debian layout exists
+rm -rf "$DEB_ROOT"/ || true
 mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
 
-# Copy a minimal launcher script (example)
+## Copy a minimal launcher script (example)
 cat > "$DEB_ROOT/usr/local/bin/lilim-run" <<'EOS'
 #!/usr/bin/env bash
 echo "Lilim runtime entrypoint (deb package placeholder)"
