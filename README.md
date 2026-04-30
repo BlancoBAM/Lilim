@@ -157,6 +157,17 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now lilith-ai
 ```
 
+### Production Readiness
+
+This distribution component includes a production-readiness workflow implemented by fix.sh, which generates a robust host orchestration script lilim_host_apply_and_test.sh. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation in a Python virtual environment, code tests, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification.
+
+- How to use:
+- 1) Run fix.sh to regenerate the host script.
+- 2) Run the generated script: ~/lilim_host_apply_and_test.sh
+- 3) Inspect logs under /var/log/lilim (e.g., lilim_host_apply_and_test.log) for traceability.
+- 4) Verify the service is running and healthy via curl http://127.0.0.1:8000/health and systemctl status lilith-ai.service.
+- 5) If needed, push changes to the main branch using the RUN_PUSH option on the host script or manually via git.
+
 ### Desktop App
 
 ```bash
