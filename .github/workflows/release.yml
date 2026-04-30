@@ -12,20 +12,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node.js (for UI build)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Build Lilim Desktop (if present)
+        run: |
+          if [ -f lilim_desktop/package.json ]; then
+            cd lilim_desktop
+            npm ci
+            npm run build
+            cd ..
+          else
+            echo "lilim_desktop/package.json not found; skipping UI build."
+          fi
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install packaging dependencies
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev debhelper
+      - name: Build zeroclaw (runtime) if required by packaging
+        run: |
+          if [ ! -x zeroclaw/target/release/zeroclaw ]; then
+            echo "Building zeroclaw (runtime) for packaging..."
+            if [ -d zeroclaw ]; then
+              cd zeroclaw
+              if [ -f Cargo.toml ]; then
+                cargo build --release
+              else
+                echo "No Cargo.toml found in zeroclaw; skipping build."
+              fi
+              cd ..
+            fi
+          else
+            echo "zeroclaw binary already present."
+          fi
       - name: Build .deb
         run: bash packaging/build_deb.sh
+      - name: Determine Release Tag
+        id: detag
+        run: |
+          TAG="v0.0.0-prod-$(date +%Y%m%d%H%M%S)"
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_OUTPUT
       - name: Create Release and Upload Deb
         uses: ncipollo/release-action@v1
         with:
           artifacts: dist/*.deb
-          tag: v${{ github.run_number }}
-          name: Lilim Release ${{ github.run_number }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.detag.outputs.RELEASE_TAG }}
+          name: Lilim Release ${{ steps.detag.outputs.RELEASE_TAG }}
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
