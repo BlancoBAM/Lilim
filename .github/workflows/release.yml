@@ -34,16 +34,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev debhelper
       - name: Build zeroclaw (runtime) if required by packaging
         run: |
-          if [ ! -x zeroclaw/target/release/zeroclaw ]; then
+          if [ ! -x crates/zeroclaw/target/release/zeroclaw ]; then
             echo "Building zeroclaw (runtime) for packaging..."
-            if [ -d zeroclaw ]; then
-              cd zeroclaw
+            if [ -d crates/zeroclaw ]; then
+              cd crates/zeroclaw
               if [ -f Cargo.toml ]; then
                 cargo build --release
               else
                 echo "No Cargo.toml found in zeroclaw; skipping build."
               fi
-              cd ..
+              cd -
             fi
           else
             echo "zeroclaw binary already present."

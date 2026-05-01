@@ -15,13 +15,13 @@ rm -rf "$DEB_ROOT"/ || true
 mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
 
 ## Build real runtime binary into the package (require it to be present)
-ZEROCLAW_BIN="${ROOT_DIR:-$(pwd)}/zeroclaw/target/release/zeroclaw"
-if [ -x "$ZEROCLAW_BIN" ]; then
+RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/crates/lilim-runtime/target/release/lilim-runtime"
+if [ -x "$RUNTIME_BIN" ]; then
   mkdir -p "$DEB_ROOT/usr/bin"
-  cp "$ZEROCLAW_BIN" "$DEB_ROOT/usr/bin/zeroclaw"
-  chmod +x "$DEB_ROOT/usr/bin/zeroclaw"
+  cp "$RUNTIME_BIN" "$DEB_ROOT/usr/bin/lilim-runtime"
+  chmod +x "$DEB_ROOT/usr/bin/lilim-runtime"
 else
-  echo "ERROR: zeroclaw binary not found at $ZEROCLAW_BIN; please build zeroclaw before packaging" >&2
+  echo "ERROR: lilim-runtime not found at $RUNTIME_BIN; please build the Rust runtime before packaging" >&2
   exit 1
 fi
 

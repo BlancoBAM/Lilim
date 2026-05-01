@@ -1,0 +1,28 @@
+Im very confused what it is youre talking about in your replies; Im new to github and have no coding skills. I also 
+wonder if I need to completely overhaul this repo...basically what Im trying to accomplish is for my distro, Lilith 
+Linux, which is made for a single user, to feature a built in integrated AI chat function similar to copilot which can 
+answer normal questions, specializes in the specific domains specified, which are help for a college student in a 
+medical assistant degree pursuit first year, has little proficiency with computers and linux, and can also ask general 
+linux questions for help and advice from the assistant which can also perform the fixes needed itself and answer 
+questions with actual context from the system including files etc and write commands in the terminal to make changes or 
+fixes itself when asked to. The assistant is named Lilim, and the UI used to communicate is a desktop app activated by 
+selecting the icon or global hotkey and has been custom designed already to fit with the asthetics of the distro. The 
+distro is written in rust wherever possible and so are the components. For these reasons, I found the closest repo's 
+which have the features I already want, for example: openinterpreter seemed to already be an integrated assistant using 
+natural language to automatically accomplish tasks, zeroclaw is a rust based assistant similar to openclaw which can 
+schedule tasks and integrate with iphone to be controlled, cortexmem is a rust based persistent memory which lets Lilim 
+learn from past interactions and save context and personalize to the user over time, plano routes tasks to different 
+models from the main general built in one integrated with the distro at source and those elsewhere on the web based on 
+the complexity of each request so that the user doesnt have to wait too long for responses if the request is too large 
+or will take too much time to answer, and promptomatix is to automatically enhance the prompt given by the user so that 
+one who isnt familiar with LLM's or technically inclined can type whatever and Lilim can format it better for the model 
+replying to the request. This makes me wonder if perhaps instead of including them as submodules or full components, or 
+just aspects of those distros being forked or copied which are relevant to their use in Lilim, or if the various 
+components should be cobbled together in some way, or just used as general inspiration to rewrite the aspects. I 
+suspect but dont know for sure that the iphone control is the biggest hurdle and if so that can be scrapped. But I know 
+openclaw and possibly zeroclaw offers that so I thought it would be doable. Either way, I need Lilim built to these 
+specs and to function in the way described in the README.md file, production ready for the end user to be added to 
+Lilith Linux as a .deb, and vibe coded end to end functionally. Evaluate how to make this a reality and document the 
+steps needed, then perform them one by one, updating the documentation as you go, so that any model can pick up where 
+left off at any time and no features regress and there is a clear direction being worked towards, possibly 
+collaboratively.

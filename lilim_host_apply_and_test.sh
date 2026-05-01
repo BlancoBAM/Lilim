@@ -148,4 +148,12 @@ else
 fi
 
 echo
+echo "Launching UI if available..."
+if command -v /usr/bin/lilim-desktop >/dev/null 2>&1; then
+  /usr/bin/lilim-desktop &
+else
+  echo "UI launcher not available (lilim-desktop not installed)."
+fi
+
+echo
 echo "Done."
