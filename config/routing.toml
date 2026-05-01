@@ -11,7 +11,9 @@
 strategy = "auto"
 
 # Local model via Ollama (fast, free, private)
-local_model = "ollama/qwen3:4b"
+# Default: TinyLlama 1.1B — very small, runs on any hardware
+# Change to a larger model once you have the hardware
+local_model = "ollama/tinyllama:latest"
 
 # Complexity threshold: 0.0-1.0
 # Above this score, requests route to remote models

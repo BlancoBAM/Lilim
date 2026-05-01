@@ -70,6 +70,9 @@ ROUTING_PATHS = [
     _HERE.parent / "config" / "routing.toml",
 ]
 
+# Dynamic model-config.json written by the UI settings panel
+MODEL_CONFIG_PATH = Path.home() / ".config" / "lilim" / "model-config.json"
+
 PORT = int(os.environ.get("LILIM_BRAIN_PORT", "8081"))
 HOST = os.environ.get("LILIM_BRAIN_HOST", "127.0.0.1")
 
@@ -104,6 +107,95 @@ def load_identity() -> dict:
             "core_drive": "Help the user succeed while maintaining dry humor and genuine care"
         },
     }
+
+
+def load_model_config() -> dict:
+    """Load the dynamic model config written by the UI settings panel."""
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def get_local_model(model_cfg: dict) -> str:
+    """Determine the local model to use from dynamic config."""
+    if not model_cfg.get("localEnabled", True):
+        return None
+    model = model_cfg.get("localModel", "tinyllama:latest")
+    endpoint = model_cfg.get("localEndpoint", "http://127.0.0.1:11434")
+    # If using custom model name key
+    if model == "custom":
+        model = model_cfg.get("customModel", "tinyllama:latest")
+    # Set litellm environment for custom ollama endpoint
+    if endpoint and endpoint != "http://127.0.0.1:11434":
+        os.environ["OLLAMA_API_BASE"] = endpoint
+    return f"ollama/{model}"
+
+
+def get_remote_models(model_cfg: dict) -> dict:
+    """Build remote model dict from settings, preferring free tiers."""
+    strategy = model_cfg.get("strategy", "local-first")
+    models = {}
+
+    # Groq (free tier — fastest)
+    groq_key = model_cfg.get("groqKey", "")
+    if groq_key:
+        os.environ["GROQ_API_KEY"] = groq_key
+        groq_model = model_cfg.get("groqModel", "llama3-8b-8192")
+        models["fast"] = f"groq/{groq_model}"
+        models["balanced"] = f"groq/{groq_model}"
+
+    # Google Gemini free tier
+    google_key = model_cfg.get("googleKey", "")
+    if google_key:
+        os.environ["GEMINI_API_KEY"] = google_key
+        google_model = model_cfg.get("googleModel", "gemini-2.0-flash")
+        if "fast" not in models:
+            models["fast"] = f"gemini/{google_model}"
+        models["balanced"] = f"gemini/{google_model}"
+
+    # OpenRouter (free models)
+    or_key = model_cfg.get("openrouterKey", "")
+    if or_key:
+        os.environ["OPENROUTER_API_KEY"] = or_key
+        or_model = model_cfg.get("openrouterModel", "meta-llama/llama-3-8b-instruct:free")
+        if "fast" not in models:
+            models["fast"] = f"openrouter/{or_model}"
+
+    # OpenAI
+    oai_key = model_cfg.get("openaiKey", "")
+    if oai_key:
+        os.environ["OPENAI_API_KEY"] = oai_key
+        oai_model = model_cfg.get("openaiModel", "gpt-4o-mini")
+        if "fast" not in models:
+            models["fast"] = oai_model
+        models["quality"] = oai_model
+
+    # Anthropic
+    ant_key = model_cfg.get("anthropicKey", "")
+    if ant_key:
+        os.environ["ANTHROPIC_API_KEY"] = ant_key
+        ant_model = model_cfg.get("anthropicModel", "claude-haiku-3-5")
+        models["reasoning"] = f"anthropic/{ant_model}"
+
+    # Custom endpoint
+    custom_ep = model_cfg.get("customEndpoint", "")
+    custom_model = model_cfg.get("customModel", "")
+    if custom_ep and custom_model:
+        os.environ["OPENAI_API_BASE"] = custom_ep
+        if model_cfg.get("customKey"):
+            os.environ["OPENAI_API_KEY"] = model_cfg["customKey"]
+        if "fast" not in models:
+            models["fast"] = custom_model
+
+    # Default fallback (local also used as remote when no keys)
+    if not models:
+        models = {"fast": "ollama/tinyllama:latest", "balanced": "ollama/tinyllama:latest", "reasoning": "ollama/tinyllama:latest"}
+
+    return models
 
 
 def build_system_prompt(identity: dict) -> str:
@@ -190,7 +282,21 @@ async def startup():
     _system_prompt = build_system_prompt(_identity)
     _enhancer = PromptEnhancer(memory_manager=_memory)
 
-    # Load routing config
+    # Load dynamic model config from UI settings
+    model_cfg = load_model_config()
+
+    # Build routing config from model config
+    local_model = get_local_model(model_cfg) or "ollama/tinyllama:latest"
+    remote_models = get_remote_models(model_cfg)
+    strategy = model_cfg.get("strategy", "local-first")
+    # Map UI strategy names to router strategy names
+    strategy_map = {
+        "local-first": "auto",
+        "free-first": "auto",
+        "quality-first": "auto",
+    }
+
+    # Load routing config from TOML
     routing_path = None
     for p in ROUTING_PATHS:
         if p.exists():
@@ -198,8 +304,18 @@ async def startup():
             break
     _router = ModelRouter(config_path=routing_path)
 
+    # Override with dynamic settings
+    _router.config["local_model"] = local_model
+    _router.config["remote_models"].update(remote_models)
+    _router.config["strategy"] = strategy_map.get(strategy, "auto")
+    if strategy == "local-first":
+        # Force all categories to local
+        for k in _router.config.get("category_routes", {}):
+            _router.config["category_routes"][k] = "local"
+
     print(f"[Lilim Brain] Started on {HOST}:{PORT}", flush=True)
-    print(f"[Lilim Brain] Identity loaded: {_identity.get('identity', {}).get('names', {}).get('first', '?')}", flush=True)
+    print(f"[Lilim Brain] Local model: {local_model}", flush=True)
+    print(f"[Lilim Brain] Remote models: {remote_models}", flush=True)
     print(f"[Lilim Brain] Memory DB: {_memory.db_path}", flush=True)
 
 
@@ -208,6 +324,31 @@ async def startup():
 @app.get("/health")
 async def health():
     return {"status": "ok", "name": "Lilim Brain", "ts": datetime.utcnow().isoformat()}
+
+
+@app.post("/settings/model-config")
+async def update_model_config(request: Request):
+    """Hot-reload model config from the UI settings panel."""
+    global _router
+    try:
+        model_cfg = await request.json()
+        MODEL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(MODEL_CONFIG_PATH, "w") as f:
+            json.dump(model_cfg, f, indent=2)
+
+        # Reload routing
+        local_model = get_local_model(model_cfg) or "ollama/tinyllama:latest"
+        remote_models = get_remote_models(model_cfg)
+        _router.config["local_model"] = local_model
+        _router.config["remote_models"].update(remote_models)
+        strategy = model_cfg.get("strategy", "local-first")
+        if strategy == "local-first":
+            for k in _router.config.get("category_routes", {}):
+                _router.config["category_routes"][k] = "local"
+        print(f"[Lilim Brain] Model config reloaded. Local: {local_model}", flush=True)
+        return {"status": "reloaded", "local_model": local_model}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/chat")

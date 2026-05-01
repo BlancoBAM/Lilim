@@ -120,6 +120,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/schedule/list", get(scheduler::handle_schedule_list))
         .route("/schedule/:id", delete(scheduler::handle_schedule_cancel))
 
+        // ── Settings (write config, proxied to brain) ─────────
+        .route("/settings/model-config", post(handle_settings_model_config))
+
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(state);
@@ -234,5 +237,40 @@ async fn handle_memory_context(
     match proxy::proxy_json_get(&url, &state.http_client, &params).await {
         Ok(v) => (StatusCode::OK, Json(v)),
         Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+// ── Settings endpoints ────────────────────────────────────────
+
+async fn handle_settings_model_config(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    // Write to the user config directory
+    let config_path = dirs::config_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
+        .join("lilim")
+        .join("model-config.json");
+
+    if let Some(parent) = config_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
+    match serde_json::to_string_pretty(&body) {
+        Ok(json_str) => {
+            if let Err(e) = std::fs::write(&config_path, &json_str) {
+                error!("Failed to write model config: {e}");
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()})));
+            }
+            info!("Model config updated at {}", config_path.display());
+        }
+        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+    }
+
+    // Also forward to brain so it reloads
+    let url = format!("{}/settings/model-config", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err(_) => (StatusCode::OK, Json(json!({"status": "saved", "brain_reload": "pending"}))),
     }
 }
