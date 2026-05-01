@@ -159,7 +159,7 @@ sudo systemctl enable --now lilith-ai
 
 ### Production Readiness
 
-This distribution component includes a production-readiness workflow implemented by fix.sh, which generates a robust host orchestration script lilim_host_apply_and_test.sh. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation in a Python virtual environment, code tests, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification. The current packaging also includes the desktop UI assets in the release when present, enabling the desktop chat UI as part of the final install.
+This distribution component includes a production-readiness workflow implemented by fix.sh, which generates a robust host orchestration script lilim_host_apply_and_test.sh. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation in a Python virtual environment, code tests, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification. The packaging now builds a single .deb that includes a Rust-based Lilim Runtime binary (lilim-runtime) and the integrated desktop UI when present.
 
 - How to use:
 - 1) Run fix.sh to regenerate the host script.

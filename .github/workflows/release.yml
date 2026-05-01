@@ -32,21 +32,19 @@ jobs:
           python-version: '3.11'
       - name: Install packaging dependencies
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev debhelper
-      - name: Build zeroclaw (runtime) if required by packaging
+      - name: Build lilim-runtime (Rust runtime) if required by packaging
         run: |
-          if [ ! -x crates/zeroclaw/target/release/zeroclaw ]; then
-            echo "Building zeroclaw (runtime) for packaging..."
-            if [ -d crates/zeroclaw ]; then
-              cd crates/zeroclaw
-              if [ -f Cargo.toml ]; then
-                cargo build --release
-              else
-                echo "No Cargo.toml found in zeroclaw; skipping build."
-              fi
+          if [ ! -x crates/lilim-runtime/target/release/lilim-runtime ]; then
+            echo "Building lilim-runtime (Rust runtime) for packaging..."
+            if [ -f crates/lilim-runtime/Cargo.toml ]; then
+              cd crates/lilim-runtime
+              cargo build --release
               cd -
+            else
+              echo "No Cargo.toml found for lilim-runtime; skipping build."
             fi
           else
-            echo "zeroclaw binary already present."
+            echo "lilim-runtime binary already present."
           fi
       - name: Build .deb
         run: bash packaging/build_deb.sh
