@@ -26,73 +26,64 @@
 
 🔥 **Intelligent Chatbot** — Sarcastic but caring AI assistant with infernal personality, powered by LiteLLM (GPT-4o, Claude, Ollama, and more)
 
-🧠 **Cortex-Mem Persistent Memory** — Powerful vector-based memory backend using [Cortex-Mem](https://github.com/sopaco/cortex-mem) (Abstract/Overview/Detail hierarchy)
+🧠 **Native SQLite Memory** — Fast, hierarchical vector-based memory backend embedded directly into the Python brain (no external binaries)
 
 ✨ **Automatic Prompt Enhancement** — Transparently enriches vague prompts with context, task structure, and system info for better LLM responses
 
 🎯 **Smart Model Routing** — Simple requests route to fast local models; complex ones auto-escalate to the best remote model within your daily budget
 
-⌨️ **Global Hotkey** — `Ctrl+Shift+L` summons Lilim from anywhere on your desktop
+⌨️ **Global Hotkey** — `Ctrl+L` summons Lilim from anywhere on your desktop
 
-💻 **Code Execution** — Safely runs Python, JavaScript, and shell commands with user confirmation
+💻 **Code Execution** — Safely runs Python, JavaScript, and shell commands with explicit UI confirmation
 
-📅 **Task Scheduling** — Schedule one-time and recurring tasks via natural language
+📅 **Task Scheduling** — Schedule one-time and recurring tasks via natural language, backed by `systemd-run`
 
-🌐 **Browser Control** — Sandboxed web browsing for research and troubleshooting
+📱 **iPhone Access** — (Planned) Control your desktop from your iPhone via secure Gateway API with pairing authentication
 
-📱 **iPhone Access** — Control your desktop from your iPhone via secure Gateway API with pairing authentication
-
-(*Note: Voice Synthesis has been separated to the standalone [Lilith-TTS](https://github.com/BlancoBAM/Lilith-TTS) repository*)
-
-🛡️ **Security First** — Supervised autonomy, sandboxed execution, forbidden path enforcement, pairing-based auth
+🛡️ **Security First** — Rust-native API gateway, sandboxed execution, strict command blocklists, and audit logging
 
 ## Architecture
 
 ```
- Ctrl+Shift+L
+ Ctrl+L
      │
  ┌───▼──────────┐    HTTP/SSE     ┌──────────────────────────┐
- │ Tauri UI      │ ◄────────────► │   Open Interpreter :8000 │
- │ (React flame) │                │   ┌──────────────────┐   │
- └──────────────┘                │   │ Prompt Enhancer  │   │
-                                  │   │ (classify+enrich)│   │
- ┌──────────────┐  HTTPS/WSS     │   └───────┬──────────┘   │
- │ iPhone       │ ◄──────────►  │           ▼              │
- │ (Shortcuts)  │  :42617        │   ┌──────────────────┐   │
- └──────────────┘                │   │  Model Router    │   │
-                                  │   │  (Plano+LiteLLM) │   │
- ┌──────────────┐                │   └───────┬──────────┘   │
- │ Cortex-Mem   │ ◄────────────► │           ▼              │
- │ (Rust API)   │  cortex://     │   local ◄─┤─► remote    │
- └──────────────┘                │   ollama  │  gpt-4o     │
-                                 │           │  claude     │
-                                 ├──────────────────────────┤
-                                  │   ZeroClaw Runtime       │
-                                  │   • Gateway + pairing    │
-                                  │   • Cron scheduler       │
-                                  │   • Browser control      │
-                                  └──────────────────────────┘
+ │ Tauri UI      │ ◄────────────► │   Rust Proxy Gateway     │
+ │ (React flame) │                │   (lilim-runtime :8080)  │
+ └──────────────┘                │   ┌──────────────────┐   │
+                                  │   │ Process Manager  │   │
+                                  │   │ Security Filter  │   │
+                                  │   └───────┬──────────┘   │
+                                  │           ▼              │
+                                  │   ┌──────────────────┐   │
+                                  │   │ Python Brain API │   │
+                                  │   │ (FastAPI :8081)  │   │
+                                  │   └───────┬──────────┘   │
+ ┌──────────────┐                │           ▼              │
+ │ SQLite Mem   │ ◄────────────► │   local ◄─┤─► remote    │
+ │ (Embedded)   │                │   ollama  │  gpt-4o     │
+ └──────────────┘                │           │  claude     │
+                                 └──────────────────────────┘
 ```
 
 | Component | Tech | Purpose |
 |-----------|------|---------|
-| **Brain** | Python / Open Interpreter / LiteLLM | LLM routing, code execution, personality |
-| **Memory** | **Rust / Cortex-Mem** | High-performance vector database, multi-tier abstraction |
+| **Brain** | Python / FastAPI / LiteLLM | LLM routing, task parsing, memory ops, personality |
+| **Memory** | **Python / SQLite** | High-performance semantic memory embedded in the Brain |
 | **Enhancer** | Python / DSPy-inspired | Automatic prompt classification and enrichment |
 | **Router** | Python / Plano-inspired | Smart model selection with budget tracking |
-| **Runtime** | Rust / ZeroClaw | Security, scheduling, gateway, sandboxing |
-| **Desktop UI** | TypeScript / React / Tauri | Flame-themed chat interface |
+| **Runtime Gateway** | Rust / Axum | Security, proxying, system tool sandbox, process management |
+| **Desktop UI** | TypeScript / React / Tauri | Flame-themed chat interface with streaming |
 
 ## Intelligence Layer
 
 Three modules in `lilim_core/` run transparently to make Lilim smarter:
 
-### Cortex-Mem Persistent Memory
+### Native SQLite Persistent Memory
 
-Lilim integrates [Cortex-Mem](https://github.com/sopaco/cortex-mem) to provide a powerful, hierarchical long-term memory system! Unlike fragile text logs, Cortex-Mem uses Qdrant vector-search to retrieve facts instantly and handles profile updating automatically via `cortex://` URIs!
+Lilim uses an embedded SQLite-based memory system (`lilim_core/memory_sqlite.py`) to provide a powerful, hierarchical long-term memory system! Unlike fragile text logs, it uses token-overlap based search and basic vector approximations to retrieve facts instantly and handles profile updating automatically.
 
-
-### Prompt Enhancement (Promptomatix-inspired)
+### Prompt Enhancement
 
 Short or vague prompts are automatically enriched before hitting the LLM:
 
@@ -133,33 +124,34 @@ git clone https://github.com/BlancoBAM/Lilim.git
 cd Lilim
 
 # Install system dependencies
-sudo apt install cmake espeak-ng python3-pip nodejs npm xsel xclip
+sudo apt install python3-pip python3-venv nodejs npm pkg-config libssl-dev libwebkit2gtk-4.1-dev librsvg2-dev
 
-# Install Open Interpreter
-cd ../Lilim-v2 && pip install -e . && cd ../Lilim
+# 1. Setup Python Brain
+python3 -m venv .venv
+source .venv/bin/activate
+pip install fastapi uvicorn litellm apscheduler pydantic
 
-# Build ZeroClaw runtime
-git clone https://github.com/zeroclaw-labs/zeroclaw.git zeroclaw
-cd zeroclaw && cargo build --release && cd ..
-sudo cp zeroclaw/target/release/zeroclaw /usr/bin/
+# 2. Build Rust Runtime Gateway
+cd crates/lilim-runtime
+cargo build --release
+cd ../..
 
-# Deploy configs
-sudo mkdir -p /etc/lilith
-sudo cp config/zeroclaw.toml /etc/lilith/
-sudo cp config/lilim-identity.json /etc/lilith/
-sudo cp config/routing.toml /etc/lilith/
+# 3. Build Tauri Desktop UI
+cd lilim_desktop
+npm install
+npm run tauri build
+cd ..
 
-# Install service
-sudo cp scripts/lilim-serve /usr/bin/
-sudo chmod +x /usr/bin/lilim-serve
-sudo cp systemd/system/lilith-ai.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now lilith-ai
+# 4. Deploy configs and test
+./fix.sh
+~/lilim_host_apply_and_test.sh
 ```
 
 ### Production Readiness
 
-This distribution component includes a production-readiness workflow implemented by fix.sh, which generates a robust host orchestration script lilim_host_apply_and_test.sh. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation in a Python virtual environment, code tests, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification. The packaging now builds a single .deb that includes a Rust-based Lilim Runtime binary (lilim-runtime) and the integrated desktop UI when present.
+This distribution component includes a production-readiness workflow implemented by `fix.sh`, which generates a robust host orchestration script `lilim_host_apply_and_test.sh`. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation, building the Rust proxy and Tauri UI, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification.
+
+The packaging step natively bundles the Rust-based Lilim Runtime binary (`lilim-runtime`), the Python brain (`lilim_core`), and the integrated desktop UI (`lilim`) into a single `.deb` file for your system.
 
 - How to use:
 - 1) Run fix.sh to regenerate the host script.
@@ -196,7 +188,7 @@ Lilim: Let me check that for you...
 
 You: Remind me to take a break in 30 minutes
 Lilim: Done. I'll bug you in 30 minutes. Don't blame me when you're startled.
-       > zeroclaw cron add-at "..." "Time for a break!"
+       > systemd-run --on-active="30m" notify-send "Lilim" "Time for a break!"
 
 You: Help me study anatomy terms
 Lilim: *Cracks knuckles like a judgmental tutor*
@@ -223,14 +215,10 @@ balanced = "gpt-4o"
 reasoning = "claude-sonnet-4-20250514"
 ```
 
-### Autonomy Level
+### Security Layer
 
-Edit `config/zeroclaw.toml`:
-
-```toml
-[autonomy]
-level = "supervised"  # "readonly", "supervised", "full"
-```
+Edit `config/routing.toml` to manage safety thresholds.
+All system commands executed by Lilim are subject to strict blocklists in the Rust Proxy Gateway and require explicit UI confirmation.
 
 ### Memory
 
@@ -252,25 +240,25 @@ See [docs/iphone-setup.md](docs/iphone-setup.md) for full instructions.
 
 ## Project Structure
 
-```
 Lilim/
-├── assets/                    # Icons and images
 ├── config/                    # Runtime configuration
-│   ├── zeroclaw.toml          # ZeroClaw runtime settings
-│   ├── lilim-identity.json    # AIEOS persona specification
+│   ├── lilim-identity.json    # Persona specification
 │   └── routing.toml           # Model routing + budget config
-├── desktop/                   # .desktop launcher entries
-├── docs/                      # Documentation
+├── crates/
+│   └── lilim-runtime/         # Rust Proxy Gateway Server
 ├── lilim_core/                # Intelligence layer (Python)
-│   ├── memory_manager.py      # Persistent knowledge graph
+│   ├── server.py              # FastAPI Backend
+│   ├── memory_sqlite.py       # Persistent knowledge graph
 │   ├── prompt_enhancer.py     # Automatic prompt optimization
-│   └── model_router.py        # Smart model routing
+│   ├── model_router.py        # Smart model routing
+│   ├── tool_executor.py       # Safe system tool executor
+│   └── scheduler.py           # Task scheduler
 ├── lilim_desktop/             # Tauri desktop app (React + Rust)
 │   ├── src/                   # React frontend
 │   └── src-tauri/             # Tauri backend (Rust)
-├── scripts/                   # Server launch + panel scripts
+├── packaging/                 # Debian .deb build scripts
 ├── systemd/                   # systemd service files
-└── lilith-tts/                # TTS module (separate repo)
+└── fix.sh                     # Host orchestrator generator
 ```
 
 ## Contributing
@@ -279,16 +267,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Inspired By / Credits
 
-Lilim's architecture and capabilities were heavily inspired by and built upon several phenomenal open-source projects. Please check them out:
+Lilim's architecture and capabilities were heavily inspired by several phenomenal open-source projects. Please check them out:
 
-- **[Open Interpreter](https://github.com/OpenInterpreter/open-interpreter)** — The core LLM execution engine and computer API that powers Lilim's brain.
-- **[ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw)** — The secure Rust runtime, gateway API, and system abstraction layer.
-- **[Rowboat](https://github.com/rowboatlabs/rowboat)** — Inspiration for the local Markdown-vault persistent memory system.
+- **[Open Interpreter](https://github.com/OpenInterpreter/open-interpreter)** — Inspiration for the code execution workflow.
+- **[ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw)** — Inspiration for the secure gateway, scheduling, and system abstraction layers.
+- **[Rowboat](https://github.com/rowboatlabs/rowboat)** — Inspiration for persistent memory systems.
 - **[Promptomatix](https://github.com/SalesforceAIResearch/promptomatix)** — Inspiration for the automatic, transparent prompt enhancement and classification layer.
 - **[Plano](https://github.com/katanemo/plano)** — Inspiration for the intelligent, complexity-based model routing layer.
-- **[Cortex Mem](https://github.com/sopaco/cortex-mem)** - Updated Rust based memory layer for Lilim.
+- **[Cortex Mem](https://github.com/sopaco/cortex-mem)** - Inspiration for the hierarchical memory architecture.
+
 ## License
 
-This project is licensed under **AGPL-3.0** (inherited from Open Interpreter and ZeroClaw).
+This project is licensed under **AGPL-3.0**.
 
 See [LICENSE](LICENSE) for details.
