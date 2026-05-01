@@ -1,75 +1,238 @@
-use axum::{routing::{get, post}, Json, Router};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::Write;
-use std::sync::Mutex;
-use once_cell::sync::Lazy;
+// lilim-runtime: main Axum server
+//
+// The Rust gateway for Lilim AI assistant.
+//
+// Responsibilities:
+//   1. Spawn and supervise the Python brain (lilim_core/server.py)
+//   2. Serve the Tauri desktop UI via HTTP on :8080
+//   3. Proxy /chat requests to the Python brain (SSE streaming)
+//   4. Execute system tools with safety enforcement
+//   5. Handle task scheduling
+//   6. CORS for Tauri WebView origin
+//
+// All AI/LLM logic lives in Python. Rust handles: process management,
+// security enforcement, HTTP serving, tool execution, and scheduling.
 
-static MEMORY: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
-    let mut m: HashMap<String, String> = HashMap::new();
-    let path = "/var/lib/lilim/memory.json";
-    if let Ok(data) = fs::read_to_string(path) {
-        if let Ok(map) = serde_json::from_str::<HashMap<String, String>>(&data) {
-            m = map;
-        }
-    }
-    Mutex::new(m)
-});
+mod brain;
+mod config;
+mod proxy;
+mod scheduler;
+mod tools;
 
-#[derive(Deserialize)]
-struct Query {
-    prompt: String,
-    session: Option<String>,
+use std::sync::Arc;
+use std::time::Duration;
+
+use axum::{
+    extract::{Query, State},
+    http::{Method, StatusCode},
+    response::{Json, Response},
+    routing::{delete, get, post},
+    Router,
+};
+use reqwest::Client;
+use serde_json::{json, Value};
+use tokio::signal;
+use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
+use tracing::{error, info};
+
+// ── Shared application state ──────────────────────────────────
+
+pub struct AppState {
+    pub brain_base_url: String,
+    pub http_client: Client,
 }
 
-#[derive(Serialize)]
-struct Answer {
-    response: String,
-    memory: HashMap<String, String>,
-}
-
-async fn health() -> &'static str {
-    "OK"
-}
-
-async fn query(Json(payload): Json<Query>) -> Json<Answer> {
-    // Minimal placeholder logic: echo with a tiny enrichment for demonstration
-    let enriched = format!("{}", payload.prompt);
-
-    // Simple in-process memory update for session context
-    let mut mem = MEMORY.lock().unwrap();
-    if let Some(sess) = &payload.session {
-        mem.insert(sess.clone(), payload.prompt.clone());
-    }
-    // Persist memory to disk
-    if let Ok(json) = serde_json::to_string_pretty(&*mem) {
-        if let Err(e) = fs::create_dir_all("/var/lib/lilim") {
-            eprintln!("Mem dir create error: {e}");
-        }
-        if let Ok(mut f) = File::create("/var/lib/lilim/memory.json") {
-            let _ = f.write_all(json.as_bytes());
-        }
-    }
-    Json(Answer { response: format!("{}", enriched), memory: mem.clone().into_iter().collect() })
-}
+// ── Entry point ───────────────────────────────────────────────
 
 #[tokio::main]
-async fn main() {
-    // Initialize simple logger
-    std::env::set_var("RUST_LOG", "info");
-    let _ = env_logger::builder().is_test(false).try_init();
+async fn main() -> anyhow::Result<()> {
+    // Structured logging
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "lilim_runtime=info,tower_http=warn".into()),
+        )
+        .compact()
+        .init();
 
-    // Build our app with routes
+    info!("══════════════════════════════════════");
+    info!("  Lilim Runtime v{}", env!("CARGO_PKG_VERSION"));
+    info!("══════════════════════════════════════");
+
+    // Load config
+    let cfg = config::load()?;
+    let bind_addr = format!("{}:{}", cfg.server.host, cfg.server.port);
+    let brain_port = cfg.brain.port;
+    let brain_base_url = format!("http://{}:{}", cfg.brain.host, brain_port);
+
+    // Spawn the Python brain
+    info!("Starting Python brain on port {brain_port}…");
+    let mut brain = brain::BrainProcess::new(brain_port);
+    if let Err(e) = brain.start() {
+        error!("Failed to start Python brain: {e}");
+        error!("Continuing without brain — only system tools will work.");
+        error!("Install FastAPI: pip install fastapi uvicorn litellm");
+    }
+
+    // Build shared HTTP client (for proxying to brain)
+    let http_client = Client::builder()
+        .timeout(Duration::from_secs(120)) // LLM calls can be slow
+        .build()?;
+
+    let state = Arc::new(AppState {
+        brain_base_url: brain_base_url.clone(),
+        http_client,
+    });
+
+    // CORS — allow Tauri WebView and local dev origins
+    let cors = CorsLayer::new()
+        .allow_origin([
+            "http://localhost:5173".parse().unwrap(),
+            "http://localhost:8080".parse().unwrap(),
+            "http://127.0.0.1:8080".parse().unwrap(),
+        ])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
+        .allow_headers(Any);
+
+    // Router
     let app = Router::new()
-        .route("/health", get(health))
-        .route("/query", post(query));
+        // ── Health ────────────────────────────────────────────
+        .route("/health", get(handle_health))
 
-    // Bind address and run
-    let addr = "127.0.0.1:8000".parse().unwrap();
-    println!("Lilim runtime listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        // ── Chat (proxied to Python brain) ────────────────────
+        .route("/chat", post(handle_chat))
+        .route("/chat/sync", post(handle_chat_sync))
+
+        // ── Memory (proxied to Python brain) ──────────────────
+        .route("/memory/search", post(handle_memory_search))
+        .route("/memory/stats", get(handle_memory_stats))
+        .route("/memory/context", get(handle_memory_context))
+
+        // ── System tools (Rust-native) ────────────────────────
+        .route("/tools/shell", post(tools::handle_shell))
+        .route("/tools/file", get(tools::handle_file_read))
+        .route("/system/info", get(tools::handle_system_info))
+
+        // ── Scheduling (proxied to Python brain) ──────────────
+        .route("/schedule/once", post(scheduler::handle_schedule_once))
+        .route("/schedule/recurring", post(scheduler::handle_schedule_recurring))
+        .route("/schedule/list", get(scheduler::handle_schedule_list))
+        .route("/schedule/:id", delete(scheduler::handle_schedule_cancel))
+
+        .layer(cors)
+        .layer(TraceLayer::new_for_http())
+        .with_state(state);
+
+    info!("Gateway listening on http://{bind_addr}");
+    info!("Brain proxied at {brain_base_url}");
+    info!("Press Ctrl+C to stop.");
+
+    let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+
+    info!("Lilim Runtime stopped.");
+    drop(brain); // Triggers BrainProcess::drop → stops Python process
+    Ok(())
+}
+
+// ── Shutdown signal ───────────────────────────────────────────
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c().await.expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => info!("Received Ctrl+C"),
+        _ = terminate => info!("Received SIGTERM"),
+    }
+}
+
+// ── Health endpoint ───────────────────────────────────────────
+
+async fn handle_health(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let brain_ok = state
+        .http_client
+        .get(format!("{}/health", state.brain_base_url))
+        .timeout(Duration::from_secs(2))
+        .send()
         .await
-        .unwrap();
+        .map(|r| r.status().is_success())
+        .unwrap_or(false);
+
+    Json(json!({
+        "status": "ok",
+        "version": env!("CARGO_PKG_VERSION"),
+        "brain": if brain_ok { "healthy" } else { "unreachable" },
+        "ts": chrono::Utc::now().to_rfc3339(),
+    }))
+}
+
+// ── Chat endpoints ────────────────────────────────────────────
+
+async fn handle_chat(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Response {
+    let url = format!("{}/chat", state.brain_base_url);
+    proxy::proxy_sse_stream(&url, &state.http_client, body).await
+}
+
+async fn handle_chat_sync(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/chat/sync", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+// ── Memory endpoints ──────────────────────────────────────────
+
+async fn handle_memory_search(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/memory/search", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+async fn handle_memory_stats(
+    State(state): State<Arc<AppState>>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/memory/stats", state.brain_base_url);
+    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+async fn handle_memory_context(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/memory/context", state.brain_base_url);
+    match proxy::proxy_json_get(&url, &state.http_client, &params).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
 }
