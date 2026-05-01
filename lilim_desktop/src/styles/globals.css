@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg-dark: #0f0f0f;
+  --color-bg-medium: #1a1a1a;
+  --color-flame-orange: #ff4500;
+  --color-flame-red: #dc2626;
+  --color-flame-yellow: #fbbf24;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #ff6b35, #ff4500);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #ff8c42, #ff6b35);
+}
+
+/* Animation for flame flicker */
+@keyframes flameFlicker {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 8px rgba(255, 69, 0, 0.8));
+  }
+  50% {
+    filter: brightness(1.2) drop-shadow(0 0 16px rgba(255, 69, 0, 1));
+  }
+}
+
+.flame-glow {
+  animation: flameFlicker 2s ease-in-out infinite;
+}
