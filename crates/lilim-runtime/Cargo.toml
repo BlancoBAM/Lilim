@@ -20,7 +20,7 @@ tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 
 # HTTP client (to proxy to Python brain)
-reqwest = { version = "0.12", features = ["json", "stream", "blocking"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "blocking", "charset"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

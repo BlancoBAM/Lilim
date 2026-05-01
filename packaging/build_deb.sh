@@ -26,7 +26,7 @@ else
 fi
 
 # Desktop UI (Tauri binary)
-TAURI_BIN="$ROOT_DIR/lilim_desktop/src-tauri/target/release/lilim"
+TAURI_BIN="$ROOT_DIR/lilim_desktop/src-tauri/target/release/tauri-applilim-desktop"
 if [ -x "$TAURI_BIN" ]; then
   cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
 else
@@ -73,9 +73,13 @@ set -e
 echo "Creating python venv for Lilim..."
 python3 -m venv /usr/lib/lilim/venv
 /usr/lib/lilim/venv/bin/pip install fastapi uvicorn litellm apscheduler
+mkdir -p /var/log/lilim
+chown -R aegon:aegon /var/log/lilim
+mkdir -p /home/aegon/.local/share/lilim
+chown -R aegon:aegon /home/aegon/.local/share/lilim
 systemctl daemon-reload
 systemctl enable lilith-ai.service
-systemctl start lilith-ai.service
+systemctl restart lilith-ai.service
 POSTINST
 chmod +x "$DEB_ROOT/DEBIAN/postinst"
 

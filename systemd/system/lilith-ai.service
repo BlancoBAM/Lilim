@@ -6,10 +6,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=lilith
-Group=lilith
+User=aegon
+Group=aegon
 ExecStart=/usr/bin/lilim-runtime
-WorkingDirectory=/var/lib/lilith
+WorkingDirectory=/home/aegon/.local/share/lilim
 Restart=on-failure
 RestartSec=10
 TimeoutStartSec=90
@@ -19,16 +19,14 @@ TimeoutStopSec=30
 Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
-Environment=HOME=/var/lib/lilith
-Environment=PYTHONUNBUFFERED=1
-Environment=HOME=/var/lib/lilith
+Environment=HOME=/home/aegon
 
 # Security Hardening
 NoNewPrivileges=yes
 PrivateTmp=yes
-ProtectSystem=strict
-ProtectHome=yes
-ReadWritePaths=/var/lib/lilith /var/log/lilith /tmp
+ProtectSystem=full
+ProtectHome=no
+ReadWritePaths=/home/aegon /var/log/lilim /tmp
 ReadOnlyPaths=/etc/lilith /usr/lib/lilim
 InaccessiblePaths=/root
 

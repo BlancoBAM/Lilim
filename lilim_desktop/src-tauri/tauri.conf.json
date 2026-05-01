@@ -12,9 +12,23 @@
   "app": {
     "windows": [
       {
-        "title": "Lilim Assistant",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Lilim",
+        "width": 420,
+        "height": 700,
+        "minWidth": 380,
+        "minHeight": 500,
+        "maxWidth": 520,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": false,
+        "center": false,
+        "x": null,
+        "y": null,
+        "shadow": false,
+        "skipTaskbar": false,
+        "visible": true
       }
     ],
     "security": {

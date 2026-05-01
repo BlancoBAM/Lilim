@@ -1,0 +1,10 @@
+/home/aegon/workspace/Lilim/lilim_core/target/debug/deps/levenshtein_automata-ecf690b6d3ab7b2a.d: /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/lib.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/alphabet.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/dfa.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/index.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/levenshtein_nfa.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/parametric_dfa.rs
+
+/home/aegon/workspace/Lilim/lilim_core/target/debug/deps/liblevenshtein_automata-ecf690b6d3ab7b2a.rmeta: /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/lib.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/alphabet.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/dfa.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/index.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/levenshtein_nfa.rs /home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/parametric_dfa.rs
+
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/lib.rs:
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/alphabet.rs:
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/dfa.rs:
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/index.rs:
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/levenshtein_nfa.rs:
+/home/aegon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/levenshtein_automata-0.2.1/src/parametric_dfa.rs:

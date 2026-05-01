@@ -1,33 +1,16 @@
 /**
- * Lilim API Client — Open Interpreter Backend
+ * Lilim API Client — Native Rust Gateway Backend
  *
- * Connects to OI's FastAPI server using Server-Sent Events (SSE) for streaming.
- * The OI server can be started with:
- *   interpreter --serve (or python -m interpreter.server)
+ * Connects to lilim-runtime (Rust proxy) on port 8080 via SSE streaming.
+ * The gateway proxies to the Python FastAPI brain on port 8081.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// The Rust gateway always runs on 8080 on localhost
+const API_BASE_URL = 'http://127.0.0.1:8080';
 
-/**
- * OI stream chunk format (LMC Messages)
- */
-export interface OIChunk {
-  role: 'assistant' | 'computer' | 'user';
-  type: 'message' | 'code' | 'console' | 'confirmation' | 'review';
-  format?: string;       // "active_line", "output", "python", "javascript", "shell", etc.
-  content: string;
-  start?: boolean;       // true when a new message type begins
-  end?: boolean;         // true when a message type ends
-}
-
-/**
- * Assembled message from the stream
- */
 export interface LilimMessage {
   id: string;
-  role: 'user' | 'assistant' | 'computer';
-  type: 'message' | 'code' | 'console' | 'confirmation';
-  format?: string;
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
@@ -40,123 +23,122 @@ export class LilimAPIError extends Error {
 }
 
 /**
- * Send a chat message via POST and stream the response
+ * Chunk yielded from the stream to the UI
  */
-export async function* streamChat(
-  message: string,
-): AsyncGenerator<OIChunk> {
+export interface OIChunk {
+  role: 'assistant';
+  type: 'message';
+  content: string;
+  start?: boolean;
+  end?: boolean;
+}
+
+/**
+ * Stream a chat response from the Rust gateway (SSE).
+ * Yields OIChunk objects compatible with the legacy ChatInterface.
+ */
+export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
+  // Retrieve or create a session ID so memory is per-session
+  const sessionId = getSessionId();
+
+  let response: Response;
   try {
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+    response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message, stream: true }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, session_id: sessionId, stream: true }),
     });
+  } catch (err) {
+    throw new LilimAPIError(
+      `Cannot connect to Lilim backend at ${API_BASE_URL}. Is the lilith-ai service running?`
+    );
+  }
 
-    if (!response.ok) {
-      throw new LilimAPIError(
-        `API request failed: ${response.statusText}`,
-        response.status
-      );
-    }
+  if (!response.ok) {
+    throw new LilimAPIError(
+      `API error ${response.status}: ${response.statusText}`,
+      response.status
+    );
+  }
 
-    if (!response.body) {
-      throw new LilimAPIError('No response body — streaming not supported');
-    }
+  if (!response.body) {
+    throw new LilimAPIError('No response body — streaming not supported by this client');
+  }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
 
-    // Yield a start chunk for the assistant message
-    yield {
-      role: 'assistant',
-      type: 'message',
-      content: '',
-      start: true
-    };
+  // Signal start of assistant message to the UI
+  yield { role: 'assistant', type: 'message', content: '', start: true };
 
+  try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-
       const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      buffer = lines.pop() ?? '';
 
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed) continue;
+        if (!trimmed.startsWith('data: ')) continue;
 
-        if (trimmed.startsWith('data: ')) {
-          const jsonStr = trimmed.slice(6);
-          if (jsonStr === '[DONE]') continue;
-          
-          try {
-            const data = JSON.parse(jsonStr);
-            if (data.type === 'token') {
-              yield {
-                role: 'assistant',
-                type: 'message',
-                content: data.text
-              };
-            } else if (data.type === 'done') {
-              yield {
-                role: 'assistant',
-                type: 'message',
-                content: '',
-                end: true
-              };
-            } else if (data.type === 'error') {
-               yield {
-                 role: 'assistant',
-                 type: 'message',
-                 content: `\n*Error: ${data.text}*`
-               };
-            }
-          } catch {
-            // Not valid JSON, skip
+        const jsonStr = trimmed.slice(6);
+        if (jsonStr === '[DONE]') continue;
+
+        try {
+          const data = JSON.parse(jsonStr);
+
+          if (data.type === 'token' && data.text) {
+            yield { role: 'assistant', type: 'message', content: data.text };
+          } else if (data.type === 'done') {
+            yield { role: 'assistant', type: 'message', content: '', end: true };
+            return;
+          } else if (data.type === 'error') {
+            yield { role: 'assistant', type: 'message', content: `\n*${data.text}*` };
           }
+          // 'meta' chunks (model info) are silently ignored
+        } catch {
+          // Non-JSON SSE line, skip
         }
       }
     }
-
-    // Ensure we close the message if it wasn't closed
-    yield {
-      role: 'assistant',
-      type: 'message',
-      content: '',
-      end: true
-    };
-  } catch (error) {
-    if (error instanceof LilimAPIError) throw error;
-    throw new LilimAPIError(
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
-    );
+  } finally {
+    reader.releaseLock();
   }
+
+  yield { role: 'assistant', type: 'message', content: '', end: true };
 }
 
 /**
- * Send a non-streaming chat message (fallback)
+ * Execute a confirmed shell command via the Rust security gateway.
  */
-export async function sendMessage(message: string): Promise<OIChunk[]> {
-  const chunks: OIChunk[] = [];
-  for await (const chunk of streamChat(message)) {
-    chunks.push(chunk);
+export async function runShellCommand(command: string): Promise<{
+  stdout: string;
+  stderr: string;
+  returncode: number;
+}> {
+  const response = await fetch(`${API_BASE_URL}/tools/shell`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command, confirmed: true }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new LilimAPIError(`Shell command rejected: ${detail}`, response.status);
   }
-  return chunks;
+  return response.json();
 }
 
 /**
- * Check if the OI backend is reachable
+ * Check if the backend is reachable.
  */
 export async function healthCheck(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/heartbeat`, {
-      method: 'GET',
-    });
+    const response = await fetch(`${API_BASE_URL}/health`);
     return response.ok;
   } catch {
     return false;
@@ -164,37 +146,18 @@ export async function healthCheck(): Promise<boolean> {
 }
 
 /**
- * Get conversation history from the server
- */
-export async function getHistory(): Promise<OIChunk[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/history`, {
-      method: 'GET',
-    });
-    if (!response.ok) return [];
-    return response.json();
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Get or create a session ID
+ * Get or create a persistent session ID stored in localStorage.
  */
 export function getSessionId(): string {
   let sessionId = localStorage.getItem('lilim_session_id');
-
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     localStorage.setItem('lilim_session_id', sessionId);
   }
-
   return sessionId;
 }
 
-/**
- * Clear current session
- */
+/** Clear the current session (new conversation). */
 export function clearSession(): void {
   localStorage.removeItem('lilim_session_id');
 }
