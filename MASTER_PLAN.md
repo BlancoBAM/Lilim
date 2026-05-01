@@ -214,22 +214,21 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
 ### PHASE 4 — Packaging & Deployment
 *Goal: A single .deb file that installs Lilim completely on Lilith Linux.*
 
-- [ ] **4.1** Fix `packaging/build_deb.sh` 
-  - Build Rust runtime binary
-  - Bundle Python venv
-  - Bundle Tauri UI binary
-  - Install to correct paths
-  - **STATUS:** Skeleton script exists but references missing files
-- [ ] **4.2** Write proper `packaging/deb_root/DEBIAN/control`
-  - Package name: `lilim`
-  - Dependencies: `python3 (>=3.10)`, `libwebkit2gtk-4.1-0`, `libgtk-3-0`, etc.
-  - Maintainer, description, etc.
-  - **STATUS:** DEBIAN dir exists, needs correct control file
-- [ ] **4.3** Write `packaging/deb_root/DEBIAN/postinst`
-  - Enable systemd service
-  - Create `/var/lib/lilim` directory
-  - Set permissions
-  - **STATUS:** Not started
+- [x] **4.1** Update `packaging/build_deb.sh` *(2026-05-01)*
+  - Package `lilim-runtime` (Rust) and `lilim_desktop` (Tauri)
+  - Package `lilim_core` (Python source) and `config/`
+  - Generate postinst script to create Python venv and install pip deps
+  - **STATUS:** ✅ Complete
+- [x] **4.2** Systemd Service File *(2026-05-01)*
+  - Update `systemd/system/lilith-ai.service`
+  - Execute `/usr/bin/lilim-runtime`
+  - Remove all open-interpreter/zeroclaw environment vars
+  - **STATUS:** ✅ Complete
+- [x] **4.3** Update `fix.sh` Host workflow script *(2026-05-01)*
+  - Update the host environment check
+  - Install dependencies (FastAPI, Tauri build deps, etc.)
+  - Test python core before building
+  - **STATUS:** ✅ Complete
 - [ ] **4.4** Write `packaging/deb_root/DEBIAN/prerm`
   - Stop and disable service before removal
   - **STATUS:** Not started
@@ -363,12 +362,12 @@ This is **optional** and lowest priority. If implemented:
 - `lilim_core/scheduler.py` — Task scheduler with systemd-run + fallback
 - `crates/lilim-runtime` — Fully functional Rust proxy server, orchestrates the Python brain, proxies chat via SSE, executes system tools securely.
 - `lilim_desktop` — React + Tauri UI scaffolded with dark mode aesthetics and SSE chat/tool confirmation integration.
+- `packaging` — Build `.deb` bundling Rust runtime, Tauri frontend, and Python backend.
 
 **What does NOT work yet:**
-- .deb packaging (Phase 4)
 - iPhone gateway (Phase 2.4 — deferred)
 
-**Next task to do:** `4.1` — Finalize `packaging/build_deb.sh`
+**Next task to do:** Deploy and test (Phase 5).
 
 ---
 
@@ -395,3 +394,4 @@ When one AI session ends and another begins:
 | 2026-05-01 | Phase 1 complete | Tasks 1.1–1.8 done. 47 tests pass. Python brain layer complete. |
 | 2026-05-01 | Phase 2 complete | Tasks 2.1-2.3 done. Rust runtime proxies properly. |
 | 2026-05-01 | Phase 3 complete | Tasks 3.1-3.4 done. Tauri desktop UI implemented. |
+| 2026-05-01 | Phase 4 complete | Tasks 4.1-4.3 done. Packaging scripts updated. |

@@ -25,40 +25,34 @@ else
   exit 1
 fi
 
-# Desktop UI assets (if present)
-if [ -d "$ROOT_DIR/lilim_desktop/dist" ]; then
-  mkdir -p "$DEB_ROOT/usr/share/lilim-desktop"
-  cp -r "$ROOT_DIR/lilim_desktop/dist/." "$DEB_ROOT/usr/share/lilim-desktop/"
-fi
-if [ -d "$ROOT_DIR/lilim_desktop/build" ]; then
-  mkdir -p "$DEB_ROOT/usr/share/lilim-desktop"
-  cp -r "$ROOT_DIR/lilim_desktop/build/." "$DEB_ROOT/usr/share/lilim-desktop/"
+# Desktop UI (Tauri binary)
+TAURI_BIN="$ROOT_DIR/lilim_desktop/src-tauri/target/release/lilim"
+if [ -x "$TAURI_BIN" ]; then
+  cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
+else
+  echo "WARNING: Tauri binary not found at $TAURI_BIN. Skipping UI." >&2
 fi
 
-## Desktop launcher and desktop file
-if [ -d "$DEB_ROOT/usr/share/lilim-desktop" ]; then
-  mkdir -p "$DEB_ROOT/usr/share/applications"
-  cat > "$DEB_ROOT/usr/share/applications/lilim-desktop.desktop" <<'DES'
+# Python Brain & Configuration
+cp -r "$ROOT_DIR/lilim_core" "$DEB_ROOT/usr/lib/lilim/"
+mkdir -p "$DEB_ROOT/etc/lilith"
+cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
+
+# Systemd Service
+mkdir -p "$DEB_ROOT/lib/systemd/system"
+cp "$ROOT_DIR/systemd/system/lilith-ai.service" "$DEB_ROOT/lib/systemd/system/"
+
+## Desktop file
+mkdir -p "$DEB_ROOT/usr/share/applications"
+cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
 [Desktop Entry]
-Name=Lilim Desktop Chat
-Comment=Desktop chat UI for Lilim
-Exec=/usr/bin/lilim-desktop
+Name=Lilim Assistant
+Comment=AI Assistant for Lilith Linux
+Exec=/usr/bin/lilim
 Icon=lilim
 Type=Application
 Categories=Utility;
 DES
-  cat > "$DEB_ROOT/usr/bin/lilim-desktop" <<'DESBIN'
-#!/usr/bin/env bash
-if [ -d "/usr/share/lilim-desktop" ]; then
-  if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open http://127.0.0.1:8000/ || true
-  else
-    echo "Lilim Desktop UI available at /usr/share/lilim-desktop"
-  fi
-fi
-DESBIN
-  chmod +x "$DEB_ROOT/usr/bin/lilim-desktop"
-fi
 
 # Debian control file
 cat > "$DEB_ROOT/DEBIAN/control" <<'CTRL'
@@ -68,9 +62,22 @@ Section: base
 Priority: optional
 Architecture: amd64
 Maintainer: Lilim Maintainers <maintainer@example.com>
-Description: Lilim component for production-ready Open Interpreter-based AI assistant
- This package includes the production-ready Lilim runtime components and their launcher.
+Depends: python3, python3-venv, systemd, libwebkit2gtk-4.0-37 | libwebkit2gtk-4.1-0
+Description: Lilim component for production-ready AI assistant
+ This package includes the production-ready Lilim runtime components, the Python brain, and the Tauri desktop UI.
 CTRL
+
+cat > "$DEB_ROOT/DEBIAN/postinst" <<'POSTINST'
+#!/usr/bin/env bash
+set -e
+echo "Creating python venv for Lilim..."
+python3 -m venv /usr/lib/lilim/venv
+/usr/lib/lilim/venv/bin/pip install fastapi uvicorn litellm apscheduler
+systemctl daemon-reload
+systemctl enable lilith-ai.service
+systemctl start lilith-ai.service
+POSTINST
+chmod +x "$DEB_ROOT/DEBIAN/postinst"
 
 dpkg-deb --root-owner-group --build "$DEB_ROOT" "$DEB_OUTPUT/$DEB_NAME"
 echo "DEB built at $DEB_OUTPUT/$DEB_NAME"

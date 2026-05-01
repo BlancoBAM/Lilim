@@ -1,5 +1,5 @@
 [Unit]
-Description=Lilim AI Assistant — Unified OI + ZeroClaw Runtime
+Description=Lilim AI Assistant Runtime (Rust Proxy & Python Brain)
 Documentation=file:///usr/share/doc/lilith-ai/USER_MANUAL.md
 After=network-online.target
 Wants=network-online.target
@@ -16,12 +16,10 @@ TimeoutStartSec=90
 TimeoutStopSec=30
 
 # Environment Configuration
-Environment=LILIM_PORT=8000
-Environment=LILIM_PROFILE=/etc/lilith/lilim-profile.py
-Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=LILIM_INSTALL=/usr/lib/lilim
-Environment=ZEROCLAW_CONFIG=/etc/lilith/zeroclaw.toml
-Environment=ZEROCLAW_BIN=/usr/bin/zeroclaw
+Environment=LILIM_VENV=/usr/lib/lilim/venv
+Environment=PYTHONUNBUFFERED=1
+Environment=HOME=/var/lib/lilith
 Environment=PYTHONUNBUFFERED=1
 Environment=HOME=/var/lib/lilith
 
