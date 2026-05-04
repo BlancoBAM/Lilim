@@ -200,10 +200,7 @@ fn generate_blocking(
     }
 
     // Extract logits for the last prompt token
-    let last_logits = match last_logits.unwrap().squeeze(0).and_then(|l| {
-        let seq_len = l.dim(0)?;
-        l.get(seq_len - 1)
-    }) {
+    let last_logits = match last_logits.unwrap().squeeze(0) {
         Ok(l) => l,
         Err(e) => {
             let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
@@ -276,8 +273,8 @@ fn generate_blocking(
 
         pos += 1;
 
-        // For single-token input, squeeze and get the only position
-        let logits = match logits.squeeze(0).and_then(|l| l.get(0)) {
+        // For single-token input, squeeze to get the 1D vocab logits
+        let last_logits = match logits.squeeze(0) {
             Ok(l) => l,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
