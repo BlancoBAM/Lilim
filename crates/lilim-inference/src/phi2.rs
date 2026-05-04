@@ -159,7 +159,7 @@ fn generate_blocking(
     };
 
     let prompt_len = prompt_tokens.len();
-    debug!("Prompt tokenized: {} tokens", prompt_len);
+    info!("Prompt tokenized: {} tokens", prompt_len);
 
     // Set up logits processor for sampling
     let seed = 42u64;
@@ -169,28 +169,38 @@ fn generate_blocking(
         Some(config.top_p),
     );
 
-    // ── Phase 1: Process the full prompt in one forward pass ──
-    // This builds the internal KV-cache inside the GGUF model.
-    let prompt_tensor = match Tensor::new(prompt_tokens.as_slice(), &inner.device)
-        .and_then(|t| t.unsqueeze(0))
-    {
-        Ok(t) => t,
-        Err(e) => {
-            let _ = tx.blocking_send(Err(anyhow::anyhow!("Tensor error during prompt: {e}")));
-            return;
-        }
-    };
+    // ── Phase 1: Process the full prompt token-by-token ──
+    // Candle's quantized GEMM for `seq_len > 1` on CPU falls back to an unoptimized scalar loop.
+    // By processing token-by-token (`seq_len = 1`), we force the use of the highly optimized
+    // GEMV (vector-matrix) kernels, which is dramatically faster on CPUs without AVX512/MKL.
+    let mut pos = 0;
+    let mut last_logits: Option<Tensor> = None;
 
-    let prompt_logits = match inner.model.forward(&prompt_tensor, 0) {
-        Ok(l) => l,
-        Err(e) => {
-            let _ = tx.blocking_send(Err(anyhow::anyhow!("Forward pass error (prompt): {e}")));
-            return;
-        }
-    };
+    for &token in prompt_tokens.iter() {
+        let token_tensor = match Tensor::new(&[token], &inner.device)
+            .and_then(|t| t.unsqueeze(0))
+        {
+            Ok(t) => t,
+            Err(e) => {
+                let _ = tx.blocking_send(Err(anyhow::anyhow!("Tensor error during prompt: {e}")));
+                return;
+            }
+        };
+
+        let logits = match inner.model.forward(&token_tensor, pos) {
+            Ok(l) => l,
+            Err(e) => {
+                let _ = tx.blocking_send(Err(anyhow::anyhow!("Forward pass error (prompt): {e}")));
+                return;
+            }
+        };
+
+        last_logits = Some(logits);
+        pos += 1;
+    }
 
     // Extract logits for the last prompt token
-    let last_logits = match prompt_logits.squeeze(0).and_then(|l| {
+    let last_logits = match last_logits.unwrap().squeeze(0).and_then(|l| {
         let seq_len = l.dim(0)?;
         l.get(seq_len - 1)
     }) {
@@ -211,7 +221,7 @@ fn generate_blocking(
     };
 
     let prompt_elapsed = start.elapsed().as_secs_f64();
-    debug!("Prompt processed in {prompt_elapsed:.1}s");
+    info!("Prompt processed token-by-token in {prompt_elapsed:.1}s");
 
     // Track position for incremental KV-cache indexing
     let mut pos = prompt_len;
