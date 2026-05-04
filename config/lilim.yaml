@@ -1,247 +1,205 @@
-# Lilim AI Assistant Configuration - Multi-Model Architecture
-# Lilith Linux - Intelligent Routing System
+# Lilim AI Assistant Configuration
+# Lilith Linux — Local-First Architecture
+# Last updated: 2026-05-04
+#
+# Architecture overview:
+#   ┌──────────────────────────────────────────────────────┐
+#   │  Tauri Desktop UI  →  Rust Runtime (port 8080)       │
+#   │                         │                            │
+#   │              ┌──────────┴─────────┐                  │
+#   │              ▼                    ▼                   │
+#   │     Candle Phi-2 (local)    Python Brain (8081)       │
+#   │     GGUF Q4_K_M             litellm → online APIs    │
+#   └──────────────────────────────────────────────────────┘
 
 # ═══════════════════════════════════════════════════════════
-# Local Model Configuration
+# Local Inference Engine (Rust/Candle — Primary)
 # ═══════════════════════════════════════════════════════════
-models:
-  local:
-    # Router Model (Fast, Lightweight - Query Analysis)
-    router:
-      enabled: true
-      model_path: "/var/lib/lilith/models/qwen2-0.5b"
-      model_type: "gguf"  # gguf, safetensors, onnx
-      timeout_ms: 500
-      max_tokens: 256
-      temperature: 0.3
-      
-    # Main Agentic Model (Primary Reasoning + Tools)
-    main:
-      enabled: true
-      model_path: "/var/lib/lilith/models/qwen3-vl-4b"
-      model_type: "gguf"
-      timeout_ms: 5000
-      max_tokens: 2048
-      temperature: 0.7
-      ctx_size: 4096
-      gpu_layers: 35  # Adjust based on VRAM
-      
-    # TTS Model (Voice Synthesis)
-    tts:
-      enabled: true
-      engine: "neutts"  # neutts-nano-q4-gguf
-      model_path: "/var/lib/lilith/models/neutts-nano-q4-gguf"
-      voice: "default"
-      speed: 1.0
-      pitch: 1.0
-      sample_rate: 22050
+local_inference:
+  # Phi-2 2.7B Q4_K_M — the only local model currently bundled.
+  # Model files live at ~/.local/share/lilim/models/phi-2-q4/
+  # or /usr/lib/lilim/models/phi-2-q4/ (bundled in .deb).
+  model: "phi-2-q4"
+  model_type: "gguf"
+  context_size: 2048
+  max_gen_tokens: 256
+  temperature: 0.5
+  top_p: 0.9
+
+  # Device selection — CPU-only (no CUDA/Metal on this hardware)
+  device: "cpu"
+
+  # Warmup: pre-run a dummy forward pass at startup so the first
+  # real request isn't slow from cold cache. Adds ~7s to startup.
+  warmup_on_startup: true
 
 # ═══════════════════════════════════════════════════════════
-# System Integration (Hotkeys, Tray, Screen Reading)
-# ═══════════════════════════════════════════════════════════
-system:
-  # Global hotkeys
-  hotkeys:
-    toggle_ui: "Ctrl+L"           # Show/hide Lilim window
-    tts_screen_reader: "Ctrl+Shift+M"  # TTS read screen content
-    
-  # System tray
-  tray:
-    enabled: true
-    always_visible: true
-    icon_path: "/usr/share/icons/hicolor/256x256/apps/lilith-ai.png"
-    
-  # Screen reading capabilities
-  screen_reader:
-    capture_browser: true      # Full HTML page content
-    capture_terminal: true     # Terminal stdout
-    accessibility_api: true    # Use system accessibility APIs
-    max_content_size: 50000    # Characters limit per capture
-
-# ═══════════════════════════════════════════════════════════
-# Online Provider Configuration (Fallback & Specialized)
+# Online Provider Configuration (Optional Fallback)
+# Keys are read from environment variables — never hardcoded.
+# Add keys via: Settings → API Keys, or export in ~/.profile
 # ═══════════════════════════════════════════════════════════
 providers:
+  # Provider list is ordered by priority (first available wins).
+  # All are disabled by default — enable by setting the env var.
   online:
-    # OpenAI Provider
     - name: "openai"
-      enabled: true
-      api_url: "https://api.openai.com/v1/chat/completions"
-      auth_type: "bearer"  # bearer, api-key, custom, none
+      enabled: false   # Set to true when OPENAI_API_KEY is present
       api_key_env: "OPENAI_API_KEY"
       model: "gpt-4o-mini"
-      priority: 1
       timeout_s: 30
       max_tokens: 4096
       temperature: 0.7
-      
-    # Anthropic Provider
+
     - name: "anthropic"
-      enabled: true
-      api_url: "https://api.anthropic.com/v1/messages"
-      auth_type: "custom"
+      enabled: false   # Set to true when ANTHROPIC_API_KEY is present
       api_key_env: "ANTHROPIC_API_KEY"
-      model: "claude-3-5-sonnet-20241022"
-      priority: 2
+      model: "claude-3-5-haiku-20241022"
       timeout_s: 30
       max_tokens: 4096
-      custom_headers:
-        x-api-key: "${ANTHROPIC_API_KEY}"
-        anthropic-version: "2023-06-01"
-      
-    # Remote Ollama Instance (Example)
-    - name: "ollama-remote"
-      enabled: false
-      api_url: "http://remote-server:11434/api/generate"
-      auth_type: "none"
-      model: "llama3.1:70b"
-      priority: 3
-      timeout_s: 60
-      stream: true
-      
-    # Custom API Provider (Generic)
-    - name: "custom-provider"
-      enabled: false
-      api_url: "https://custom.example.com/v1/completions"
-      auth_type: "api-key"
-      api_key_env: "CUSTOM_API_KEY"
-      model: "custom-model-v1"
-      priority: 4
+
+    - name: "gemini"
+      enabled: false   # Set to true when GEMINI_API_KEY is present
+      api_key_env: "GEMINI_API_KEY"
+      model: "gemini-2.0-flash"
       timeout_s: 30
-      custom_headers:
-        X-Custom-Header: "value"
-        X-Api-Version: "1.0"
+      max_tokens: 4096
+
+    - name: "groq"
+      enabled: false   # Groq free tier — fast inference
+      api_key_env: "GROQ_API_KEY"
+      model: "llama-3.1-8b-instant"
+      timeout_s: 15
+      max_tokens: 4096
 
 # ═══════════════════════════════════════════════════════════
-# Intelligent Routing Configuration
+# Routing (Local vs. Online Decision)
+# Handled by Python Brain (/route endpoint).
 # ═══════════════════════════════════════════════════════════
 routing:
-  # Complexity thresholds (0.0-1.0)
-  complexity_threshold:
-    trivial: 0.2     # Router handles directly
-    simple: 0.5      # Local main model
-    moderate: 0.7    # Local main with tools
-    complex: 0.9     # Online fallback preferred
-    
-  # Performance requirements
-  max_local_latency_ms: 5000
+  # Always try local first
   prefer_local: true
-  
-  # Task-specific routing rules
-  task_routes:
-    # Local-preferred tasks
-    coding: "local"
-    medical_lookup: "local"
-    linux_troubleshooting: "local"
-    academic: "local"
-    vision: "local"  # Qwen3-VL capability
-    
-    # Online-preferred tasks
-    creative_writing: "online"
-    latest_news: "online"
-    complex_reasoning: "online"
-    
-    # Special handling
-    voice_response: "tts"
-    
-  # Online fallback conditions
-  fallback_triggers:
-    - slow_local_response: true      # >max_local_latency_ms
-    - high_complexity: true          # >complexity_threshold.complex
-    - low_rag_relevance: true       # <0.3 and complex query
-    - requires_latest_info: true     # Time-sensitive queries
-    - local_model_unavailable: true
 
-# ═══════════════════════════════════════════════════════════
-# RAG (Retrieval-Augmented Generation) Configuration
-# ═══════════════════════════════════════════════════════════
-rag:
-  vector_index: "/var/lib/lilith/rag_index"
-  keyword_index: "/var/lib/lilith/keyword_index"
-  max_results: 5
-  min_similarity: 0.3
-  
-  # RAG influence on routing
-  high_relevance_threshold: 0.8  # If RAG score >0.8, prefer local
-  use_rag_for_routing: true
+  # Fall back to online only when:
+  fallback_triggers:
+    - local_model_unavailable: true    # Engine failed to load
+    - online_key_present: true         # User has configured a key
+                                       # AND explicitly wants it
+
+  # Task hints — used by Python brain's routing oracle
+  # to select best provider per query type
+  task_routes:
+    medical_study: "local"
+    linux_help: "local"
+    academic: "local"
+    coding: "local"
+    creative_writing: "online_preferred"
+    latest_news: "online_required"
 
 # ═══════════════════════════════════════════════════════════
 # Memory / Conversation History
+# Managed by Python Brain (SQLite in-process)
 # ═══════════════════════════════════════════════════════════
 memory:
-  db_path: "/var/lib/lilith/memory.db"
+  db_path: "/home/aegon/.local/share/lilim/memory.db"
   max_history_messages: 20
-  session_timeout: 7200
-  
-  # Context window management
-  context_strategy: "sliding"  # sliding, summarize, truncate
-  max_context_tokens: 3072
+  session_timeout_s: 7200       # 2 hours of inactivity resets context
+  context_strategy: "sliding"   # sliding | truncate
+  max_context_tokens: 1024      # Keep short — local model has 2048 ctx total
 
 # ═══════════════════════════════════════════════════════════
 # Agent / Tool Execution
+# All tool calls require explicit user confirmation.
 # ═══════════════════════════════════════════════════════════
 agent:
-  enable_web_search: true
-  enable_file_search: true
-  enable_terminal: true
-  yolo_mode: false
-  
+  enable_file_ops: true        # Read files, create/write documents
+  enable_terminal: true        # Run shell commands (with confirmation)
+  enable_web_search: false     # Disabled until search tool is implemented
+  require_confirmation: true   # NEVER run tools autonomously
+  tool_timeout_s: 30
+
+  # Allowlist for shell commands (confirmation still required)
   allowed_commands:
     - "ls"
     - "cat"
     - "grep"
     - "find"
+    - "df"
+    - "free"
     - "systemctl status"
     - "journalctl"
-    - "apt search"
-  
-  max_web_results: 5
-  max_search_depth: 5
-  tool_timeout_s: 30
+    - "ps"
+    - "ip"
+    - "ss"
 
 # ═══════════════════════════════════════════════════════════
-# Server Configuration
+# System Integration
+# ═══════════════════════════════════════════════════════════
+system:
+  # Global hotkeys (implemented in Tauri frontend)
+  hotkeys:
+    toggle_ui: "Ctrl+L"      # Show/hide Lilim window
+
+  # System tray — removed (no longer used, handled by Tauri)
+  tray: false
+
+  # TTS / screen reader — removed, moved to separate application
+  tts: false
+  screen_reader: false
+
+# ═══════════════════════════════════════════════════════════
+# Server Configuration (Rust Runtime)
 # ═══════════════════════════════════════════════════════════
 server:
-  host: "127.0.0.1"
-  port: 8080
+  # Rust proxy gateway — Tauri talks to this
+  gateway_host: "127.0.0.1"
+  gateway_port: 8080
+
+  # Python brain — Rust starts and manages this process
+  brain_host: "127.0.0.1"
+  brain_port: 8081
+
   cors_origins:
-    - "http://localhost:5173"
-    - "http://localhost:8080"
-    - "tauri://localhost"  # For Tauri desktop app
+    - "tauri://localhost"
+    - "http://localhost:1420"   # Vite dev server
 
 # ═══════════════════════════════════════════════════════════
 # Personality Configuration
+# Applied by Python Brain to all responses regardless of
+# which model (local Phi-2 or online provider) is used.
 # ═══════════════════════════════════════════════════════════
 personality:
-  responses_yaml_path: "/usr/share/lilith/lilim-responses.yaml"
-  theme_intensity: 0.15
+  responses_yaml_path: "/etc/lilith/lilim-responses.yaml"
+  always_apply: true          # Inject persona into EVERY system prompt
+  theme_intensity: 0.15       # 0.0 = no flavor, 1.0 = full demon mode
   sarcasm_level: 0.25
-  
-  # Apply personality regardless of executor model
-  always_apply: true
+
+  # Target audience (informs tone calibration)
+  target_user: "first-year medical assistant student, non-technical"
+  specializations:
+    - "Medical Assistant coursework (A&P, terminology, clinical procedures)"
+    - "Ubuntu/Linux troubleshooting and system administration"
+    - "First-year college subjects (biology, math, writing, test prep)"
 
 # ═══════════════════════════════════════════════════════════
 # Logging Configuration
 # ═══════════════════════════════════════════════════════════
 logging:
-  level: "info"  # trace, debug, info, warn, error
-  file: "/var/log/lilith/lilim.log"
-  log_queries: true
-  log_responses: false
-  log_routing_decisions: true  # NEW: Track which model handled query
+  level: "info"               # trace | debug | info | warn | error
+  log_routing_decisions: true  # Log which engine handled each query
+  log_queries: false           # Disable for privacy (no query logging)
+  log_responses: false         # Disable for privacy
 
 # ═══════════════════════════════════════════════════════════
 # Performance Tuning
 # ═══════════════════════════════════════════════════════════
 performance:
-  query_timeout: 30
-  rag_timeout: 5
-  max_concurrent_queries: 10
-  enable_cache: true
-  cache_ttl: 300
-  
-  # Model warmup (preload on startup)
-  warmup_models: true
-  warmup_timeout_s: 60
+  # Request timeout — Phi-2 on i5-6200U needs up to 5 mins
+  # for a complex prompt. The UI shows thinking indicators during this.
+  query_timeout_s: 300        # 5 minutes max
+
+  # Concurrent request handling
+  max_concurrent_queries: 1   # Single-threaded inference — queue extras
+
+  # Response caching (exact-match cache for repeated queries)
+  enable_cache: false         # Disabled — responses vary by context
 
