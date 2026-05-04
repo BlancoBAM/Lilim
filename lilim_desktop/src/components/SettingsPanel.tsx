@@ -1,87 +1,126 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap } from 'lucide-react';
+import { getModelStatus, getProvidersStatus, registerApiKey, saveModelConfig, type ProviderStatus } from '../api/lilim';
 
-interface ModelConfig {
-  localEnabled: boolean;
-  localEndpoint: string;   // Ollama or llama.cpp compatible endpoint
-  localModel: string;
+// ── Provider metadata for display ────────────────────────────────────────────
 
-  // Remote providers
-  openaiKey: string;
-  openaiModel: string;
-
-  anthropicKey: string;
-  anthropicModel: string;
-
-  googleKey: string;
-  googleModel: string;
-
-  groqKey: string;         // Free tier — Groq
-  groqModel: string;
-
-  openrouterKey: string;   // Free models via OpenRouter
-  openrouterModel: string;
-
-  customEndpoint: string;
-  customKey: string;
-  customModel: string;
-
-  // Routing preference
-  preferFree: boolean;
-  strategy: 'local-first' | 'free-first' | 'quality-first';
-}
-
-const DEFAULTS: ModelConfig = {
-  localEnabled: true,
-  localEndpoint: 'http://127.0.0.1:11434',
-  localModel: 'tinyllama:latest',
-
-  openaiKey: '',
-  openaiModel: 'gpt-4o-mini',
-
-  anthropicKey: '',
-  anthropicModel: 'claude-haiku-3-5',
-
-  googleKey: '',
-  googleModel: 'gemini-2.0-flash',
-
-  groqKey: '',
-  groqModel: 'llama3-8b-8192',
-
-  openrouterKey: '',
-  openrouterModel: 'meta-llama/llama-3-8b-instruct:free',
-
-  customEndpoint: '',
-  customKey: '',
-  customModel: '',
-
-  preferFree: true,
-  strategy: 'local-first',
+const PROVIDER_DISPLAY: Record<string, {
+  label: string;
+  url: string;
+  freeNote: string;
+  color: string;
+  keyPlaceholder: string;
+  keyPrefix?: string;
+}> = {
+  openrouter: {
+    label: 'OpenRouter',
+    url: 'https://openrouter.ai',
+    freeNote: '30+ free models via one key',
+    color: '#8B5CF6',
+    keyPlaceholder: 'sk-or-v1-…',
+    keyPrefix: 'sk-or-v1-',
+  },
+  groq: {
+    label: 'Groq',
+    url: 'https://console.groq.com',
+    freeNote: '14,400 req/day free — fastest inference',
+    color: '#F59E0B',
+    keyPlaceholder: 'gsk_…',
+    keyPrefix: 'gsk_',
+  },
+  gemini: {
+    label: 'Google Gemini',
+    url: 'https://aistudio.google.com',
+    freeNote: '500 req/day free',
+    color: '#4285F4',
+    keyPlaceholder: 'AIza…',
+    keyPrefix: 'AIza',
+  },
+  cerebras: {
+    label: 'Cerebras',
+    url: 'https://cloud.cerebras.ai',
+    freeNote: '14,400 req/day free — ultra fast',
+    color: '#10B981',
+    keyPlaceholder: 'csk-…',
+    keyPrefix: 'csk-',
+  },
+  cloudflare: {
+    label: 'Cloudflare AI',
+    url: 'https://developers.cloudflare.com/workers-ai',
+    freeNote: '10,000 neurons/day free',
+    color: '#F97316',
+    keyPlaceholder: 'CF token (also needs Account ID)',
+  },
+  cohere: {
+    label: 'Cohere',
+    url: 'https://cohere.com',
+    freeNote: '1,000 req/month free',
+    color: '#6366F1',
+    keyPlaceholder: '40-char alphanumeric key',
+  },
+  mistral: {
+    label: 'Mistral',
+    url: 'https://console.mistral.ai',
+    freeNote: 'Free experiment plan (needs phone verification)',
+    color: '#EF4444',
+    keyPlaceholder: 'Mistral API key',
+  },
+  huggingface: {
+    label: 'HuggingFace',
+    url: 'https://huggingface.co',
+    freeNote: '$0.10/month credits — access to all open models',
+    color: '#FBBF24',
+    keyPlaceholder: 'hf_…',
+    keyPrefix: 'hf_',
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    url: 'https://platform.deepseek.com',
+    freeNote: 'Generous free tier — strong reasoning',
+    color: '#06B6D4',
+    keyPlaceholder: 'dsk-…',
+    keyPrefix: 'dsk-',
+  },
+  openai: {
+    label: 'OpenAI',
+    url: 'https://platform.openai.com',
+    freeNote: 'Paid — $5 trial credits on signup',
+    color: '#374151',
+    keyPlaceholder: 'sk-…',
+    keyPrefix: 'sk-',
+  },
+  anthropic: {
+    label: 'Anthropic',
+    url: 'https://console.anthropic.com',
+    freeNote: 'Paid — no free tier',
+    color: '#7C3AED',
+    keyPlaceholder: 'sk-ant-…',
+    keyPrefix: 'sk-ant-',
+  },
 };
+
+const FREE_PROVIDERS = ['openrouter', 'groq', 'gemini', 'cerebras', 'cloudflare', 'cohere', 'mistral', 'huggingface', 'deepseek'];
+const PAID_PROVIDERS = ['openai', 'anthropic'];
 
 const STORAGE_KEY = 'lilim_model_config';
 
-function loadConfig(): ModelConfig {
+function loadConfig(): Record<string, string> {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : DEFAULTS;
-  } catch { return DEFAULTS; }
+    return saved ? JSON.parse(saved) : {};
+  } catch { return {}; }
 }
 
-function saveConfig(cfg: ModelConfig) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-  // Also send to the backend so it takes effect immediately
-  fetch('http://127.0.0.1:8080/settings/model-config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(cfg),
-  }).catch(() => {}); // best-effort
-}
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-// ── A collapsible section ─────────────────────────────────────
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
+function Section({ title, icon, children, defaultOpen = true }: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-orange-500/20 rounded-xl overflow-hidden mb-3">
       <button
@@ -91,41 +130,187 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
         <span className="flex items-center gap-2 text-orange-200 text-sm font-medium">{icon}{title}</span>
         {open ? <ChevronUp size={14} className="text-orange-400" /> : <ChevronDown size={14} className="text-orange-400" />}
       </button>
-      {open && <div className="px-3 pt-2 pb-3 space-y-2">{children}</div>}
+      {open && <div className="px-3 pt-2 pb-3 space-y-3">{children}</div>}
     </div>
   );
 }
 
-// ── Labelled text input ───────────────────────────────────────
-function Field({ label, value, onChange, placeholder, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function ProviderRow({
+  providerId,
+  status,
+  savedKey,
+  onSave,
+}: {
+  providerId: string;
+  status?: ProviderStatus;
+  savedKey: string;
+  onSave: (key: string, provider: string) => void;
 }) {
+  const [keyInput, setKeyInput] = useState(savedKey ? '●●●●●●●●●●●●' : '');
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const display = PROVIDER_DISPLAY[providerId];
+  const isConfigured = status?.configured ?? (savedKey.length > 0);
+
+  const handleSave = async () => {
+    if (!keyInput.trim() || keyInput === '●●●●●●●●●●●●') return;
+    setSaving(true);
+    try {
+      const result = await registerApiKey(keyInput.trim(), providerId);
+      if (result) {
+        // Persist to localStorage config
+        const cfg = loadConfig();
+        cfg[`${providerId}Key`] = keyInput.trim();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+        await saveModelConfig(cfg);
+        onSave(keyInput.trim(), providerId);
+        setSaved(true);
+        setEditing(false);
+        setKeyInput('●●●●●●●●●●●●');
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div>
-      <label className="block text-xs text-gray-400 mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none placeholder-gray-600"
-      />
+    <div className="rounded-lg border border-white/5 bg-black/20 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: display?.color ?? '#666', boxShadow: isConfigured ? `0 0 6px ${display?.color}` : 'none' }}
+          />
+          <span className="text-sm text-white font-medium">{display?.label ?? providerId}</span>
+          {isConfigured && !saved && (
+            <CheckCircle size={12} className="text-green-400" />
+          )}
+          {saved && (
+            <motion.span
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="text-xs text-green-400"
+            >✓ Saved</motion.span>
+          )}
+        </div>
+        <a
+          href={display?.url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[10px] text-orange-400 hover:text-orange-300 underline transition-colors"
+        >
+          Get key ↗
+        </a>
+      </div>
+
+      <p className="text-[10px] text-gray-500 mb-2">{display?.freeNote}</p>
+
+      {status && (
+        <div className="flex gap-3 mb-2 text-[10px] text-gray-600">
+          <span>≤{status.daily_limit.toLocaleString()}/day</span>
+          <span>{(status.tokens_per_min / 1000).toFixed(0)}k tok/min</span>
+          {status.failures > 0 && <span className="text-red-400">{status.failures} recent failures</span>}
+        </div>
+      )}
+
+      <div className="flex gap-1.5">
+        {editing ? (
+          <>
+            <input
+              type="password"
+              value={keyInput}
+              onChange={e => setKeyInput(e.target.value)}
+              placeholder={display?.keyPlaceholder ?? 'API key'}
+              className="flex-1 bg-black/40 text-white text-xs px-2 py-1.5 rounded-lg border border-orange-500/30 focus:border-orange-500/60 focus:outline-none placeholder-gray-600"
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+            />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-2 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
+            >
+              {saving ? <RefreshCw size={10} className="animate-spin" /> : <Save size={10} />}
+            </button>
+            <button
+              onClick={() => { setEditing(false); setKeyInput(isConfigured ? '●●●●●●●●●●●●' : ''); }}
+              className="px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors"
+            >
+              <X size={10} />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => { setEditing(true); setKeyInput(''); }}
+            className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
+              isConfigured
+                ? 'bg-green-900/30 text-green-300 hover:bg-green-900/50 border border-green-500/20'
+                : 'bg-orange-900/20 text-orange-300 hover:bg-orange-900/40 border border-orange-500/20'
+            }`}
+          >
+            {isConfigured ? '✓ Key configured — click to update' : '+ Enter API key'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
+
+// ── Main Settings Panel ───────────────────────────────────────────────────────
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const [cfg, setCfg] = useState<ModelConfig>(loadConfig);
-  const [saved, setSaved] = useState(false);
+  const [config, setConfig] = useState<Record<string, string>>(loadConfig);
+  const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
+  const [modelStatus, setModelStatus] = useState<{
+    available: boolean; device: string; source: string; size_mb: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [strategy, setStrategy] = useState<'local-first' | 'free-first' | 'quality-first'>(
+    (config.strategy as 'local-first' | 'free-first' | 'quality-first') ?? 'local-first'
+  );
 
-  const set = <K extends keyof ModelConfig>(key: K, value: ModelConfig[K]) =>
-    setCfg(prev => ({ ...prev, [key]: value }));
+  const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [providers, model] = await Promise.all([
+        getProvidersStatus(),
+        getModelStatus(),
+      ]);
+      if (providers) setProviderStatuses(providers.providers);
+      if (model) {
+        setModelStatus({
+          available: model.local_engine.available,
+          device: model.local_engine.device,
+          source: model.local_engine.model_status.source,
+          size_mb: model.local_engine.model_status.size_mb,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleSave = () => {
-    saveConfig(cfg);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  const handleKeySaved = (key: string, provider: string) => {
+    const updated = { ...config, [`${provider}Key`]: key };
+    setConfig(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Re-fetch provider statuses after a short delay
+    setTimeout(fetchStatus, 1000);
   };
+
+  const handleStrategySave = async () => {
+    const updated = { ...config, strategy };
+    setConfig(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    await saveModelConfig(updated);
+  };
+
+  const configuredCount = providerStatuses.filter(p => p.configured).length;
 
   return (
     <motion.div
@@ -133,155 +318,199 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="absolute inset-0 flex flex-col rounded-2xl overflow-hidden"
-      style={{ zIndex: 50, background: 'rgba(8,2,0,0.97)', border: '1.5px solid rgba(255,80,0,0.35)' }}
+      style={{ zIndex: 50, background: 'rgba(6,1,0,0.98)', border: '1.5px solid rgba(255,80,0,0.35)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-orange-500/20 flex-shrink-0">
-        <span className="text-orange-200 font-medium text-sm">⚙ Settings</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={16} /></button>
+        <div className="flex items-center gap-2">
+          <span className="text-orange-200 font-medium text-sm">⚙ Settings</span>
+          {!loading && (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+              configuredCount > 0
+                ? 'bg-green-900/40 text-green-400 border border-green-500/20'
+                : 'bg-red-900/30 text-red-400 border border-red-500/20'
+            }`}>
+              {configuredCount > 0 ? `${configuredCount} provider${configuredCount > 1 ? 's' : ''} ready` : 'No providers configured'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchStatus}
+            className="text-gray-500 hover:text-orange-400 transition-colors"
+            title="Refresh status"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* Body — scrollable */}
-      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,80,0,0.3) transparent' }}>
+      {/* Body */}
+      <div
+        className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0 space-y-1"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,80,0,0.3) transparent' }}
+      >
 
-        {/* Strategy */}
-        <div className="mb-4">
-          <label className="block text-xs text-gray-400 mb-2">Model Routing Strategy</label>
+        {/* Local Model Status */}
+        <Section title="Local Model (Phi-2, Built-in)" icon={<Cpu size={13} />}>
+          {loading ? (
+            <div className="flex items-center gap-2 text-gray-500 text-xs py-2">
+              <RefreshCw size={12} className="animate-spin" /> Checking status…
+            </div>
+          ) : modelStatus ? (
+            <div className={`rounded-lg p-3 border text-sm ${
+              modelStatus.available
+                ? 'bg-green-900/20 border-green-500/20'
+                : 'bg-orange-900/20 border-orange-500/20'
+            }`}>
+              <div className="flex items-center gap-2 mb-1">
+                {modelStatus.available
+                  ? <CheckCircle size={13} className="text-green-400" />
+                  : <AlertCircle size={13} className="text-orange-400" />
+                }
+                <span className={`font-medium text-xs ${modelStatus.available ? 'text-green-300' : 'text-orange-300'}`}>
+                  {modelStatus.available ? 'Phi-2 Ready ✓' : 'Phi-2 Not Available'}
+                </span>
+              </div>
+              {modelStatus.available && (
+                <div className="text-[10px] text-gray-500 space-y-0.5">
+                  <div>Device: <span className="text-gray-400">{modelStatus.device}</span></div>
+                  <div>Source: <span className="text-gray-400">{modelStatus.source}</span></div>
+                  {modelStatus.size_mb > 0 && <div>Size: <span className="text-gray-400">{modelStatus.size_mb} MB</span></div>}
+                </div>
+              )}
+              {!modelStatus.available && (
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Model files not found. Online providers will be used instead.
+                  Configure at least one provider below.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 py-2 flex items-center gap-2">
+              <AlertCircle size={12} className="text-orange-400" />
+              Backend not reachable — is the service running?
+            </div>
+          )}
+
+          <p className="text-[10px] text-gray-600 mt-1">
+            Microsoft Phi-2 (2.7B) runs locally on CPU. No API key needed.
+            Bundled in the Lilith Linux package.
+          </p>
+        </Section>
+
+        {/* Routing Strategy */}
+        <Section title="Routing Strategy" icon={<Zap size={13} />}>
           <div className="grid grid-cols-3 gap-1.5">
             {(['local-first', 'free-first', 'quality-first'] as const).map(s => (
-              <button key={s} onClick={() => set('strategy', s)}
-                className={`py-1.5 rounded-lg text-xs transition-colors ${cfg.strategy === s ? 'bg-orange-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+              <button
+                key={s}
+                onClick={() => setStrategy(s)}
+                className={`py-1.5 rounded-lg text-xs transition-colors ${
+                  strategy === s ? 'bg-orange-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
                 {s === 'local-first' ? '🏠 Local first' : s === 'free-first' ? '🆓 Free first' : '⭐ Best quality'}
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-600 mt-1.5">
-            {cfg.strategy === 'local-first' && 'Uses local model for everything, falls back to free tiers if needed.'}
-            {cfg.strategy === 'free-first' && 'Tries free API tiers (Groq, OpenRouter, Gemini) before paid models.'}
-            {cfg.strategy === 'quality-first' && 'Always uses the best available model for the task type.'}
+          <p className="text-[10px] text-gray-600">
+            {strategy === 'local-first' && 'Uses Phi-2 for most queries, online for complex ones.'}
+            {strategy === 'free-first' && 'Always tries free providers before paid ones. Good if local is slow.'}
+            {strategy === 'quality-first' && 'Uses the best available model for every query.'}
           </p>
+          <button
+            onClick={handleStrategySave}
+            className="w-full py-1.5 bg-orange-800/40 hover:bg-orange-800/60 text-orange-300 text-xs rounded-lg transition-colors"
+          >
+            Save Strategy
+          </button>
+        </Section>
+
+        {/* Free API Providers */}
+        <Section title="Free API Providers (priority order)" icon={<span className="text-xs">🆓</span>}>
+          <p className="text-[10px] text-gray-500 mb-2">
+            Add keys for any providers. Lilim auto-detects the provider from the key format.
+            Free providers are tried first in the order shown. No key = skipped.
+          </p>
+          {FREE_PROVIDERS.map(pid => {
+            const status = providerStatuses.find(p => p.name === pid);
+            const savedKey = config[`${pid}Key`] ?? '';
+            return (
+              <ProviderRow
+                key={pid}
+                providerId={pid}
+                status={status}
+                savedKey={savedKey}
+                onSave={handleKeySaved}
+              />
+            );
+          })}
+        </Section>
+
+        {/* Paid Providers */}
+        <Section title="Paid Providers (fallback)" icon={<Key size={13} />} defaultOpen={false}>
+          <p className="text-[10px] text-gray-500 mb-2">
+            Only used when free providers are exhausted or rate-limited.
+          </p>
+          {PAID_PROVIDERS.map(pid => {
+            const status = providerStatuses.find(p => p.name === pid);
+            const savedKey = config[`${pid}Key`] ?? '';
+            return (
+              <ProviderRow
+                key={pid}
+                providerId={pid}
+                status={status}
+                savedKey={savedKey}
+                onSave={handleKeySaved}
+              />
+            );
+          })}
+        </Section>
+
+        {/* Cloudflare Account ID (special case) */}
+        {config['cloudflareKey'] && (
+          <div className="rounded-lg border border-orange-500/10 bg-black/20 p-3">
+            <p className="text-xs text-orange-300 mb-1">Cloudflare Account ID</p>
+            <p className="text-[10px] text-gray-500 mb-2">Required alongside the Cloudflare API token.</p>
+            <input
+              type="text"
+              placeholder="Your Cloudflare Account ID"
+              defaultValue={config['cloudflareAccountId'] ?? ''}
+              onChange={e => {
+                const updated = { ...config, cloudflareAccountId: e.target.value };
+                setConfig(updated);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+              }}
+              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none placeholder-gray-600"
+            />
+          </div>
+        )}
+
+        {/* Info box */}
+        <div className="rounded-lg bg-blue-900/10 border border-blue-500/10 p-3">
+          <p className="text-[10px] text-blue-300 font-medium mb-1">💡 Recommended free setup</p>
+          <ol className="text-[10px] text-gray-500 space-y-1 list-decimal list-inside">
+            <li>Sign up at <span className="text-orange-400">openrouter.ai</span> — one key, 30+ free models</li>
+            <li>Sign up at <span className="text-orange-400">console.groq.com</span> — fastest free inference</li>
+            <li>No credit card required for either</li>
+          </ol>
         </div>
-
-        {/* Local model */}
-        <Section title="Local Model (Ollama / llama.cpp)" icon={<Cpu size={13} />}>
-          <div className="flex items-center gap-2 mb-2">
-            <label className="text-xs text-gray-400">Enable local inference</label>
-            <button onClick={() => set('localEnabled', !cfg.localEnabled)}
-              className={`relative w-9 h-5 rounded-full transition-colors ${cfg.localEnabled ? 'bg-orange-600' : 'bg-gray-700'}`}>
-              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${cfg.localEnabled ? 'left-4.5' : 'left-0.5'}`} />
-            </button>
-          </div>
-          <Field label="Endpoint" value={cfg.localEndpoint} onChange={v => set('localEndpoint', v)}
-            placeholder="http://127.0.0.1:11434" />
-          <div className="mt-2">
-            <label className="block text-xs text-gray-400 mb-1">Model</label>
-            <select value={cfg.localModel} onChange={e => set('localModel', e.target.value)}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none mb-1">
-              <option value="tinyllama:latest">TinyLlama 1.1B (tiny, fast)</option>
-              <option value="qwen2.5:0.5b">Qwen2.5 0.5B (tiny)</option>
-              <option value="phi3:mini">Phi-3 Mini 3.8B (balanced)</option>
-              <option value="llama3.2:1b">Llama 3.2 1B (fast)</option>
-              <option value="llama3.2:3b">Llama 3.2 3B (better)</option>
-              <option value="mistral:7b">Mistral 7B (best local)</option>
-              <option value="custom">Custom…</option>
-            </select>
-            {cfg.localModel === 'custom' && (
-              <Field label="Custom model name" value={cfg.customModel} onChange={v => set('customModel', v)}
-                placeholder="my-model:tag" />
-            )}
-            <p className="text-[10px] text-gray-600 mt-1">
-              Install Ollama: <span className="text-orange-500 font-mono">curl https://ollama.ai/install.sh | sh</span><br />
-              Pull a model: <span className="text-orange-500 font-mono">ollama pull tinyllama</span>
-            </p>
-          </div>
-        </Section>
-
-        {/* Free providers */}
-        <Section title="Free API Tiers" icon={<span className="text-xs">🆓</span>}>
-          <p className="text-[10px] text-gray-500 mb-2">These providers have generous free tiers — recommended for remote models.</p>
-
-          <p className="text-xs text-orange-300 font-medium mt-1 mb-1">Groq (fastest free LLM API)</p>
-          <Field label="API Key (groq.com — free signup)" value={cfg.groqKey} onChange={v => set('groqKey', v)}
-            placeholder="gsk_…" type="password" />
-          <div className="mt-1">
-            <label className="block text-xs text-gray-400 mb-1">Model</label>
-            <select value={cfg.groqModel} onChange={e => set('groqModel', e.target.value)}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none">
-              <option value="llama3-8b-8192">Llama 3 8B (free)</option>
-              <option value="llama3-70b-8192">Llama 3 70B (free)</option>
-              <option value="mixtral-8x7b-32768">Mixtral 8x7B (free)</option>
-              <option value="gemma-7b-it">Gemma 7B (free)</option>
-            </select>
-          </div>
-
-          <p className="text-xs text-orange-300 font-medium mt-3 mb-1">Google Gemini (free tier)</p>
-          <Field label="API Key (aistudio.google.com — free)" value={cfg.googleKey} onChange={v => set('googleKey', v)}
-            placeholder="AIza…" type="password" />
-          <div className="mt-1">
-            <label className="block text-xs text-gray-400 mb-1">Model</label>
-            <select value={cfg.googleModel} onChange={e => set('googleModel', e.target.value)}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none">
-              <option value="gemini-2.0-flash">Gemini 2.0 Flash (free tier)</option>
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (free tier)</option>
-              <option value="gemini-1.5-pro">Gemini 1.5 Pro (paid)</option>
-            </select>
-          </div>
-
-          <p className="text-xs text-orange-300 font-medium mt-3 mb-1">OpenRouter (many free models)</p>
-          <Field label="API Key (openrouter.ai — free models available)" value={cfg.openrouterKey}
-            onChange={v => set('openrouterKey', v)} placeholder="sk-or-…" type="password" />
-          <Field label="Model (use :free suffix for free tier)" value={cfg.openrouterModel}
-            onChange={v => set('openrouterModel', v)} placeholder="meta-llama/llama-3-8b-instruct:free" />
-        </Section>
-
-        {/* Paid providers */}
-        <Section title="Paid Providers (optional)" icon={<Key size={13} />}>
-          <p className="text-xs text-orange-300 font-medium mt-1 mb-1">OpenAI</p>
-          <Field label="API Key" value={cfg.openaiKey} onChange={v => set('openaiKey', v)} placeholder="sk-…" type="password" />
-          <div className="mt-1">
-            <label className="block text-xs text-gray-400 mb-1">Model</label>
-            <select value={cfg.openaiModel} onChange={e => set('openaiModel', e.target.value)}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none">
-              <option value="gpt-4o-mini">GPT-4o Mini (cheapest)</option>
-              <option value="gpt-4o">GPT-4o</option>
-              <option value="o4-mini">o4-mini (reasoning)</option>
-            </select>
-          </div>
-
-          <p className="text-xs text-orange-300 font-medium mt-3 mb-1">Anthropic</p>
-          <Field label="API Key" value={cfg.anthropicKey} onChange={v => set('anthropicKey', v)} placeholder="sk-ant-…" type="password" />
-          <div className="mt-1">
-            <label className="block text-xs text-gray-400 mb-1">Model</label>
-            <select value={cfg.anthropicModel} onChange={e => set('anthropicModel', e.target.value)}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none">
-              <option value="claude-haiku-3-5">Claude 3.5 Haiku (fastest/cheapest)</option>
-              <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-              <option value="claude-opus-4-5">Claude Opus 4.5</option>
-            </select>
-          </div>
-        </Section>
-
-        {/* Custom */}
-        <Section title="Custom / Self-hosted Endpoint" icon={<Cloud size={13} />}>
-          <p className="text-[10px] text-gray-500 mb-2">Any OpenAI-compatible endpoint (vLLM, LM Studio, llama.cpp server, etc.)</p>
-          <Field label="Endpoint URL" value={cfg.customEndpoint} onChange={v => set('customEndpoint', v)}
-            placeholder="http://192.168.1.100:8000/v1" />
-          <Field label="API Key (if required)" value={cfg.customKey} onChange={v => set('customKey', v)}
-            placeholder="optional" type="password" />
-          <Field label="Model name" value={cfg.customModel} onChange={v => set('customModel', v)}
-            placeholder="my-custom-model" />
-        </Section>
       </div>
 
       {/* Footer */}
       <div className="flex-shrink-0 px-3 py-2.5 border-t border-orange-500/20 bg-black/30 flex items-center justify-between">
-        <span className={`text-xs transition-colors ${saved ? 'text-green-400' : 'text-gray-600'}`}>
-          {saved ? '✓ Saved!' : 'Changes require restart to take effect.'}
+        <span className="text-[10px] text-gray-600">
+          Keys are stored locally. Never transmitted except to the selected provider.
         </span>
-        <button onClick={handleSave}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs rounded-lg transition-colors">
-          <Save size={12} /> Save Settings
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-700/60 hover:bg-orange-600/60 text-white text-xs rounded-lg transition-colors"
+        >
+          <Cloud size={12} /> Done
         </button>
       </div>
     </motion.div>

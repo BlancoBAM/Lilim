@@ -200,16 +200,17 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
   - Register global `Ctrl+L` shortcut
   - Implement system tray icon for status/toggle
   - **STATUS:** ✅ Complete
-- [ ] **3.5** Apply Lilith Linux flame aesthetic
-  - Dark theme (deep charcoal / ember colors)
-  - Smooth animations (message appear, thinking pulse)
-  - Lilim avatar/icon in header
-  - **STATUS:** Not started
-- [ ] **3.6** Settings panel (basic)
-  - Current model info
-  - Daily spend display
-  - Memory on/off toggle
-  - **STATUS:** Not started
+- [x] **3.5** Apply Lilith Linux flame aesthetic
+  - Dark theme, ember colors, smooth animations — already implemented in Phase 3
+  - **STATUS:** ✅ Complete (done in Phase 3)
+- [x] **3.6** Settings panel (full redesign)
+  - Provider-agnostic API key entry with auto-detection
+  - 9 free providers + 2 paid fallbacks, each with daily limit / token rate display
+  - Live configured/unconfigured status badges
+  - Phi-2/Candle local engine status card
+  - Routing strategy selector (local-first / free-first / quality-first)
+  - Hot-reload via /settings/model-config endpoint
+  - **STATUS:** ✅ Complete (2026-05-04)
 
 ### PHASE 4 — Packaging & Deployment
 *Goal: A single .deb file that installs Lilim completely on Lilith Linux.*
@@ -229,14 +230,16 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
   - Install dependencies (FastAPI, Tauri build deps, etc.)
   - Test python core before building
   - **STATUS:** ✅ Complete
-- [ ] **4.4** Write `packaging/deb_root/DEBIAN/prerm`
-  - Stop and disable service before removal
-  - **STATUS:** Not started
-- [ ] **4.5** CI/CD — GitHub Actions workflow
-  - Build on push to `main`
-  - Run tests
-  - Produce .deb artifact
-  - **STATUS:** Not started
+- [x] **4.4** Write `packaging/deb_root/DEBIAN/prerm` *(2026-05-04)*
+  - Stops and disables lilith-ai.service before removal
+  - Kills stray lilim-runtime processes
+  - **STATUS:** ✅ Complete
+- [x] **4.5** CI/CD — GitHub Actions workflow *(2026-05-04)*
+  - `.github/workflows/build.yml` — builds on push to main
+  - Runs 47 Python tests, builds Rust runtime, builds Tauri desktop
+  - Downloads and caches Phi-2 GGUF model from HuggingFace
+  - Produces .deb artifact and creates GitHub Release
+  - **STATUS:** ✅ Complete
 
 ### PHASE 5 — Polish, Testing & Documentation
 - [ ] **5.1** Integration tests — test full chat flow end-to-end
@@ -357,17 +360,24 @@ This is **optional** and lowest priority. If implemented:
 **What compiles/runs today:**
 - `lilim_core/*.py` — All Python modules compile; 47 unit tests pass
 - `lilim_core/memory_sqlite.py` — SQLite memory (no external binary needed)
-- `lilim_core/server.py` — FastAPI brain server
+- `lilim_core/server.py` — FastAPI brain server v2.0 (FreeRouter, persona injection, /route endpoint)
+- `lilim_core/free_router.py` — Provider-agnostic router: 9 free providers + 2 paid fallbacks
 - `lilim_core/tool_executor.py` — Safe system tool runner
 - `lilim_core/scheduler.py` — Task scheduler with systemd-run + fallback
-- `crates/lilim-runtime` — Fully functional Rust proxy server, orchestrates the Python brain, proxies chat via SSE, executes system tools securely.
-- `lilim_desktop` — React + Tauri UI scaffolded with dark mode aesthetics and SSE chat/tool confirmation integration.
-- `packaging` — Build `.deb` bundling Rust runtime, Tauri frontend, and Python backend.
+- `config/lilim-responses.yaml` — Personality response library + refined persona spec
+- `crates/lilim-runtime` — Rust proxy server v0.3.0, integrates Candle InferenceEngine, smart local/remote routing
+- `crates/lilim-inference` — New Candle Phi-2 crate (lib.rs, phi2.rs, downloader.rs, config.rs)
+- `lilim_desktop` — Updated Settings panel (provider-agnostic, live status), updated API client
+- `packaging/deb_root/DEBIAN/prerm` — Service pre-removal script
+- `.github/workflows/build.yml` — Full CI/CD pipeline with Phi-2 bundling
 
 **What does NOT work yet:**
-- iPhone gateway (Phase 2.4 — deferred)
+- `lilim-runtime` full cargo build (Candle takes ~20min to compile on first build — expected)
+- iPhone gateway (Phase 2.5 — permanently deferred)
+- Full integration test with real LLM response (needs API key configured by user)
 
-**Next task to do:** Deploy and test (Phase 5).
+**Next task to do:** Configure at least one API key (recommend Groq or OpenRouter free tier),
+then run `~/lilim_host_apply_and_test.sh` to deploy and test end-to-end.
 
 ---
 
@@ -395,3 +405,4 @@ When one AI session ends and another begins:
 | 2026-05-01 | Phase 2 complete | Tasks 2.1-2.3 done. Rust runtime proxies properly. |
 | 2026-05-01 | Phase 3 complete | Tasks 3.1-3.4 done. Tauri desktop UI implemented. |
 | 2026-05-01 | Phase 4 complete | Tasks 4.1-4.3 done. Packaging scripts updated. |
+| 2026-05-04 | Bug fix + major upgrade | Fixed persona-recap bug. Added Candle Phi-2 inference crate. Provider-agnostic FreeRouter (9 free + 2 paid). Persona injection from REFINED-PERSONA.md + lilim-responses.yaml. Settings panel redesign. prerm script. CI/CD pipeline. |

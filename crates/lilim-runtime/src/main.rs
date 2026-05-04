@@ -15,9 +15,11 @@
 
 mod brain;
 mod config;
+mod inference;
 mod proxy;
 mod scheduler;
 mod tools;
+
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -40,7 +42,9 @@ use tracing::{error, info};
 
 pub struct AppState {
     pub brain_base_url: String,
-    pub http_client: Client,
+    pub http_client: reqwest::Client,
+    /// Local Candle Phi-2 inference engine (None if model not available)
+    pub inference_engine: Option<lilim_inference::InferenceEngine>,
 }
 
 // ── Entry point ───────────────────────────────────────────────
@@ -75,6 +79,17 @@ async fn main() -> anyhow::Result<()> {
         error!("Install FastAPI: pip install fastapi uvicorn litellm");
     }
 
+    // Initialize local inference engine (Phi-2 via Candle)
+    info!("Initializing local Phi-2 inference engine…");
+    let inference_config = lilim_inference::InferenceConfig::default();
+    let inference_engine = lilim_inference::InferenceEngine::new(inference_config).await;
+    let engine_available = inference_engine.is_available();
+    if engine_available {
+        info!("Local Phi-2 engine ready ✓");
+    } else {
+        info!("Local engine unavailable — all requests will route to online providers");
+    }
+
     // Build shared HTTP client (for proxying to brain)
     let http_client = Client::builder()
         .timeout(Duration::from_secs(120)) // LLM calls can be slow
@@ -83,26 +98,27 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState {
         brain_base_url: brain_base_url.clone(),
         http_client,
+        inference_engine: if engine_available { Some(inference_engine) } else { None },
     });
 
     // CORS — allow Tauri WebView and local dev origins
     let cors = CorsLayer::new()
-        .allow_origin([
-            "http://localhost:5173".parse().unwrap(),
-            "http://localhost:8080".parse().unwrap(),
-            "http://127.0.0.1:8080".parse().unwrap(),
-        ])
+        .allow_origin(Any)
         .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
         .allow_headers(Any);
 
     // Router
     let app = Router::new()
-        // ── Health ────────────────────────────────────────────
+        // ── Health ──────────────────────────────────────────────────
         .route("/health", get(handle_health))
 
-        // ── Chat (proxied to Python brain) ────────────────────
+        // ── Chat (smart local/remote routing) ─────────────────────
         .route("/chat", post(handle_chat))
         .route("/chat/sync", post(handle_chat_sync))
+
+        // ── Model status (for Settings panel) ───────────────────
+        .route("/model/status", get(handle_model_status))
+        .route("/providers/status", get(handle_providers_status))
 
         // ── Memory (proxied to Python brain) ──────────────────
         .route("/memory/search", post(handle_memory_search))
@@ -185,14 +201,14 @@ async fn handle_health(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-// ── Chat endpoints ────────────────────────────────────────────
+// ── Chat endpoints ───────────────────────────────────────
 
 async fn handle_chat(
     State(state): State<Arc<AppState>>,
     Json(body): Json<Value>,
 ) -> Response {
-    let url = format!("{}/chat", state.brain_base_url);
-    proxy::proxy_sse_stream(&url, &state.http_client, body).await
+    // Smart routing: local Phi-2 or remote via Python brain + FreeRouter
+    inference::handle_chat_routed(State(state), body).await
 }
 
 async fn handle_chat_sync(
@@ -201,6 +217,34 @@ async fn handle_chat_sync(
 ) -> (StatusCode, Json<Value>) {
     let url = format!("{}/chat/sync", state.brain_base_url);
     match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(v) => (StatusCode::OK, Json(v)),
+        Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+// ── Model / Provider status endpoints ─────────────────────────
+
+async fn handle_model_status(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let cfg = lilim_inference::InferenceConfig::default();
+    let status = lilim_inference::downloader::model_status(&cfg);
+    Json(json!({
+        "local_engine": {
+            "available": state.inference_engine.is_some(),
+            "model": "phi-2",
+            "device": state.inference_engine
+                .as_ref()
+                .map(|e| e.device_label())
+                .unwrap_or("none"),
+            "model_status": status,
+        }
+    }))
+}
+
+async fn handle_providers_status(
+    State(state): State<Arc<AppState>>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/providers/status", state.brain_base_url);
+    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
         Ok(v) => (StatusCode::OK, Json(v)),
         Err((code, msg)) => (code, Json(json!({"error": msg}))),
     }

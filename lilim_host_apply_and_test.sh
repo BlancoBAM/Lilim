@@ -55,7 +55,7 @@ if [ ! -d ".venv" ]; then
 fi
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install --upgrade fastapi uvicorn pydantic litellm
+pip install --upgrade fastapi uvicorn pydantic litellm pyyaml
 
 ############################
 # 4) Validate code/tests

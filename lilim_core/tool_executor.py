@@ -166,6 +166,26 @@ class ToolExecutor:
         except Exception as e:
             return {"path": path, "content": "", "error": str(e), "truncated": False}
 
+    def file_write(self, path: str, content: str, confirmed: bool = False) -> dict:
+        """Write content to a file (requires confirmation)."""
+        if not confirmed:
+            return {"error": "Write not confirmed by user.", "path": path}
+
+        resolved = Path(path).resolve()
+        
+        # Check forbidden paths
+        for forbidden in FORBIDDEN_READ_PATHS:
+            if str(resolved).startswith(forbidden):
+                return {"error": f"Writing to '{forbidden}' is not permitted.", "path": path}
+
+        try:
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(content)
+            self._audit_log(f"WRITE {path}", 0)
+            return {"path": str(resolved), "size": len(content), "error": None}
+        except Exception as e:
+            return {"path": path, "error": str(e)}
+
     def file_list(self, path: str, max_entries: int = 50) -> dict:
         """List directory contents."""
         resolved = Path(path).resolve()

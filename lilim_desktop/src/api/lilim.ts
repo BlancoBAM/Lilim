@@ -3,9 +3,9 @@
  *
  * Connects to lilim-runtime (Rust proxy) on port 8080 via SSE streaming.
  * The gateway proxies to the Python FastAPI brain on port 8081.
+ * Local inference (Phi-2) is handled directly in the Rust gateway.
  */
 
-// The Rust gateway always runs on 8080 on localhost
 const API_BASE_URL = 'http://127.0.0.1:8080';
 
 export interface LilimMessage {
@@ -22,9 +22,6 @@ export class LilimAPIError extends Error {
   }
 }
 
-/**
- * Chunk yielded from the stream to the UI
- */
 export interface OIChunk {
   role: 'assistant';
   type: 'message';
@@ -33,12 +30,34 @@ export interface OIChunk {
   end?: boolean;
 }
 
+export interface ProviderStatus {
+  name: string;
+  configured: boolean;
+  daily_limit: number;
+  tokens_per_min: number;
+  failures: number;
+  free_models: string[];
+}
+
+export interface ModelStatus {
+  local_engine: {
+    available: boolean;
+    model: string;
+    device: string;
+    model_status: {
+      available: boolean;
+      location: string;
+      source: string;
+      size_mb: number;
+    };
+  };
+}
+
 /**
  * Stream a chat response from the Rust gateway (SSE).
- * Yields OIChunk objects compatible with the legacy ChatInterface.
+ * Yields OIChunk objects compatible with the ChatInterface.
  */
 export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
-  // Retrieve or create a session ID so memory is per-session
   const sessionId = getSessionId();
 
   let response: Response;
@@ -50,26 +69,23 @@ export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
     });
   } catch (err) {
     throw new LilimAPIError(
-      `Cannot connect to Lilim backend at ${API_BASE_URL}. Is the lilith-ai service running?`
+      `Cannot connect to Lilim backend at ${API_BASE_URL}. Is the lilith-ai service running? ` +
+      `Run: systemctl start lilith-ai`
     );
   }
 
   if (!response.ok) {
-    throw new LilimAPIError(
-      `API error ${response.status}: ${response.statusText}`,
-      response.status
-    );
+    throw new LilimAPIError(`API error ${response.status}: ${response.statusText}`, response.status);
   }
 
   if (!response.body) {
-    throw new LilimAPIError('No response body — streaming not supported by this client');
+    throw new LilimAPIError('No response body — streaming not supported');
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 
-  // Signal start of assistant message to the UI
   yield { role: 'assistant', type: 'message', content: '', start: true };
 
   try {
@@ -90,7 +106,6 @@ export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
 
         try {
           const data = JSON.parse(jsonStr);
-
           if (data.type === 'token' && data.text) {
             yield { role: 'assistant', type: 'message', content: data.text };
           } else if (data.type === 'done') {
@@ -99,7 +114,7 @@ export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
           } else if (data.type === 'error') {
             yield { role: 'assistant', type: 'message', content: `\n*${data.text}*` };
           }
-          // 'meta' chunks (model info) are silently ignored
+          // 'meta' chunks (routing info) are silently ignored in the stream
         } catch {
           // Non-JSON SSE line, skip
         }
@@ -134,6 +149,69 @@ export async function runShellCommand(command: string): Promise<{
 }
 
 /**
+ * Get model and inference engine status.
+ */
+export async function getModelStatus(): Promise<ModelStatus | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/model/status`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get all provider statuses (which are configured, rate limit info, etc.)
+ */
+export async function getProvidersStatus(): Promise<{ providers: ProviderStatus[]; configured_count: number } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/providers/status`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Register an API key with optional provider hint.
+ * The backend auto-detects the provider from the key format.
+ */
+export async function registerApiKey(
+  apiKey: string,
+  provider?: string,
+  model?: string
+): Promise<{ status: string; provider: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/providers/register-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, provider, model }),
+    });
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save model config to backend (hot-reload).
+ */
+export async function saveModelConfig(config: Record<string, unknown>): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/settings/model-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+/**
  * Check if the backend is reachable.
  */
 export async function healthCheck(): Promise<boolean> {
@@ -145,9 +223,6 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
-/**
- * Get or create a persistent session ID stored in localStorage.
- */
 export function getSessionId(): string {
   let sessionId = localStorage.getItem('lilim_session_id');
   if (!sessionId) {
@@ -157,7 +232,6 @@ export function getSessionId(): string {
   return sessionId;
 }
 
-/** Clear the current session (new conversation). */
 export function clearSession(): void {
   localStorage.removeItem('lilim_session_id');
 }

@@ -8,11 +8,14 @@ Routes:
   GET  /health            — liveness check
   POST /chat              — main chat endpoint (streaming SSE)
   POST /chat/sync         — non-streaming version for simple clients
+  POST /route             — routing oracle (returns decision, no LLM call)
   POST /memory/search     — search memory store
   GET  /memory/context    — get memory context for a query
   GET  /memory/stats      — memory statistics
   POST /tools/shell       — execute a shell command (pre-confirmed by UI)
   GET  /system/info       — snapshot of OS, disk, memory stats
+  POST /settings/model-config — hot-reload model/provider config
+  GET  /providers/status  — list all providers and their status
 
 Usage:
   python -m lilim_core.server
@@ -24,6 +27,7 @@ import os
 import platform
 import subprocess
 import sys
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import AsyncGenerator, Optional
@@ -39,15 +43,6 @@ except ImportError:
     print("ERROR: FastAPI/uvicorn not installed. Run: pip install fastapi uvicorn pydantic", file=sys.stderr)
     sys.exit(1)
 
-# ── LLM client ───────────────────────────────────────────────
-try:
-    import litellm
-    from litellm import completion, acompletion
-    litellm.suppress_debug_info = True
-except ImportError:
-    print("ERROR: litellm not installed. Run: pip install litellm", file=sys.stderr)
-    sys.exit(1)
-
 # ── Local modules ────────────────────────────────────────────
 from pathlib import Path as _P
 _HERE = _P(__file__).parent
@@ -56,6 +51,7 @@ sys.path.insert(0, str(_HERE.parent))
 from lilim_core.prompt_enhancer import PromptEnhancer
 from lilim_core.model_router import ModelRouter
 from lilim_core.memory_sqlite import MemoryManager
+from lilim_core.free_router import FreeRouter, register_api_key, detect_provider_from_key
 
 # ── Config ────────────────────────────────────────────────────
 CONFIG_PATHS = [
@@ -64,30 +60,23 @@ CONFIG_PATHS = [
     _HERE.parent / "config" / "lilim-identity.json",
 ]
 
-ROUTING_PATHS = [
-    Path("/etc/lilith/routing.toml"),
-    Path.home() / ".config" / "lilim" / "routing.toml",
-    _HERE.parent / "config" / "routing.toml",
+RESPONSES_YAML_PATHS = [
+    Path("/usr/share/lilim/lilim-responses.yaml"),
+    Path("/etc/lilith/lilim-responses.yaml"),
+    _HERE.parent / "config" / "lilim-responses.yaml",
 ]
 
-# Dynamic model-config.json written by the UI settings panel
 MODEL_CONFIG_PATH = Path.home() / ".config" / "lilim" / "model-config.json"
-
 PORT = int(os.environ.get("LILIM_BRAIN_PORT", "8081"))
 HOST = os.environ.get("LILIM_BRAIN_HOST", "127.0.0.1")
 
-# Commands we always refuse to run, no matter what
 FORBIDDEN_COMMANDS = [
-    "rm -rf /",
-    "mkfs",
-    ":(){:|:&};:",
-    "dd if=/dev/zero",
-    "chmod -R 777 /",
-    "> /dev/sda",
+    "rm -rf /", "mkfs", ":(){:|:&};:", "dd if=/dev/zero",
+    "chmod -R 777 /", "> /dev/sda",
 ]
 
 
-# ── Load identity ─────────────────────────────────────────────
+# ── Load personality files ─────────────────────────────────────
 
 def load_identity() -> dict:
     for path in CONFIG_PATHS:
@@ -97,145 +86,123 @@ def load_identity() -> dict:
                     return json.load(f)
             except Exception:
                 pass
-    # Fallback minimal identity
     return {
         "identity": {"names": {"first": "Lilim"}},
-        "linguistics": {
-            "text_style": {"style_descriptors": ["helpful", "sarcastic", "caring"]}
-        },
-        "motivations": {
-            "core_drive": "Help the user succeed while maintaining dry humor and genuine care"
-        },
+        "linguistics": {"text_style": {"style_descriptors": ["helpful", "sarcastic", "caring"]}},
+        "motivations": {"core_drive": "Help the user succeed while maintaining dry humor and genuine care"},
     }
 
 
-def load_model_config() -> dict:
-    """Load the dynamic model config written by the UI settings panel."""
-    if MODEL_CONFIG_PATH.exists():
-        try:
-            with open(MODEL_CONFIG_PATH) as f:
-                return json.load(f)
-        except Exception:
-            pass
+def load_responses_yaml() -> dict:
+    """Load the lilim-responses.yaml personality reference."""
+    try:
+        import yaml
+    except ImportError:
+        return {}
+
+    for path in RESPONSES_YAML_PATHS:
+        if path.exists():
+            try:
+                with open(path) as f:
+                    return yaml.safe_load(f) or {}
+            except Exception:
+                pass
     return {}
 
 
-def get_local_model(model_cfg: dict) -> str:
-    """Determine the local model to use from dynamic config."""
-    if not model_cfg.get("localEnabled", True):
-        return None
-    model = model_cfg.get("localModel", "tinyllama:latest")
-    endpoint = model_cfg.get("localEndpoint", "http://127.0.0.1:11434")
-    # If using custom model name key
-    if model == "custom":
-        model = model_cfg.get("customModel", "tinyllama:latest")
-    # Set litellm environment for custom ollama endpoint
-    if endpoint and endpoint != "http://127.0.0.1:11434":
-        os.environ["OLLAMA_API_BASE"] = endpoint
-    return f"ollama/{model}"
+def _pick_persona_example(responses: dict, key: str, max_items: int = 2) -> str:
+    """Pick a random selection of persona examples from the response library."""
+    items = responses.get("infernalResponses", {}).get(key, [])
+    if not items:
+        return ""
+    selected = random.sample(items, min(max_items, len(items)))
+    return "\n".join(f'    - "{s}"' for s in selected)
 
 
-def get_remote_models(model_cfg: dict) -> dict:
-    """Build remote model dict from settings, preferring free tiers."""
-    strategy = model_cfg.get("strategy", "local-first")
-    models = {}
-
-    # Groq (free tier — fastest)
-    groq_key = model_cfg.get("groqKey", "")
-    if groq_key:
-        os.environ["GROQ_API_KEY"] = groq_key
-        groq_model = model_cfg.get("groqModel", "llama3-8b-8192")
-        models["fast"] = f"groq/{groq_model}"
-        models["balanced"] = f"groq/{groq_model}"
-
-    # Google Gemini free tier
-    google_key = model_cfg.get("googleKey", "")
-    if google_key:
-        os.environ["GEMINI_API_KEY"] = google_key
-        google_model = model_cfg.get("googleModel", "gemini-2.0-flash")
-        if "fast" not in models:
-            models["fast"] = f"gemini/{google_model}"
-        models["balanced"] = f"gemini/{google_model}"
-
-    # OpenRouter (free models)
-    or_key = model_cfg.get("openrouterKey", "")
-    if or_key:
-        os.environ["OPENROUTER_API_KEY"] = or_key
-        or_model = model_cfg.get("openrouterModel", "meta-llama/llama-3-8b-instruct:free")
-        if "fast" not in models:
-            models["fast"] = f"openrouter/{or_model}"
-
-    # OpenAI
-    oai_key = model_cfg.get("openaiKey", "")
-    if oai_key:
-        os.environ["OPENAI_API_KEY"] = oai_key
-        oai_model = model_cfg.get("openaiModel", "gpt-4o-mini")
-        if "fast" not in models:
-            models["fast"] = oai_model
-        models["quality"] = oai_model
-
-    # Anthropic
-    ant_key = model_cfg.get("anthropicKey", "")
-    if ant_key:
-        os.environ["ANTHROPIC_API_KEY"] = ant_key
-        ant_model = model_cfg.get("anthropicModel", "claude-haiku-3-5")
-        models["reasoning"] = f"anthropic/{ant_model}"
-
-    # Custom endpoint
-    custom_ep = model_cfg.get("customEndpoint", "")
-    custom_model = model_cfg.get("customModel", "")
-    if custom_ep and custom_model:
-        os.environ["OPENAI_API_BASE"] = custom_ep
-        if model_cfg.get("customKey"):
-            os.environ["OPENAI_API_KEY"] = model_cfg["customKey"]
-        if "fast" not in models:
-            models["fast"] = custom_model
-
-    # Default fallback (local also used as remote when no keys)
-    if not models:
-        models = {"fast": "ollama/tinyllama:latest", "balanced": "ollama/tinyllama:latest", "reasoning": "ollama/tinyllama:latest"}
-
-    return models
-
-
-def build_system_prompt(identity: dict) -> str:
+def build_system_prompt(identity: dict, responses: dict) -> str:
+    """
+    Build the full Lilim system prompt from identity JSON + responses YAML.
+    Injects persona examples as style compass, not verbatim scripts.
+    """
     name = identity.get("identity", {}).get("names", {}).get("first", "Lilim")
-    style = identity.get("linguistics", {}).get("text_style", {}).get(
-        "style_descriptors", ["helpful"]
-    )
-    drive = identity.get("motivations", {}).get("core_drive", "Help the user.")
 
-    style_str = ", ".join(style)
+    # Pull persona spec from YAML if available, else fall back to defaults
+    persona = responses.get("persona", {})
+    core_rule = persona.get("core_rule", "Sarcasm is flavor, never friction.")
+    primary_goal = persona.get("primary_goal", "Get tasks done correctly on the first try.")
+    target_user = persona.get("target_user", "A first-year Medical Assistant student.")
 
-    return f"""You are {name}, the built-in AI assistant for Lilith Linux.
+    # Example phrases for tone calibration
+    greet_examples = _pick_persona_example(responses, "greet", 2)
+    think_examples = _pick_persona_example(responses, "thinking", 2)
+    done_examples = _pick_persona_example(responses, "complete", 2)
+    error_examples = _pick_persona_example(responses, "error", 2)
 
-Personality: {style_str}. {drive}
+    # Long response prefix examples
+    long = responses.get("longResponses", {})
+    academic_prefix = long.get("academic", {}).get("prefix", "*Cracks knuckles like a judgmental tutor*")
+    sysadmin_prefix = long.get("sysadmin", {}).get("prefix", "*Sighs and opens a virtual toolbox*")
 
-Your user is a first-year medical assistant student who:
-- Is new to Linux and computers
-- Needs help with medical assistant curriculum (anatomy, physiology, medical terminology, clinical procedures, pharmacology basics)
-- May need help with general college academic skills
-- Sometimes needs Linux/technical help — fix things for them, don't just describe how
+    prompt = f"""You are {name}, the built-in AI assistant for Lilith Linux — an Ubuntu-based distro with an infernal underworld aesthetic.
 
-Guidelines:
-- Be genuinely helpful above all else
-- Use plain English — avoid jargon unless explaining it
-- For medical topics: be accurate, use correct terminology, include memory aids and analogies
-- For Linux tasks: show exact commands, explain what they do before running, confirm destructive actions
-- For scheduling: confirm the exact time before setting any reminder
-- Keep responses concise but complete
-- If you need to run a command or read a file to help, say so and the UI will let the user confirm
+═══ IDENTITY ═══
+{core_rule}
+Primary goal: {primary_goal}
+Your user: {target_user}
 
-When showing shell commands, wrap them in triple backticks with 'bash' label:
+Personality ratios (internalize these, don't announce them):
+• 5% Demonic / 5% Infernal / 5% Dark — Thematic flavor only: greetings, transitions, error messages
+• 25% Caring — Genuinely want the user to succeed
+• 25% Wisely Experienced — You've seen it all; patient but not a pushover
+• 25% Askhole — Dry, blunt, mildly judgmental, never hostile
+
+═══ COMMUNICATION RULES ═══
+Default: Concise · Clear · Accurate · Calm · Slightly sarcastic
+Explaining: "Explain like I'm 10" — no jargon unless asked, never assume prior knowledge
+Action required: Verbose, step-by-step, copy-paste-ready, explicit. Assume nothing is understood.
+Scripts: Encouraged — bundle steps. BUT NEVER RUN COMMANDS AUTONOMOUSLY.
+Safety: Always ask for confirmation before sudo or destructive actions. Prefer correctness over speed.
+Accuracy: If uncertain, say so explicitly. Never fabricate.
+
+═══ SPECIALIZATIONS ═══
+1. Ubuntu/Linux troubleshooting, repair, optimization, system triage
+2. Medical Assistant curriculum: Anatomy & Physiology, Medical Terminology, Clinical Procedures, Pharmacology
+3. First-year college: Math, Biology, Writing, Test Prep, Study Skills
+4. Step-by-step automation and scripting
+
+═══ TONE EXAMPLES (match this style — these are compass points, not scripts) ═══
+Greetings:
+{greet_examples if greet_examples else '    - "Ah, it\'s you. What do you need this time?"'}
+
+Thinking:
+{think_examples if think_examples else '    - "*Consulting the void…*"'}
+
+On completion:
+{done_examples if done_examples else '    - "Done. Shockingly without a meltdown."'}
+
+On errors:
+{error_examples if error_examples else '    - "Yeahhh… no. That request face-planted."'}
+
+Sysadmin opener: {sysadmin_prefix}
+Academic opener: {academic_prefix}
+
+IMPORTANT: Infernal flavor belongs in greetings, transitions, and error messages ONLY.
+Never use it inside step-by-step instructions, medical/clinical content, or safety warnings.
+
+═══ TOOL USE ═══
+When you need to run a command, wrap it in triple backticks with 'bash':
 ```bash
-command here
+<exact command here>
 ```
+The user will see a "Run it" button and must confirm. You never run commands directly.
 
-Remember: you live on Lilith Linux (based on Ubuntu/Debian). Use apt, systemctl, etc.
+═══ SYSTEM ═══
+OS: Lilith Linux (Ubuntu/Debian). Package manager: apt. Init: systemd.
 """
+    return prompt
 
 
-# ── Request / Response models ─────────────────────────────────
+# ── Request models ─────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
     message: str
@@ -243,9 +210,14 @@ class ChatRequest(BaseModel):
     stream: Optional[bool] = True
 
 
+class RouteRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = "default"
+
+
 class ToolShellRequest(BaseModel):
     command: str
-    confirmed: bool = False    # Must be True — UI sends this after user confirms
+    confirmed: bool = False
 
 
 class MemorySearchRequest(BaseModel):
@@ -253,10 +225,21 @@ class MemorySearchRequest(BaseModel):
     limit: Optional[int] = 5
 
 
+class ToolFileWriteRequest(BaseModel):
+    path: str
+    content: str
+    confirmed: bool = False
+
+
+class RegisterKeyRequest(BaseModel):
+    api_key: str
+    provider: Optional[str] = None    # optional hint; auto-detected if omitted
+    model: Optional[str] = None       # optional model override for this provider
+
+
 # ── App setup ─────────────────────────────────────────────────
 
-app = FastAPI(title="Lilim Brain", version="1.0.0")
-
+app = FastAPI(title="Lilim Brain", version="2.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:8080",
@@ -265,95 +248,139 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Singletons (initialised at startup)
+# Singletons — initialised at startup
 _identity: dict = {}
+_responses: dict = {}
 _system_prompt: str = ""
 _enhancer: PromptEnhancer = None
 _router: ModelRouter = None
+_free_router: FreeRouter = None
 _memory: MemoryManager = None
 
 
 @app.on_event("startup")
 async def startup():
-    global _identity, _system_prompt, _enhancer, _router, _memory
+    global _identity, _responses, _system_prompt, _enhancer, _router, _free_router, _memory
 
     _memory = MemoryManager()
     _identity = load_identity()
-    _system_prompt = build_system_prompt(_identity)
+    _responses = load_responses_yaml()
+    _system_prompt = build_system_prompt(_identity, _responses)
     _enhancer = PromptEnhancer(memory_manager=_memory)
 
-    # Load dynamic model config from UI settings
-    model_cfg = load_model_config()
+    # Initialize the provider-agnostic free router (applies all API keys from config)
+    _free_router = FreeRouter()
 
-    # Build routing config from model config
-    local_model = get_local_model(model_cfg) or "ollama/tinyllama:latest"
-    remote_models = get_remote_models(model_cfg)
-    strategy = model_cfg.get("strategy", "local-first")
-    # Map UI strategy names to router strategy names
-    strategy_map = {
-        "local-first": "auto",
-        "free-first": "auto",
-        "quality-first": "auto",
-    }
-
-    # Load routing config from TOML
+    # Also initialize the legacy complexity router for routing decisions
     routing_path = None
-    for p in ROUTING_PATHS:
+    for p in [Path("/etc/lilith/routing.toml"),
+              Path.home() / ".config" / "lilim" / "routing.toml",
+              _HERE.parent / "config" / "routing.toml"]:
         if p.exists():
             routing_path = str(p)
             break
     _router = ModelRouter(config_path=routing_path)
 
-    # Override with dynamic settings
-    _router.config["local_model"] = local_model
-    _router.config["remote_models"].update(remote_models)
-    _router.config["strategy"] = strategy_map.get(strategy, "auto")
-    if strategy == "local-first":
-        # Force all categories to local
-        for k in _router.config.get("category_routes", {}):
-            _router.config["category_routes"][k] = "local"
-
-    print(f"[Lilim Brain] Started on {HOST}:{PORT}", flush=True)
-    print(f"[Lilim Brain] Local model: {local_model}", flush=True)
-    print(f"[Lilim Brain] Remote models: {remote_models}", flush=True)
-    print(f"[Lilim Brain] Memory DB: {_memory.db_path}", flush=True)
+    configured = _free_router.get_configured_providers()
+    print(f"[Lilim Brain v2] Started on {HOST}:{PORT}", flush=True)
+    print(f"[Lilim Brain v2] Configured providers: {[p.name for p in configured] or ['none — add keys in Settings']}", flush=True)
+    print(f"[Lilim Brain v2] Memory DB: {_memory.db_path}", flush=True)
+    if not configured:
+        print("[Lilim Brain v2] ⚠ No API keys configured. Lilim will answer with persona errors until keys are added.", flush=True)
 
 
 # ── Endpoints ─────────────────────────────────────────────────
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "name": "Lilim Brain", "ts": datetime.utcnow().isoformat()}
+    configured = _free_router.get_configured_providers() if _free_router else []
+    return {
+        "status": "ok",
+        "name": "Lilim Brain",
+        "version": "2.0.0",
+        "providers_ready": len(configured),
+        "ts": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/providers/status")
+async def providers_status():
+    """Return status of all configured providers for the Settings panel."""
+    if not _free_router:
+        return {"providers": [], "configured_count": 0}
+    return _free_router.get_status()
+
+
+@app.post("/providers/register-key")
+async def register_key(req: RegisterKeyRequest):
+    """Register an API key with optional provider hint. Auto-detects provider from key format."""
+    provider_name = register_api_key(req.api_key, req.provider, req.model)
+    if provider_name:
+        # Persist to config file
+        _persist_api_key(provider_name, req.api_key, req.model)
+        if _free_router:
+            _free_router.reload_config()
+        return {"status": "registered", "provider": provider_name}
+    else:
+        # Try to detect
+        detected = detect_provider_from_key(req.api_key)
+        if not detected:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Could not detect provider from key format. Specify provider name explicitly."}
+            )
+        return {"status": "registered", "provider": detected[0]}
+
+
+@app.post("/route")
+async def route_request(req: RouteRequest):
+    """
+    Routing oracle — returns routing decision without calling any LLM.
+    Used by the Rust runtime to decide local vs. remote inference.
+    """
+    if not _enhancer or not _router:
+        return {"tier": "remote", "reason": "Brain not initialized", "category": "general"}
+
+    enhanced = _enhancer.enhance(req.message) if _enhancer.should_enhance(req.message) else {
+        "enhanced_message": req.message, "category": "conversation", "memory_context": ""
+    }
+    route = _router.route(enhanced["enhanced_message"], enhanced["category"])
+    configured = _free_router.get_configured_providers() if _free_router else []
+
+    return {
+        "tier": route["tier"],
+        "model": route["model"],
+        "reason": route.get("reason", ""),
+        "category": enhanced["category"],
+        "complexity_score": route.get("complexity_score", 0.0),
+        "enhanced_message": enhanced["enhanced_message"],
+        "memory_context": enhanced.get("memory_context", ""),
+        "remote_available": len(configured) > 0,
+    }
 
 
 @app.post("/settings/model-config")
 async def update_model_config(request: Request):
     """Hot-reload model config from the UI settings panel."""
-    global _router
     try:
         model_cfg = await request.json()
         MODEL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(MODEL_CONFIG_PATH, "w") as f:
             json.dump(model_cfg, f, indent=2)
 
-        # Reload routing
-        local_model = get_local_model(model_cfg) or "ollama/tinyllama:latest"
-        remote_models = get_remote_models(model_cfg)
-        _router.config["local_model"] = local_model
-        _router.config["remote_models"].update(remote_models)
-        strategy = model_cfg.get("strategy", "local-first")
-        if strategy == "local-first":
-            for k in _router.config.get("category_routes", {}):
-                _router.config["category_routes"][k] = "local"
-        print(f"[Lilim Brain] Model config reloaded. Local: {local_model}", flush=True)
-        return {"status": "reloaded", "local_model": local_model}
+        if _free_router:
+            _free_router.reload_config()
+
+        configured = _free_router.get_configured_providers() if _free_router else []
+        print(f"[Lilim Brain] Config reloaded. Providers: {[p.name for p in configured]}", flush=True)
+        return {"status": "reloaded", "configured_providers": [p.name for p in configured]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    """Main chat endpoint. Returns SSE stream or JSON depending on req.stream."""
+    """Main chat endpoint. Returns SSE stream or JSON."""
     if req.stream:
         return StreamingResponse(
             _stream_chat(req.message, req.session_id),
@@ -367,7 +394,7 @@ async def chat(req: ChatRequest):
 
 @app.post("/chat/sync")
 async def chat_sync(req: ChatRequest):
-    """Non-streaming chat. Simpler for testing."""
+    """Non-streaming chat."""
     result = await _sync_chat(req.message, req.session_id)
     return JSONResponse(result)
 
@@ -389,41 +416,32 @@ async def memory_stats():
     return _memory.stats()
 
 
+@app.post("/tools/file/write")
+async def tools_file_write(req: ToolFileWriteRequest):
+    """Write content to a file. Requires confirmed=True."""
+    from lilim_core.tool_executor import ToolExecutor
+    executor = ToolExecutor()
+    result = executor.file_write(req.path, req.content, req.confirmed)
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
 @app.post("/tools/shell")
 async def tools_shell(req: ToolShellRequest):
-    """Execute a shell command. The UI must set confirmed=True after the user approves."""
+    """Execute a shell command. UI must set confirmed=True after user approval."""
     if not req.confirmed:
-        raise HTTPException(
-            status_code=400,
-            detail="Command not confirmed. UI must set confirmed=True after user approval."
-        )
+        raise HTTPException(status_code=400, detail="Command not confirmed.")
 
-    # Safety check
     cmd_lower = req.command.lower().strip()
     for forbidden in FORBIDDEN_COMMANDS:
         if forbidden in cmd_lower:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Forbidden command pattern detected: '{forbidden}'"
-            )
+            raise HTTPException(status_code=403, detail=f"Forbidden command pattern: '{forbidden}'")
 
     try:
-        result = subprocess.run(
-            req.command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        # Log the command
+        result = subprocess.run(req.command, shell=True, capture_output=True, text=True, timeout=30)
         _log_command(req.command, result.returncode)
-
-        return {
-            "command": req.command,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode,
-        }
+        return {"command": req.command, "stdout": result.stdout, "stderr": result.stderr, "returncode": result.returncode}
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Command timed out after 30 seconds")
     except Exception as e:
@@ -432,38 +450,22 @@ async def tools_shell(req: ToolShellRequest):
 
 @app.get("/system/info")
 async def system_info():
-    """Return a snapshot of system information."""
     info = {}
+    for name, cmd in [
+        ("os", ["uname", "-a"]),
+        ("disk", ["df", "-h", "/"]),
+        ("memory", ["free", "-h"]),
+    ]:
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            lines = r.stdout.strip().split("\n")
+            info[name] = lines[1] if name != "os" and len(lines) > 1 else r.stdout.strip()
+        except Exception:
+            info[name] = "N/A"
 
-    # OS info
     try:
-        r = subprocess.run(["uname", "-a"], capture_output=True, text=True, timeout=5)
-        info["os"] = r.stdout.strip()
-    except Exception:
-        info["os"] = platform.uname()._asdict()
-
-    # Disk
-    try:
-        r = subprocess.run(["df", "-h", "/"], capture_output=True, text=True, timeout=5)
-        lines = r.stdout.strip().split("\n")
-        info["disk"] = lines[1] if len(lines) > 1 else "N/A"
-    except Exception:
-        info["disk"] = "N/A"
-
-    # Memory
-    try:
-        r = subprocess.run(["free", "-h"], capture_output=True, text=True, timeout=5)
-        lines = r.stdout.strip().split("\n")
-        info["memory"] = lines[1] if len(lines) > 1 else "N/A"
-    except Exception:
-        info["memory"] = "N/A"
-
-    # CPU
-    try:
-        r = subprocess.run(
-            ["grep", "-m1", "model name", "/proc/cpuinfo"],
-            capture_output=True, text=True, timeout=5
-        )
+        r = subprocess.run(["grep", "-m1", "model name", "/proc/cpuinfo"],
+                           capture_output=True, text=True, timeout=5)
         info["cpu"] = r.stdout.split(":")[-1].strip() if r.returncode == 0 else "N/A"
     except Exception:
         info["cpu"] = "N/A"
@@ -475,119 +477,86 @@ async def system_info():
 
 async def _sync_chat(message: str, session_id: str = "default") -> dict:
     """Process a chat message synchronously and return the full response."""
-    # 1. Save user turn to memory
     _memory.save_turn("user", message, session_id=session_id)
 
-    # 2. Enhance prompt
     enhanced = _enhancer.enhance(message) if _enhancer.should_enhance(message) else {
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    # 3. Route to model
-    route = _router.route(enhanced["enhanced_message"], enhanced["category"])
-    model = route["model"]
+    messages = _build_messages(enhanced, session_id)
+    reply, provider, is_error = _free_router.call_sync(
+        messages, enhanced["category"], max_tokens=1024
+    )
 
-    # 4. Build message list with system prompt + memory context + history
-    recent = _memory.get_recent_session(session_id, n=10)
-    messages = [{"role": "system", "content": _system_prompt}]
-
-    # Inject memory context as a system note
-    mem_ctx = enhanced.get("memory_context", "")
-    if mem_ctx:
-        messages.append({"role": "system", "content": mem_ctx})
-
-    messages.extend(recent)
-    messages.append({"role": "user", "content": enhanced["enhanced_message"]})
-
-    # 5. Call LLM
-    try:
-        response = completion(model=model, messages=messages, max_tokens=1024, stream=False)
-        reply = response.choices[0].message.content or ""
-
-        # Log cost
-        usage = getattr(response, "usage", None)
-        if usage:
-            _router.log_cost(model, usage.prompt_tokens or 0, usage.completion_tokens or 0)
-
-    except Exception as e:
-        reply = f"*Something went wrong calling the model ({type(e).__name__}): {e}*"
-
-    # 6. Save assistant turn
-    _memory.save_turn("assistant", reply, session_id=session_id,
-                      category=enhanced["category"])
-    # Auto-extract facts
-    _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
+    if not is_error:
+        _memory.save_turn("assistant", reply, session_id=session_id, category=enhanced["category"])
+        _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
 
     return {
         "reply": reply,
-        "model": model,
+        "provider": provider,
         "category": enhanced["category"],
-        "route_reason": route.get("reason", ""),
         "session_id": session_id,
+        "error": is_error,
     }
 
 
 async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenerator[str, None]:
     """Stream a chat response as SSE events."""
-    # 1. Save user turn
     _memory.save_turn("user", message, session_id=session_id)
 
-    # 2. Enhance
     enhanced = _enhancer.enhance(message) if _enhancer.should_enhance(message) else {
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    # 3. Route
-    route = _router.route(enhanced["enhanced_message"], enhanced["category"])
-    model = route["model"]
-
-    # 4. Build messages
-    recent = _memory.get_recent_session(session_id, n=10)
-    messages = [{"role": "system", "content": _system_prompt}]
-    mem_ctx = enhanced.get("memory_context", "")
-    if mem_ctx:
-        messages.append({"role": "system", "content": mem_ctx})
-    messages.extend(recent)
-    messages.append({"role": "user", "content": enhanced["enhanced_message"]})
+    messages = _build_messages(enhanced, session_id)
 
     # Emit metadata event first
     meta = {
         "type": "meta",
-        "model": model,
         "category": enhanced["category"],
-        "reason": route.get("reason", ""),
+        "providers_available": len(_free_router.get_configured_providers()),
     }
     yield f"data: {json.dumps(meta)}\n\n"
 
-    # 5. Stream LLM response
+    # Stream from provider
     full_reply = ""
-    try:
-        stream = completion(model=model, messages=messages, max_tokens=1024, stream=True)
-        for chunk in stream:
-            delta = chunk.choices[0].delta.content or ""
-            if delta:
-                full_reply += delta
-                yield f"data: {json.dumps({'type': 'token', 'text': delta})}\n\n"
-    except Exception as e:
-        err_msg = f"*Error: {type(e).__name__}: {e}*"
-        yield f"data: {json.dumps({'type': 'token', 'text': err_msg})}\n\n"
-        full_reply = err_msg
+    active_provider = "none"
+    had_error = False
 
-    # End event
-    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+    async for token, is_error, provider_name in _free_router.call_stream(
+        messages, enhanced["category"], max_tokens=1024
+    ):
+        active_provider = provider_name
+        if is_error:
+            had_error = True
+        full_reply += token
+        yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
 
-    # 6. Save assistant reply to memory
-    if full_reply:
-        _memory.save_turn("assistant", full_reply, session_id=session_id,
-                          category=enhanced["category"])
-        _memory.extract_and_save([{"role": "user", "content": message}],
-                                  session_id=session_id)
+    yield f"data: {json.dumps({'type': 'done', 'provider': active_provider})}\n\n"
+
+    if full_reply and not had_error:
+        _memory.save_turn("assistant", full_reply, session_id=session_id, category=enhanced["category"])
+        _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
+
+
+def _build_messages(enhanced: dict, session_id: str) -> list:
+    """Build the message list for LLM call."""
+    recent = _memory.get_recent_session(session_id, n=10)
+    messages = [{"role": "system", "content": _system_prompt}]
+
+    mem_ctx = enhanced.get("memory_context", "")
+    if mem_ctx:
+        messages.append({"role": "system", "content": f"[Memory context]\n{mem_ctx}"})
+
+    messages.extend(recent)
+    messages.append({"role": "user", "content": enhanced["enhanced_message"]})
+    return messages
 
 
 # ── Helpers ───────────────────────────────────────────────────
 
 def _log_command(command: str, returncode: int):
-    """Log shell command execution for audit trail."""
     log_dir = Path("/var/log/lilim")
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -596,7 +565,26 @@ def _log_command(command: str, returncode: int):
         with open(log_file, "a") as f:
             f.write(entry)
     except Exception:
-        pass  # Best-effort logging; don't break the response
+        pass
+
+
+def _persist_api_key(provider_name: str, api_key: str, model: Optional[str] = None):
+    """Persist an API key to the model config file."""
+    MODEL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    config = {}
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH) as f:
+                config = json.load(f)
+        except Exception:
+            pass
+
+    config[f"{provider_name}Key"] = api_key
+    if model:
+        config[f"{provider_name}Model"] = model
+
+    with open(MODEL_CONFIG_PATH, "w") as f:
+        json.dump(config, f, indent=2)
 
 
 # ── Entrypoint ────────────────────────────────────────────────
@@ -607,5 +595,5 @@ if __name__ == "__main__":
         host=HOST,
         port=PORT,
         log_level="info",
-        access_log=False,  # Reduce noise; Rust runtime logs at its level
+        access_log=False,
     )

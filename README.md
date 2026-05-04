@@ -24,7 +24,8 @@
 
 ## Features
 
-🔥 **Intelligent Chatbot** — Sarcastic but caring AI assistant with infernal personality, powered by LiteLLM (GPT-4o, Claude, Ollama, and more)
+🔥 **Intelligent Chatbot** — Sarcastic but caring AI assistant with infernal personality, powered by FreeRouter and LiteLLM
+🧠 **Local Phi-2 Inference** — Runs Microsoft Phi-2 locally on CPU/GPU via HuggingFace Candle (no Ollama required)
 
 🧠 **Native SQLite Memory** — Fast, hierarchical vector-based memory backend embedded directly into the Python brain (no external binaries)
 
@@ -61,8 +62,8 @@
                                   │   └───────┬──────────┘   │
  ┌──────────────┐                │           ▼              │
  │ SQLite Mem   │ ◄────────────► │   local ◄─┤─► remote    │
- │ (Embedded)   │                │   ollama  │  gpt-4o     │
- └──────────────┘                │           │  claude     │
+ │ (Embedded)   │                │   Phi-2   │  groq       │
+ └──────────────┘                │  (Candle) │  openrouter │
                                  └──────────────────────────┘
 ```
 
@@ -71,8 +72,8 @@
 | **Brain** | Python / FastAPI / LiteLLM | LLM routing, task parsing, memory ops, personality |
 | **Memory** | **Python / SQLite** | High-performance semantic memory embedded in the Brain |
 | **Enhancer** | Python / DSPy-inspired | Automatic prompt classification and enrichment |
-| **Router** | Python / Plano-inspired | Smart model selection with budget tracking |
-| **Runtime Gateway** | Rust / Axum | Security, proxying, system tool sandbox, process management |
+| **Router** | Python / FreeRouter | Smart model selection with auto-fallback to free APIs |
+| **Runtime Gateway** | Rust / Axum | Security, Candle Phi-2 inference, system tool sandbox |
 | **Desktop UI** | TypeScript / React / Tauri | Flame-themed chat interface with streaming |
 
 ## Intelligence Layer
@@ -99,12 +100,13 @@ Requests are routed to the optimal model based on complexity:
 
 | Request | Model | Why |
 |---------|-------|-----|
-| "What time is it?" | `ollama/qwen3` (local) | Simple, fast, free |
-| "Help me study anatomy" | `ollama/qwen3` (local) | Tutoring, standard knowledge |
-| "Write a REST API server" | `gpt-4o-mini` (remote) | Code generation needs precision |
+| "What time is it?" | `phi-2` (local) | Simple, fast, free, no API key needed |
+| "Help me study anatomy" | `phi-2` (local) | Tutoring, standard knowledge |
+| "Write a REST API server" | `groq/llama3-70b` (remote) | Code generation needs precision (fallback to free tier) |
+| "Debug this Python traceback" | `openrouter/...` (remote) | Deep code reasoning |
 | "Debug this Python traceback" | `claude-sonnet-4-20250514` (remote) | Deep code reasoning |
 
-Configure in `config/routing.toml` — set daily budget caps, override category routing, or force local-only mode.
+Configure your API keys dynamically in the Settings UI (Ctrl+L -> Gear Icon). Lilim will auto-detect the provider and route to it automatically when local inference is insufficient or unavailable.
 
 ## Installation
 
