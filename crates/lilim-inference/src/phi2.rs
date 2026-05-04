@@ -123,13 +123,39 @@ fn format_phi2_prompt(user_message: &str) -> String {
     format!("Instruct: {user_message}\nOutput:")
 }
 
+/// Extract the last-position logits from whatever shape the model returns.
+///
+/// The quantized_phi model can return tensors of varying rank depending on
+/// the number of tokens processed and the KV-cache state:
+///   - [vocab_size]            → rank 1 (already correct)
+///   - [1, vocab_size]         → rank 2 (batch=1, needs squeeze)
+///   - [1, seq_len, vocab_size] → rank 3 (need to pick last seq pos)
+///
+/// This function normalises all cases to a 1D [vocab_size] tensor.
+fn extract_last_logits(logits: &Tensor) -> candle_core::Result<Tensor> {
+    match logits.dims() {
+        // Already 1D [vocab_size]
+        [_vocab] => Ok(logits.clone()),
+        // [batch, vocab_size] — remove batch dim
+        [1, _vocab] => logits.squeeze(0),
+        // [batch, seq_len, vocab_size] — pick last seq position then remove batch
+        [1, seq_len, _vocab] => {
+            let last = logits.narrow(1, seq_len - 1, 1)?; // [1, 1, vocab]
+            last.squeeze(1)?.squeeze(0)                   // [vocab]
+        }
+        // Unexpected shape — reshape to 1D best-effort
+        dims => {
+            let total: usize = dims.iter().product();
+            logits.reshape((total,))
+        }
+    }
+}
+
 /// Synchronous token generation — runs in blocking thread pool.
 ///
 /// Uses two-phase inference for performance:
-///   Phase 1: Process the full prompt in one forward pass (builds KV cache)
-///   Phase 2: Generate tokens one at a time, feeding only the new token each step
-///
-/// This is O(n) instead of O(n²) — critical for acceptable speed on CPU.
+///   Phase 1: Process prompt token-by-token to build KV cache (forces GEMV path)
+///   Phase 2: Generate new tokens one at a time using the cached context
 fn generate_blocking(
     inner: &mut Phi2Inner,
     prompt: &str,
@@ -169,12 +195,10 @@ fn generate_blocking(
         Some(config.top_p),
     );
 
-    // ── Phase 1: Process the full prompt token-by-token ──
-    // Candle's quantized GEMM for `seq_len > 1` on CPU falls back to an unoptimized scalar loop.
-    // By processing token-by-token (`seq_len = 1`), we force the use of the highly optimized
-    // GEMV (vector-matrix) kernels, which is dramatically faster on CPUs without AVX512/MKL.
-    let mut pos = 0;
-    let mut last_logits: Option<Tensor> = None;
+    // ── Phase 1: Process prompt token-by-token ──
+    // Forces Candle to use GEMV kernels (seq_len=1) instead of slow GEMM on CPU.
+    let mut pos = 0usize;
+    let mut last_raw_logits: Option<Tensor> = None;
 
     for &token in prompt_tokens.iter() {
         let token_tensor = match Tensor::new(&[token], &inner.device)
@@ -195,12 +219,12 @@ fn generate_blocking(
             }
         };
 
-        last_logits = Some(logits);
+        last_raw_logits = Some(logits);
         pos += 1;
     }
 
-    // Extract logits for the last prompt token
-    let last_logits = match last_logits.unwrap().squeeze(0) {
+    // Normalise output shape to [vocab_size] for sampling
+    let last_logits = match extract_last_logits(last_raw_logits.as_ref().unwrap()) {
         Ok(l) => l,
         Err(e) => {
             let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
@@ -208,7 +232,7 @@ fn generate_blocking(
         }
     };
 
-    // Sample first generated token from the prompt's output
+    // Sample first generated token from the prompt's final position
     let mut next_token = match logits_processor.sample(&last_logits) {
         Ok(t) => t,
         Err(e) => {
@@ -219,9 +243,6 @@ fn generate_blocking(
 
     let prompt_elapsed = start.elapsed().as_secs_f64();
     info!("Prompt processed token-by-token in {prompt_elapsed:.1}s");
-
-    // Track position for incremental KV-cache indexing
-    let mut pos = prompt_len;
 
     // ── Phase 2: Generate tokens one at a time (incremental) ──
     // Each step feeds ONLY the single new token. The GGUF model's internal
@@ -252,7 +273,7 @@ fn generate_blocking(
             }
         }
 
-        // Feed ONLY the new token for the next step
+        // Build input tensor for this single new token
         let token_tensor = match Tensor::new(&[next_token], &inner.device)
             .and_then(|t| t.unsqueeze(0))
         {
@@ -263,7 +284,7 @@ fn generate_blocking(
             }
         };
 
-        let logits = match inner.model.forward(&token_tensor, pos) {
+        let raw_logits = match inner.model.forward(&token_tensor, pos) {
             Ok(l) => l,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Forward pass error: {e}")));
@@ -273,8 +294,8 @@ fn generate_blocking(
 
         pos += 1;
 
-        // For single-token input, squeeze to get the 1D vocab logits
-        let last_logits = match logits.squeeze(0) {
+        // Normalise to [vocab_size] — handles all rank variants safely
+        let logits = match extract_last_logits(&raw_logits) {
             Ok(l) => l,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
