@@ -16,8 +16,10 @@ const BUNDLED_MODEL_DIR: &str = "/usr/lib/lilim/models/phi-2-q4";
 
 /// HuggingFace model repository for Phi-2 GGUF weights.
 /// We use TheBloke's Q4_K_M quantization — best quality/size tradeoff.
-const HF_REPO_ID: &str = "microsoft/phi-2";
-const HF_GGUF_FILENAME: &str = "model.gguf";
+const HF_GGUF_REPO_ID: &str = "TheBloke/phi-2-GGUF";
+const HF_GGUF_FILENAME: &str = "phi-2.Q4_K_M.gguf";
+
+const HF_TOKENIZER_REPO_ID: &str = "microsoft/phi-2";
 const HF_TOKENIZER_FILES: &[&str] = &["tokenizer.json", "tokenizer_config.json"];
 
 /// Ensure all required model files are present.
@@ -79,11 +81,11 @@ async fn download_model(target_dir: &Path) -> Result<()> {
         .build()
         .context("Failed to initialize HuggingFace API client")?;
 
-    let repo = api.model(HF_REPO_ID.to_string());
+    let gguf_repo = api.model(HF_GGUF_REPO_ID.to_string());
 
     // Download GGUF weights
-    info!("Downloading {} from {}…", HF_GGUF_FILENAME, HF_REPO_ID);
-    let gguf_path = repo.get(HF_GGUF_FILENAME).await
+    info!("Downloading {} from {}…", HF_GGUF_FILENAME, HF_GGUF_REPO_ID);
+    let gguf_path = gguf_repo.get(HF_GGUF_FILENAME).await
         .context(format!("Failed to download {HF_GGUF_FILENAME}"))?;
 
     // Copy to target directory
@@ -93,17 +95,25 @@ async fn download_model(target_dir: &Path) -> Result<()> {
             .context("Failed to copy GGUF weights to model dir")?;
     }
 
-    // Download tokenizer files
+    // Download tokenizer files using reqwest (hf-hub fails on microsoft/phi-2 relative redirects)
+    let client = reqwest::Client::new();
     for filename in HF_TOKENIZER_FILES {
-        info!("Downloading {}…", filename);
-        match repo.get(filename).await {
-            Ok(path) => {
+        info!("Downloading {} from {}…", filename, HF_TOKENIZER_REPO_ID);
+        let url = format!("https://huggingface.co/{HF_TOKENIZER_REPO_ID}/resolve/main/{filename}");
+        match client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => {
                 let target = target_dir.join(filename);
-                if path != target {
-                    if let Err(e) = tokio::fs::copy(&path, &target).await {
-                        warn!("Could not copy {filename}: {e}");
+                match resp.bytes().await {
+                    Ok(bytes) => {
+                        if let Err(e) = tokio::fs::write(&target, &bytes).await {
+                            warn!("Could not write {filename}: {e}");
+                        }
                     }
+                    Err(e) => warn!("Could not download {filename} content: {e}"),
                 }
+            }
+            Ok(resp) => {
+                warn!("Could not download {filename}: HTTP {}", resp.status());
             }
             Err(e) => {
                 warn!("Could not download {filename}: {e} (non-fatal)");

@@ -1,6 +1,6 @@
 # Lilim — Master Implementation Plan
-> **Last updated:** 2026-05-01  
-> **Status:** Phase 1 in progress  
+> **Last updated:** 2026-05-04  
+> **Status:** Phase 5 in progress  
 > **Purpose:** Canonical living document. Any AI model or contributor should read this first, then pick up the next `[ ]` task. Mark tasks `[x]` when done and update status notes. **Never skip ahead — complete phases in order.**
 
 ---
@@ -242,13 +242,34 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
   - **STATUS:** ✅ Complete
 
 ### PHASE 5 — Polish, Testing & Documentation
-- [ ] **5.1** Integration tests — test full chat flow end-to-end
-- [ ] **5.2** Test all tool execution paths (shell, file read, scheduling)
-- [ ] **5.3** Write user-facing documentation (`docs/`)
-- [ ] **5.4** Write `docs/iphone-setup.md` (if iPhone gateway implemented)
-- [ ] **5.5** Verify .deb installs cleanly on fresh Ubuntu 22.04
-- [ ] **5.6** Performance test — response time with local model
-- [ ] **5.7** Final README update
+- [x] **5.1** Fix Phi-2 inference performance — incremental single-token forward pass *(2026-05-04)*
+  - Replaced O(n²) full-sequence forward pass with two-phase incremental generation
+  - Phase 1: process full prompt once (builds KV cache)
+  - Phase 2: feed one token at a time (O(n) generation)
+  - Tuned defaults: temperature 0.5, max_gen_tokens 256
+  - **STATUS:** ✅ Complete
+- [x] **5.2** Fix routing — force local when no API keys configured *(2026-05-04)*
+  - Rust runtime now forces local tier when engine available + no remote providers
+  - Python brain `/route` endpoint also forces local when no providers configured
+  - **STATUS:** ✅ Complete
+- [x] **5.3** Remove TTS components (moved to separate repo) *(2026-05-04)*
+  - Deleted `scripts/lilith-tts-panel`, `scripts/lilim-serve`
+  - Deleted `config/zeroclaw.toml`
+  - Deleted legacy `lilim_core/src/` Rust crate and its Cargo.toml
+  - Deleted old deployment scripts (`deploy.sh`, `lilim_host_apply_and_test.sh`)
+  - Deleted IDE artifacts (`.claude/`, `.cursor/`, `.kilocode/`, `.vibecheck/`, `.tmp/`, `workflows/`)
+  - **STATUS:** ✅ Complete
+- [x] **5.4** Repository cleanup *(2026-05-04)*
+  - Comprehensive `.gitignore` (build artifacts, IDE tools, model weights)
+  - Cleaned workspace `Cargo.toml`
+  - **STATUS:** ✅ Complete
+- [x] **5.5** Documentation rewrite *(2026-05-04)*
+  - README.md: removed all TTS/ZeroClaw/OI/iPhone references, updated architecture diagram
+  - MASTER_PLAN.md: updated phase status, file map, progress log
+  - **STATUS:** ✅ Complete
+- [ ] **5.6** Integration tests — test full chat flow end-to-end
+- [ ] **5.7** Verify .deb installs cleanly on fresh Ubuntu 22.04
+- [ ] **5.8** Performance benchmarking on target hardware
 
 ---
 
@@ -256,58 +277,52 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
 
 ```
 Lilim/
-├── MASTER_PLAN.md              ← THIS FILE IN REPO — update as work progresses
+├── MASTER_PLAN.md              ← THIS FILE — update as work progresses
 ├── README.md                   ← User-facing docs
+├── Cargo.toml                  ← Workspace manifest
 ├── config/
 │   ├── lilim.yaml              ← Main config (models, routing, server)
 │   ├── lilim-identity.json     ← Personality spec
-│   ├── routing.toml            ← Model routing overrides
-│   └── zeroclaw.toml           ← ZeroClaw/gateway config (kept for compat)
+│   ├── lilim-responses.yaml    ← Personality response library
+│   └── routing.toml            ← Model routing overrides
 ├── crates/
+│   ├── lilim-inference/        ← Candle Phi-2 inference engine
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs           ← Public API (InferenceEngine)
+│   │       ├── phi2.rs          ← Token generation (incremental KV-cache)
+│   │       ├── downloader.rs    ← HuggingFace model downloader
+│   │       └── config.rs        ← Inference configuration
 │   └── lilim-runtime/          ← Rust Axum backend
 │       ├── Cargo.toml
 │       └── src/
-│           ├── main.rs         ← Server entrypoint + routing
-│           ├── proxy.rs        ← [TO CREATE] HTTP proxy to Python brain
-│           ├── tools.rs        ← [TO CREATE] Shell/file tool execution
-│           ├── scheduler.rs    ← [TO CREATE] Cron/scheduling
-│           └── gateway.rs      ← [TO CREATE] iPhone gateway (optional)
+│           ├── main.rs          ← Server entrypoint + routing
+│           ├── inference.rs     ← Local/remote routing handler
+│           ├── proxy.rs         ← HTTP proxy to Python brain
+│           ├── tools.rs         ← Shell/file tool execution
+│           ├── scheduler.rs     ← Cron/scheduling
+│           ├── brain.rs         ← Python brain process manager
+│           └── config.rs        ← Runtime config loader
 ├── lilim_core/                 ← Python intelligence layer
-│   ├── server.py               ← [TO CREATE] FastAPI brain server
-│   ├── prompt_enhancer.py      ← Done
-│   ├── model_router.py         ← Done
-│   ├── memory_manager.py       ← Stub (cortex-mem dep)
-│   ├── memory_sqlite.py        ← [TO CREATE] Self-contained memory
-│   ├── tool_executor.py        ← [TO CREATE] Safe system tool runner
-│   ├── scheduler.py            ← [TO CREATE] Task scheduling
-│   ├── __init__.py             ← Exists
-│   ├── Cargo.toml              ← (Rust crate within Python dir — review)
-│   └── src/                   ← Rust sub-crate (api_client, config, etc.)
-│       ├── api_client.rs       ← Good HTTP client
-│       ├── config.rs           ← Config loader
-│       ├── memory.rs           ← Review
-│       ├── rag.rs              ← Review
-│       ├── vlm.rs              ← Review
-│       └── lib.rs
+│   ├── server.py               ← FastAPI brain server v2.0
+│   ├── memory_sqlite.py        ← SQLite memory store
+│   ├── prompt_enhancer.py      ← Automatic prompt optimization
+│   ├── model_router.py         ← Smart model routing
+│   ├── free_router.py          ← Provider-agnostic router (9 free + 2 paid)
+│   ├── tool_executor.py        ← Safe system tool runner
+│   └── scheduler.py            ← Task scheduling
 ├── lilim_desktop/              ← Tauri desktop UI
-│   └── [ENTIRE DIRECTORY TO BE BUILT]
+│   ├── src/                    ← React frontend
+│   └── src-tauri/              ← Tauri backend (Rust)
 ├── packaging/
-│   ├── build_deb.sh            ← Fix needed
-│   └── deb_root/
-│       ├── DEBIAN/
-│       │   ├── control         ← Needs correct content
-│       │   ├── postinst        ← [TO CREATE]
-│       │   └── prerm           ← [TO CREATE]
-│       ├── etc/lilith/         ← Config files
-│       └── usr/                ← Binaries, scripts, services
+│   └── build_deb.sh            ← .deb package builder
 ├── scripts/
-│   ├── lilim-serve             ← Start script (needs Python brain path fix)
-│   └── release_to_github.sh
+│   └── release_to_github.sh    ← GitHub release helper
 ├── systemd/
 │   └── system/lilith-ai.service
-├── tests/                      ← [TO CREATE] Python tests
-├── fix.sh                      ← Generates host apply script
-└── dist/                       ← Built .deb goes here
+├── tests/                      ← Python unit tests (47 tests)
+├── local_install.sh            ← Build + install script
+└── dist/                       ← Built .deb output
 ```
 
 ---
@@ -366,18 +381,18 @@ This is **optional** and lowest priority. If implemented:
 - `lilim_core/scheduler.py` — Task scheduler with systemd-run + fallback
 - `config/lilim-responses.yaml` — Personality response library + refined persona spec
 - `crates/lilim-runtime` — Rust proxy server v0.3.0, integrates Candle InferenceEngine, smart local/remote routing
-- `crates/lilim-inference` — New Candle Phi-2 crate (lib.rs, phi2.rs, downloader.rs, config.rs)
-- `lilim_desktop` — Updated Settings panel (provider-agnostic, live status), updated API client
-- `packaging/deb_root/DEBIAN/prerm` — Service pre-removal script
-- `.github/workflows/build.yml` — Full CI/CD pipeline with Phi-2 bundling
+- `crates/lilim-inference` — Candle Phi-2 crate with **incremental single-token inference** (lib.rs, phi2.rs, downloader.rs, config.rs)
+- `lilim_desktop` — Settings panel (provider-agnostic, live status), infernal greeting rotation
+- `packaging/build_deb.sh` — Full .deb packaging with desktop file + icon
+- `systemd/system/lilith-ai.service` — Systemd service with security hardening
 
 **What does NOT work yet:**
-- `lilim-runtime` full cargo build (Candle takes ~20min to compile on first build — expected)
-- iPhone gateway (Phase 2.5 — permanently deferred)
 - Full integration test with real LLM response (needs API key configured by user)
+- iPhone gateway (permanently deferred to v2)
+- Full end-to-end automated test suite
 
-**Next task to do:** Configure at least one API key (recommend Groq or OpenRouter free tier),
-then run `~/lilim_host_apply_and_test.sh` to deploy and test end-to-end.
+**Next task to do:** Run `./local_install.sh` to deploy the performance-fixed binary,
+then test local Phi-2 inference with "help me study bones" to verify streaming tokens appear.
 
 ---
 
@@ -406,3 +421,4 @@ When one AI session ends and another begins:
 | 2026-05-01 | Phase 3 complete | Tasks 3.1-3.4 done. Tauri desktop UI implemented. |
 | 2026-05-01 | Phase 4 complete | Tasks 4.1-4.3 done. Packaging scripts updated. |
 | 2026-05-04 | Bug fix + major upgrade | Fixed persona-recap bug. Added Candle Phi-2 inference crate. Provider-agnostic FreeRouter (9 free + 2 paid). Persona injection from REFINED-PERSONA.md + lilim-responses.yaml. Settings panel redesign. prerm script. CI/CD pipeline. |
+| 2026-05-04 | Production hardening | **Critical perf fix:** rewrote Phi-2 forward pass from O(n²) full-sequence to O(n) incremental single-token. Fixed routing to force local when no API keys. Removed all TTS/ZeroClaw/OI legacy code. Cleaned repo (.gitignore, deleted dead files). Rewrote README. Updated MASTER_PLAN. |

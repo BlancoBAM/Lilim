@@ -48,12 +48,13 @@ impl Phi2Engine {
         let model_dir = get_model_dir(&config);
 
         // Run heavy IO/compute in blocking thread pool
+        let config_for_task = config.clone();
         let inner = tokio::task::spawn_blocking(move || -> Result<Phi2Inner> {
-            let device = select_device(&config)?;
-            info!("Loading Phi-2 on {} from {}", config.device_label(), model_dir.display());
+            let device = select_device(&config_for_task)?;
+            info!("Loading Phi-2 on {} from {}", config_for_task.device_label(), model_dir.display());
 
             // Load GGUF weights
-            let weights_path = model_dir.join("model.gguf");
+            let weights_path = config_for_task.weights_path();
             let mut gguf_file = std::fs::File::open(&weights_path)
                 .with_context(|| format!("Cannot open weights at {}", weights_path.display()))?;
 
@@ -64,7 +65,7 @@ impl Phi2Engine {
                 .context("Failed to load Phi-2 weights from GGUF")?;
 
             // Load tokenizer
-            let tokenizer_path = model_dir.join("tokenizer.json");
+            let tokenizer_path = config_for_task.tokenizer_path();
             let tokenizer = Tokenizer::from_file(&tokenizer_path)
                 .map_err(|e| anyhow::anyhow!("Failed to load tokenizer: {e}"))?;
 
@@ -100,10 +101,10 @@ impl Phi2Engine {
 
         // Generate in a blocking thread (Candle is not async internally)
         // We use a channel to bridge sync generation → async stream
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<Result<String>>(64);
+        let (tx, rx) = tokio::sync::mpsc::channel::<Result<String>>(64);
 
         tokio::task::spawn_blocking(move || {
-            let mut guard = futures_util::executor::block_on(inner.lock());
+            let mut guard = inner.blocking_lock();
             generate_blocking(&mut guard, &prompt, max_tokens, &config, tx);
         });
 
@@ -123,6 +124,12 @@ fn format_phi2_prompt(user_message: &str) -> String {
 }
 
 /// Synchronous token generation — runs in blocking thread pool.
+///
+/// Uses two-phase inference for performance:
+///   Phase 1: Process the full prompt in one forward pass (builds KV cache)
+///   Phase 2: Generate tokens one at a time, feeding only the new token each step
+///
+/// This is O(n) instead of O(n²) — critical for acceptable speed on CPU.
 fn generate_blocking(
     inner: &mut Phi2Inner,
     prompt: &str,
@@ -134,7 +141,7 @@ fn generate_blocking(
     let mut token_count = 0usize;
 
     // Tokenize prompt
-    let tokens = match inner.tokenizer.encode(prompt, true) {
+    let prompt_tokens = match inner.tokenizer.encode(prompt, true) {
         Ok(enc) => enc.get_ids().to_vec(),
         Err(e) => {
             let _ = tx.blocking_send(Err(anyhow::anyhow!("Tokenization failed: {e}")));
@@ -142,8 +149,17 @@ fn generate_blocking(
         }
     };
 
-    let mut tokens: Vec<u32> = tokens;
+    // Truncate prompt if it exceeds context window
     let context_size = config.context_size;
+    let prompt_tokens = if prompt_tokens.len() > context_size - 64 {
+        // Leave room for generation
+        prompt_tokens[prompt_tokens.len() - (context_size - 64)..].to_vec()
+    } else {
+        prompt_tokens
+    };
+
+    let prompt_len = prompt_tokens.len();
+    debug!("Prompt tokenized: {} tokens", prompt_len);
 
     // Set up logits processor for sampling
     let seed = 42u64;
@@ -153,21 +169,84 @@ fn generate_blocking(
         Some(config.top_p),
     );
 
-    // Token generation loop
+    // ── Phase 1: Process the full prompt in one forward pass ──
+    // This builds the internal KV-cache inside the GGUF model.
+    let prompt_tensor = match Tensor::new(prompt_tokens.as_slice(), &inner.device)
+        .and_then(|t| t.unsqueeze(0))
+    {
+        Ok(t) => t,
+        Err(e) => {
+            let _ = tx.blocking_send(Err(anyhow::anyhow!("Tensor error during prompt: {e}")));
+            return;
+        }
+    };
+
+    let prompt_logits = match inner.model.forward(&prompt_tensor, 0) {
+        Ok(l) => l,
+        Err(e) => {
+            let _ = tx.blocking_send(Err(anyhow::anyhow!("Forward pass error (prompt): {e}")));
+            return;
+        }
+    };
+
+    // Extract logits for the last prompt token
+    let last_logits = match prompt_logits.squeeze(0).and_then(|l| {
+        let seq_len = l.dim(0)?;
+        l.get(seq_len - 1)
+    }) {
+        Ok(l) => l,
+        Err(e) => {
+            let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
+            return;
+        }
+    };
+
+    // Sample first generated token from the prompt's output
+    let mut next_token = match logits_processor.sample(&last_logits) {
+        Ok(t) => t,
+        Err(e) => {
+            let _ = tx.blocking_send(Err(anyhow::anyhow!("Sampling error: {e}")));
+            return;
+        }
+    };
+
+    let prompt_elapsed = start.elapsed().as_secs_f64();
+    debug!("Prompt processed in {prompt_elapsed:.1}s");
+
+    // Track position for incremental KV-cache indexing
+    let mut pos = prompt_len;
+
+    // ── Phase 2: Generate tokens one at a time (incremental) ──
+    // Each step feeds ONLY the single new token. The GGUF model's internal
+    // KV-cache retains context from all previous tokens.
     loop {
         if token_count >= max_tokens {
             break;
         }
 
-        // Truncate context if needed
-        let input_tokens = if tokens.len() > context_size {
-            &tokens[tokens.len() - context_size..]
-        } else {
-            &tokens
+        // Check for EOS
+        if next_token == inner.eos_token_id {
+            debug!("EOS token generated — stopping");
+            break;
+        }
+
+        token_count += 1;
+
+        // Decode and send the token to the stream
+        let token_text = match inner.tokenizer.decode(&[next_token], false) {
+            Ok(t) => t,
+            Err(_) => String::new(),
         };
 
-        // Run forward pass
-        let input_tensor = match Tensor::new(input_tokens, &inner.device)
+        if !token_text.is_empty() {
+            if tx.blocking_send(Ok(token_text)).is_err() {
+                // Receiver dropped — UI probably closed
+                break;
+            }
+        }
+
+        // Feed ONLY the new token for the next step
+        let token_tensor = match Tensor::new(&[next_token], &inner.device)
             .and_then(|t| t.unsqueeze(0))
         {
             Ok(t) => t,
@@ -177,8 +256,7 @@ fn generate_blocking(
             }
         };
 
-        // For incremental generation, we use the current position
-        let logits = match inner.model.forward(&input_tensor, tokens.len() - input_tokens.len()) {
+        let logits = match inner.model.forward(&token_tensor, pos) {
             Ok(l) => l,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Forward pass error: {e}")));
@@ -186,11 +264,10 @@ fn generate_blocking(
             }
         };
 
-        // Get logits for the last token position
-        let logits = match logits.squeeze(0).and_then(|l| {
-            let seq_len = l.dim(0)?;
-            l.get(seq_len - 1)
-        }) {
+        pos += 1;
+
+        // For single-token input, squeeze and get the only position
+        let logits = match logits.squeeze(0).and_then(|l| l.get(0)) {
             Ok(l) => l,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Logits extraction error: {e}")));
@@ -199,40 +276,22 @@ fn generate_blocking(
         };
 
         // Sample next token
-        let next_token = match logits_processor.sample(&logits) {
+        next_token = match logits_processor.sample(&logits) {
             Ok(t) => t,
             Err(e) => {
                 let _ = tx.blocking_send(Err(anyhow::anyhow!("Sampling error: {e}")));
                 break;
             }
         };
-
-        // Check for EOS
-        if next_token == inner.eos_token_id {
-            debug!("EOS token generated — stopping");
-            break;
-        }
-
-        tokens.push(next_token);
-        token_count += 1;
-
-        // Decode the new token to text
-        let token_text = match inner.tokenizer.decode(&[next_token], false) {
-            Ok(t) => t,
-            Err(_) => continue, // Skip undecoded tokens
-        };
-
-        // Send token to the async channel
-        if tx.blocking_send(Ok(token_text)).is_err() {
-            // Receiver dropped — UI probably closed
-            break;
-        }
     }
 
     let elapsed = start.elapsed().as_secs_f64();
-    if token_count > 0 && elapsed > 0.0 {
-        let tps = token_count as f64 / elapsed;
-        info!("Generated {token_count} tokens in {elapsed:.1}s ({tps:.1} tok/s)");
+    let gen_elapsed = elapsed - prompt_elapsed;
+    if token_count > 0 && gen_elapsed > 0.0 {
+        let tps = token_count as f64 / gen_elapsed;
+        info!(
+            "Generated {token_count} tokens in {gen_elapsed:.1}s ({tps:.1} tok/s) | prompt: {prompt_elapsed:.1}s",
+        );
         if tps < 0.5 {
             warn!("Inference speed ({tps:.2} tok/s) is below threshold — online routing recommended");
         }
@@ -240,7 +299,7 @@ fn generate_blocking(
 }
 
 /// Select the compute device based on config and available hardware.
-fn select_device(config: &InferenceConfig) -> Result<Device> {
+fn select_device(_config: &InferenceConfig) -> Result<Device> {
     #[cfg(feature = "cuda")]
     if config.use_cuda {
         match Device::new_cuda(0) {

@@ -16,7 +16,6 @@
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#configuration">Configuration</a> •
-  <a href="#iphone-access">iPhone Access</a> •
   <a href="#contributing">Contributing</a>
 </p>
 
@@ -24,22 +23,21 @@
 
 ## Features
 
-🔥 **Intelligent Chatbot** — Sarcastic but caring AI assistant with infernal personality, powered by FreeRouter and LiteLLM
-🧠 **Local Phi-2 Inference** — Runs Microsoft Phi-2 locally on CPU/GPU via HuggingFace Candle (no Ollama required)
+🔥 **Intelligent Chatbot** — Sarcastic but caring AI assistant with infernal personality
 
-🧠 **Native SQLite Memory** — Fast, hierarchical vector-based memory backend embedded directly into the Python brain (no external binaries)
+🧠 **Local Phi-2 Inference** — Runs Microsoft Phi-2 (2.7B) locally on CPU via HuggingFace Candle — no Ollama, no Python inference, no API key required
 
-✨ **Automatic Prompt Enhancement** — Transparently enriches vague prompts with context, task structure, and system info for better LLM responses
+🧠 **Native SQLite Memory** — Fast, hierarchical vector-based memory embedded directly into the Python brain
 
-🎯 **Smart Model Routing** — Simple requests route to fast local models; complex ones auto-escalate to the best remote model within your daily budget
+✨ **Automatic Prompt Enhancement** — Transparently enriches vague prompts with context, task structure, and system info
+
+🎯 **Smart Model Routing** — Simple requests route to the local Phi-2 model; complex ones auto-escalate to remote providers when API keys are configured
 
 ⌨️ **Global Hotkey** — `Ctrl+L` summons Lilim from anywhere on your desktop
 
-💻 **Code Execution** — Safely runs Python, JavaScript, and shell commands with explicit UI confirmation
+💻 **Code Execution** — Safely runs shell commands with explicit UI confirmation
 
 📅 **Task Scheduling** — Schedule one-time and recurring tasks via natural language, backed by `systemd-run`
-
-📱 **iPhone Access** — (Planned) Control your desktop from your iPhone via secure Gateway API with pairing authentication
 
 🛡️ **Security First** — Rust-native API gateway, sandboxed execution, strict command blocklists, and audit logging
 
@@ -49,32 +47,33 @@
  Ctrl+L
      │
  ┌───▼──────────┐    HTTP/SSE     ┌──────────────────────────┐
- │ Tauri UI      │ ◄────────────► │   Rust Proxy Gateway     │
+ │ Tauri UI      │ ◄────────────► │   Rust Runtime Gateway   │
  │ (React flame) │                │   (lilim-runtime :8080)  │
  └──────────────┘                │   ┌──────────────────┐   │
-                                  │   │ Process Manager  │   │
-                                  │   │ Security Filter  │   │
+                                  │   │ Candle Phi-2     │   │
+                                  │   │ (local, CPU)     │   │
                                   │   └───────┬──────────┘   │
-                                  │           ▼              │
-                                  │   ┌──────────────────┐   │
+                                  │           │              │
+                                  │   ┌───────▼──────────┐   │
                                   │   │ Python Brain API │   │
                                   │   │ (FastAPI :8081)  │   │
-                                  │   └───────┬──────────┘   │
- ┌──────────────┐                │           ▼              │
- │ SQLite Mem   │ ◄────────────► │   local ◄─┤─► remote    │
- │ (Embedded)   │                │   Phi-2   │  groq       │
- └──────────────┘                │  (Candle) │  openrouter │
-                                 └──────────────────────────┘
+ ┌──────────────┐                │   └───────┬──────────┘   │
+ │ SQLite Mem   │ ◄────────────► │           │              │
+ │ (Embedded)   │                │   remote fallback:       │
+ └──────────────┘                │   groq · openrouter ·    │
+                                  │   gemini · cerebras …   │
+                                  └──────────────────────────┘
 ```
 
 | Component | Tech | Purpose |
 |-----------|------|---------|
+| **Inference** | Rust / Candle / GGUF | Local Phi-2 model, incremental token generation on CPU |
 | **Brain** | Python / FastAPI / LiteLLM | LLM routing, task parsing, memory ops, personality |
-| **Memory** | **Python / SQLite** | High-performance semantic memory embedded in the Brain |
+| **Memory** | Python / SQLite | Semantic memory embedded in the Brain |
 | **Enhancer** | Python / DSPy-inspired | Automatic prompt classification and enrichment |
 | **Router** | Python / FreeRouter | Smart model selection with auto-fallback to free APIs |
-| **Runtime Gateway** | Rust / Axum | Security, Candle Phi-2 inference, system tool sandbox |
-| **Desktop UI** | TypeScript / React / Tauri | Flame-themed chat interface with streaming |
+| **Runtime Gateway** | Rust / Axum | HTTP server, security, process management, tool sandbox |
+| **Desktop UI** | TypeScript / React / Tauri | Flame-themed chat interface with SSE streaming |
 
 ## Intelligence Layer
 
@@ -82,7 +81,7 @@ Three modules in `lilim_core/` run transparently to make Lilim smarter:
 
 ### Native SQLite Persistent Memory
 
-Lilim uses an embedded SQLite-based memory system (`lilim_core/memory_sqlite.py`) to provide a powerful, hierarchical long-term memory system! Unlike fragile text logs, it uses token-overlap based search and basic vector approximations to retrieve facts instantly and handles profile updating automatically.
+Lilim uses an embedded SQLite-based memory system (`lilim_core/memory_sqlite.py`) to provide a powerful, hierarchical long-term memory system. Unlike fragile text logs, it uses token-overlap based search and basic vector approximations to retrieve facts instantly and handles profile updating automatically.
 
 ### Prompt Enhancement
 
@@ -94,7 +93,7 @@ Short or vague prompts are automatically enriched before hitting the LLM:
 | "quiz me on bones" | `[Task: tutoring. Use ELI10 approach...] quiz me on bones [Memory: studying for anatomy exam]` |
 | "hey" | `hey` *(casual messages pass through unchanged)* |
 
-### Smart Routing (Plano + LiteLLM)
+### Smart Routing
 
 Requests are routed to the optimal model based on complexity:
 
@@ -102,11 +101,10 @@ Requests are routed to the optimal model based on complexity:
 |---------|-------|-----|
 | "What time is it?" | `phi-2` (local) | Simple, fast, free, no API key needed |
 | "Help me study anatomy" | `phi-2` (local) | Tutoring, standard knowledge |
-| "Write a REST API server" | `groq/llama3-70b` (remote) | Code generation needs precision (fallback to free tier) |
-| "Debug this Python traceback" | `openrouter/...` (remote) | Deep code reasoning |
-| "Debug this Python traceback" | `claude-sonnet-4-20250514` (remote) | Deep code reasoning |
+| "Write a REST API server" | `groq/llama3-70b` (remote) | Code generation needs precision (free tier) |
+| "Debug this Python traceback" | `openrouter/...` (remote) | Deep code reasoning (requires API key) |
 
-Configure your API keys dynamically in the Settings UI (Ctrl+L -> Gear Icon). Lilim will auto-detect the provider and route to it automatically when local inference is insufficient or unavailable.
+When no API keys are configured, **all requests are handled locally by Phi-2**. Configure API keys dynamically in the Settings UI (Ctrl+L → Gear Icon) to unlock remote providers for complex tasks.
 
 ## Installation
 
@@ -114,11 +112,10 @@ Configure your API keys dynamically in the Settings UI (Ctrl+L -> Gear Icon). Li
 
 - Linux (Ubuntu 22.04+ / Lilith Linux)
 - Python 3.10+
-- Rust 1.75+ (for ZeroClaw build)
-- Node.js 18+ (for Tauri UI)
-- `espeak-ng`, `cmake` (for TTS)
+- Rust 1.75+
+- Node.js 18+ (for Tauri UI build)
 
-### Quick Install
+### Quick Install (Development)
 
 ```bash
 # Clone
@@ -126,43 +123,22 @@ git clone https://github.com/BlancoBAM/Lilim.git
 cd Lilim
 
 # Install system dependencies
-sudo apt install python3-pip python3-venv nodejs npm pkg-config libssl-dev libwebkit2gtk-4.1-dev librsvg2-dev
+sudo apt install python3-pip python3-venv nodejs npm \
+  pkg-config libssl-dev libwebkit2gtk-4.1-dev librsvg2-dev
 
-# 1. Setup Python Brain
-python3 -m venv .venv
-source .venv/bin/activate
-pip install fastapi uvicorn litellm apscheduler pydantic
-
-# 2. Build Rust Runtime Gateway
-cd crates/lilim-runtime
-cargo build --release
-cd ../..
-
-# 3. Build Tauri Desktop UI
-cd lilim_desktop
-npm install
-npm run tauri build
-cd ..
-
-# 4. Deploy configs and test
-./fix.sh
-~/lilim_host_apply_and_test.sh
+# Build and install locally
+./local_install.sh
 ```
 
-### Production Readiness
+The install script will:
+1. Build the Rust runtime with Candle Phi-2 inference
+2. Build the Tauri desktop app
+3. Create a `.deb` package
+4. Install and restart the `lilith-ai` service
 
-This distribution component includes a production-readiness workflow implemented by `fix.sh`, which generates a robust host orchestration script `lilim_host_apply_and_test.sh`. The generator is designed to be idempotent and safe to re-run, with explicit logging and guarded state transitions. It covers: repo synchronization, dependency installation, building the Rust proxy and Tauri UI, packaging, configuration deployment, systemd integration, environment overrides, service startup, and health verification.
+On first launch, Lilim will download the Phi-2 GGUF model (~1.7GB, one-time).
 
-The packaging step natively bundles the Rust-based Lilim Runtime binary (`lilim-runtime`), the Python brain (`lilim_core`), and the integrated desktop UI (`lilim`) into a single `.deb` file for your system.
-
-- How to use:
-- 1) Run fix.sh to regenerate the host script.
-- 2) Run the generated script: ~/lilim_host_apply_and_test.sh
-- 3) Inspect logs under /var/log/lilim (e.g., lilim_host_apply_and_test.log) for traceability.
-- 4) Verify the service is running and healthy via curl http://127.0.0.1:8000/health and systemctl status lilith-ai.service.
-- 5) If needed, push changes to the main branch using the RUN_PUSH option on the host script or manually via git.
-
-### Desktop App
+### Desktop App (Dev Mode)
 
 ```bash
 cd lilim_desktop
@@ -175,10 +151,6 @@ npm run tauri dev
 ### Chat via Desktop
 
 Press **`Ctrl+Shift+L`** to toggle the Lilim window. Type your message and press Enter.
-
-### Read Aloud (TTS)
-
-Press **`Ctrl+Shift+T`** to read highlighted text (or clipboard contents) aloud via Lilith-TTS.
 
 ### Example Conversations
 
@@ -207,7 +179,7 @@ Edit `config/routing.toml`:
 ```toml
 [routing]
 strategy = "auto"           # "auto", "local-only", "remote-only"
-local_model = "ollama/qwen3:4b"
+local_model = "phi-2"       # Built-in Candle inference
 complexity_threshold = 0.6  # 0-1, above routes to remote
 budget_limit_daily = 5.00   # USD spending cap
 
@@ -219,40 +191,45 @@ reasoning = "claude-sonnet-4-20250514"
 
 ### Security Layer
 
-Edit `config/routing.toml` to manage safety thresholds.
-All system commands executed by Lilim are subject to strict blocklists in the Rust Proxy Gateway and require explicit UI confirmation.
+All system commands executed by Lilim are subject to strict blocklists in the Rust Runtime Gateway and require explicit UI confirmation. Edit `config/routing.toml` to manage safety thresholds.
 
 ### Memory
 
-Inspect and edit your memory vault directly:
+Lilim's memory is stored in SQLite at `~/.local/share/lilim/memory/`:
 
 ```bash
 ls ~/.local/share/lilim/memory/
-# Edit with any Markdown editor or Obsidian
 ```
-
-## iPhone Access
-
-See [docs/iphone-setup.md](docs/iphone-setup.md) for full instructions.
-
-**Quick version:**
-1. Enable tunnel in `zeroclaw.toml` (`tunnel.provider = "cloudflare"`)
-2. Get pairing code from Lilim desktop app
-3. Create iOS Shortcut that POSTs to the gateway
 
 ## Project Structure
 
+```
 Lilim/
 ├── config/                    # Runtime configuration
 │   ├── lilim-identity.json    # Persona specification
+│   ├── lilim-responses.yaml   # Personality response library
+│   ├── lilim.yaml             # Full model/server config
 │   └── routing.toml           # Model routing + budget config
 ├── crates/
-│   └── lilim-runtime/         # Rust Proxy Gateway Server
+│   ├── lilim-inference/       # Candle Phi-2 inference engine (Rust)
+│   │   └── src/
+│   │       ├── lib.rs         # Public API (InferenceEngine)
+│   │       ├── phi2.rs        # Token generation (incremental KV-cache)
+│   │       ├── downloader.rs  # HuggingFace model downloader
+│   │       └── config.rs      # Inference configuration
+│   └── lilim-runtime/         # Rust Runtime Gateway Server
+│       └── src/
+│           ├── main.rs        # Server entrypoint + Axum routing
+│           ├── inference.rs   # Local/remote routing handler
+│           ├── proxy.rs       # HTTP proxy to Python brain
+│           ├── tools.rs       # Shell/file tool execution
+│           └── scheduler.rs   # Task scheduling
 ├── lilim_core/                # Intelligence layer (Python)
-│   ├── server.py              # FastAPI Backend
-│   ├── memory_sqlite.py       # Persistent knowledge graph
+│   ├── server.py              # FastAPI Brain Server
+│   ├── memory_sqlite.py       # Persistent knowledge store
 │   ├── prompt_enhancer.py     # Automatic prompt optimization
 │   ├── model_router.py        # Smart model routing
+│   ├── free_router.py         # Provider-agnostic free-tier router
 │   ├── tool_executor.py       # Safe system tool executor
 │   └── scheduler.py           # Task scheduler
 ├── lilim_desktop/             # Tauri desktop app (React + Rust)
@@ -260,7 +237,8 @@ Lilim/
 │   └── src-tauri/             # Tauri backend (Rust)
 ├── packaging/                 # Debian .deb build scripts
 ├── systemd/                   # systemd service files
-└── fix.sh                     # Host orchestrator generator
+├── tests/                     # Python unit tests (47 tests)
+└── local_install.sh           # Build + install script
 ```
 
 ## Contributing
@@ -269,14 +247,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Inspired By / Credits
 
-Lilim's architecture and capabilities were heavily inspired by several phenomenal open-source projects. Please check them out:
+Lilim's architecture and capabilities were inspired by several open-source projects:
 
-- **[Open Interpreter](https://github.com/OpenInterpreter/open-interpreter)** — Inspiration for the code execution workflow.
-- **[ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw)** — Inspiration for the secure gateway, scheduling, and system abstraction layers.
-- **[Rowboat](https://github.com/rowboatlabs/rowboat)** — Inspiration for persistent memory systems.
-- **[Promptomatix](https://github.com/SalesforceAIResearch/promptomatix)** — Inspiration for the automatic, transparent prompt enhancement and classification layer.
-- **[Plano](https://github.com/katanemo/plano)** — Inspiration for the intelligent, complexity-based model routing layer.
-- **[Cortex Mem](https://github.com/sopaco/cortex-mem)** - Inspiration for the hierarchical memory architecture.
+- **[Open Interpreter](https://github.com/OpenInterpreter/open-interpreter)** — Code execution workflow
+- **[Rowboat](https://github.com/rowboatlabs/rowboat)** — Persistent memory systems
+- **[Promptomatix](https://github.com/SalesforceAIResearch/promptomatix)** — Automatic prompt enhancement
+- **[Plano](https://github.com/katanemo/plano)** — Complexity-based model routing
+- **[Cortex Mem](https://github.com/sopaco/cortex-mem)** — Hierarchical memory architecture
+- **[HuggingFace Candle](https://github.com/huggingface/candle)** — Rust ML framework for local inference
 
 ## License
 

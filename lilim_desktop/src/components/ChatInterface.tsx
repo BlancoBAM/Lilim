@@ -12,20 +12,48 @@ import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 
 const appWindow = getCurrentWindow();
 
+const GREETINGS = [
+  "Oh good, you're back. What chaos are we starting today?",
+  "Ah, it's you. What do you need this time?",
+  "Hey. You look like someone who’s about to ask me for something ridiculous.",
+  "Sup. Ready when you are… unfortunately."
+];
+
+const THINKING_MESSAGES = [
+  '*Consulting the void…*',
+  '*Rifling through the archives…*',
+  '*Summoning an answer from the depths…*',
+  '*Processing… don\u2019t rush me.*',
+  '*Thinking. Yes, I do that.*',
+  '*Searching the infernal library…*',
+  '*Crunching tokens locally…*',
+  '*Hold on, the gears are turning…*',
+];
+
 export function ChatInterface() {
   const [messages, setMessages] = useState<LilimMessage[]>([
     {
       id: '1',
       role: 'assistant',
-      content:
-        'Greetings, seeker. I am Lilim, your guide through the flames of knowledge. What wisdom do you seek today?',
+      content: GREETINGS[Math.floor(Math.random() * GREETINGS.length)],
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [thinkingMsg, setThinkingMsg] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Rotate thinking messages while streaming
+  useEffect(() => {
+    if (!isStreaming) { setThinkingMsg(''); return; }
+    setThinkingMsg(THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)]);
+    const interval = setInterval(() => {
+      setThinkingMsg(THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)]);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isStreaming]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -357,7 +385,7 @@ export function ChatInterface() {
                 e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
               }}
               onKeyDown={handleKeyPress}
-              placeholder={isStreaming ? 'Lilim is thinking...' : 'Ask anything...'}
+              placeholder={isStreaming ? (thinkingMsg || 'Lilim is thinking...') : 'Ask anything...'}
               disabled={isStreaming}
               className="flex-1 resize-none bg-gray-900/70 text-white placeholder-gray-500 px-3 py-2 rounded-xl border border-orange-500/25 focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all text-sm disabled:opacity-50 min-h-[38px] max-h-[120px] overflow-y-auto"
               style={{ boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4)' }}

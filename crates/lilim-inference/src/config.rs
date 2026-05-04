@@ -14,6 +14,10 @@ pub struct InferenceConfig {
     /// Maximum context window size in tokens.
     pub context_size: usize,
 
+    /// Default max tokens to generate for local inference.
+    /// Kept shorter than remote to ensure responsive UX on CPU.
+    pub max_gen_tokens: usize,
+
     /// Temperature for sampling (0.0 = greedy, 1.0 = random).
     pub temperature: f64,
 
@@ -36,7 +40,8 @@ impl Default for InferenceConfig {
         Self {
             model_dir_override: None,
             context_size: 2048,
-            temperature: 0.7,
+            max_gen_tokens: 256,
+            temperature: 0.5,
             top_p: 0.9,
             use_cuda: cfg!(feature = "cuda"),
             use_metal: cfg!(feature = "metal"),
@@ -78,7 +83,7 @@ impl InferenceConfig {
 
     /// Path to the GGUF model weights file.
     pub fn weights_path(&self) -> PathBuf {
-        self.model_dir().join("model.gguf")
+        self.model_dir().join("phi-2.Q4_K_M.gguf")
     }
 
     /// Path to the tokenizer file.

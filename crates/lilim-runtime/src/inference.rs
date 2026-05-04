@@ -38,20 +38,31 @@ pub async fn handle_chat_routed(
     let route = get_route_decision(&state, &message, &session_id).await;
 
     // Decide: local Candle inference or proxy to Python brain
-    let use_local = route.as_ref()
-        .map(|r| {
-            let tier = r.get("tier").and_then(|v| v.as_str()).unwrap_or("remote");
-            tier == "local" || tier.starts_with("local")
-        })
+    let has_engine = state.inference_engine.as_ref().map(|e| e.is_available()).unwrap_or(false);
+    let remote_available = route.as_ref()
+        .and_then(|r| r.get("remote_available"))
+        .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let tier = route.as_ref()
+        .and_then(|r| r.get("tier"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("local");
+
+    // Force local if: (a) router says local, OR (b) engine available but no remote providers
+    let use_local = tier == "local" || tier.starts_with("local")
+        || (has_engine && !remote_available);
 
     if use_local {
         if let Some(ref engine) = state.inference_engine {
             if engine.is_available() {
                 // Build full prompt with system prompt + memory context
                 let full_prompt = build_local_prompt(&route, &message);
-                info!("Routing to local Phi-2 engine");
-                return stream_local_inference(engine, &full_prompt).await;
+                let max_tokens = state.inference_engine
+                    .as_ref()
+                    .map(|_| lilim_inference::InferenceConfig::default().max_gen_tokens)
+                    .unwrap_or(256);
+                info!("Routing to local Phi-2 engine (max {} tokens)", max_tokens);
+                return stream_local_inference(engine, &full_prompt, max_tokens).await;
             }
         }
         // Fall through to Python brain if local engine unavailable
@@ -118,6 +129,7 @@ fn build_local_prompt(route: &Option<Value>, original_message: &str) -> String {
 async fn stream_local_inference(
     engine: &lilim_inference::InferenceEngine,
     prompt: &str,
+    max_tokens: usize,
 ) -> Response {
     // Meta event
     let meta_event = format!(
@@ -126,7 +138,7 @@ async fn stream_local_inference(
     );
 
     let prompt = prompt.to_string();
-    let engine_result = engine.generate_stream(&prompt, 1024).await;
+    let engine_result = engine.generate_stream(&prompt, max_tokens).await;
 
     match engine_result {
         Err(e) => {

@@ -341,11 +341,31 @@ async def route_request(req: RouteRequest):
     if not _enhancer or not _router:
         return {"tier": "remote", "reason": "Brain not initialized", "category": "general"}
 
+    # Sync strategy from model-config.json if it exists
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH) as f:
+                model_cfg = json.load(f)
+                if "strategy" in model_cfg:
+                    ui_strategy = model_cfg["strategy"]
+                    if ui_strategy == "local-first":
+                        _router.config["strategy"] = "auto"
+                        _router.config["complexity_threshold"] = 0.8
+                    elif ui_strategy in ["free-first", "quality-first"]:
+                        _router.config["strategy"] = "remote-only"
+        except Exception:
+            pass
+
     enhanced = _enhancer.enhance(req.message) if _enhancer.should_enhance(req.message) else {
         "enhanced_message": req.message, "category": "conversation", "memory_context": ""
     }
     route = _router.route(enhanced["enhanced_message"], enhanced["category"])
     configured = _free_router.get_configured_providers() if _free_router else []
+
+    # Force local if no remote providers are available at all
+    if len(configured) == 0:
+        route["tier"] = "local"
+        route["reason"] = "No remote providers configured, forcing local"
 
     return {
         "tier": route["tier"],

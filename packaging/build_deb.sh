@@ -15,7 +15,7 @@ rm -rf "$DEB_ROOT"/ || true
 mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
 
 ## Build real runtime binary into the package (require it to be present)
-RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/crates/lilim-runtime/target/release/lilim-runtime"
+RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
 if [ -x "$RUNTIME_BIN" ]; then
   mkdir -p "$DEB_ROOT/usr/bin"
   cp "$RUNTIME_BIN" "$DEB_ROOT/usr/bin/lilim-runtime"
@@ -42,8 +42,14 @@ cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
 mkdir -p "$DEB_ROOT/lib/systemd/system"
 cp "$ROOT_DIR/systemd/system/lilith-ai.service" "$DEB_ROOT/lib/systemd/system/"
 
-## Desktop file
+## Desktop file & Icon
 mkdir -p "$DEB_ROOT/usr/share/applications"
+mkdir -p "$DEB_ROOT/usr/share/pixmaps"
+
+if [ -f "/home/aegon/Downloads/lilim-icon.png" ]; then
+    cp "/home/aegon/Downloads/lilim-icon.png" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
+fi
+
 cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
 [Desktop Entry]
 Name=Lilim Assistant

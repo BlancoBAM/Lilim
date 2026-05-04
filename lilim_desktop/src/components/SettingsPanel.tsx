@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap } from 'lucide-react';
 import { getModelStatus, getProvidersStatus, registerApiKey, saveModelConfig, type ProviderStatus } from '../api/lilim';
 

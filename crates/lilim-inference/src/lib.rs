@@ -63,7 +63,7 @@ impl InferenceEngine {
                 Self { inner: Some(engine), config }
             }
             Err(e) => {
-                warn!("Failed to load Phi-2 engine: {e}");
+                warn!("Failed to load Phi-2 engine: {:?}", e);
                 Self { inner: None, config }
             }
         }
