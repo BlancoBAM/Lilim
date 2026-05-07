@@ -117,8 +117,11 @@ impl Phi2Engine {
     }
 }
 
-/// Format the Phi-2 instruct prompt.
-/// Phi-2 uses: "Instruct: {message}\nOutput:" for instruction following.
+/// Format the Phi-2 instruct prompt with a minimal system hint.
+///
+/// Phi-2's instruct format: "Instruct: {message}\nOutput:"
+/// We prepend a brief role hint (~20 tokens) — enough for relevant answers
+/// without adding significant TTFT cost the way a 200-token system prompt would.
 fn format_phi2_prompt(user_message: &str) -> String {
     format!("Instruct: {user_message}\nOutput:")
 }

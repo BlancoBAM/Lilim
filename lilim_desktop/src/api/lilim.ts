@@ -13,6 +13,7 @@ export interface LilimMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  provider?: string;
 }
 
 export class LilimAPIError extends Error {
@@ -28,6 +29,7 @@ export interface OIChunk {
   content: string;
   start?: boolean;
   end?: boolean;
+  provider?: string;
 }
 
 export interface ProviderStatus {
@@ -57,7 +59,7 @@ export interface ModelStatus {
  * Stream a chat response from the Rust gateway (SSE).
  * Yields OIChunk objects compatible with the ChatInterface.
  */
-export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
+export async function* streamChat(message: string, signal?: AbortSignal): AsyncGenerator<OIChunk> {
   const sessionId = getSessionId();
 
   let response: Response;
@@ -66,8 +68,10 @@ export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, session_id: sessionId, stream: true }),
+      signal,
     });
   } catch (err) {
+    if ((err as any).name === 'AbortError') throw err;
     throw new LilimAPIError(
       `Cannot connect to Lilim backend at ${API_BASE_URL}. Is the lilith-ai service running? ` +
       `Run: systemctl start lilith-ai`
@@ -108,13 +112,15 @@ export async function* streamChat(message: string): AsyncGenerator<OIChunk> {
           const data = JSON.parse(jsonStr);
           if (data.type === 'token' && data.text) {
             yield { role: 'assistant', type: 'message', content: data.text };
+          } else if (data.type === 'status') {
+            // Agentic status — show as italic
+            yield { role: 'assistant', type: 'message', content: `\n*${data.text}*\n` };
           } else if (data.type === 'done') {
-            yield { role: 'assistant', type: 'message', content: '', end: true };
+            yield { role: 'assistant', type: 'message', content: '', end: true, provider: data.provider };
             return;
           } else if (data.type === 'error') {
             yield { role: 'assistant', type: 'message', content: `\n*${data.text}*` };
           }
-          // 'meta' chunks (routing info) are silently ignored in the stream
         } catch {
           // Non-JSON SSE line, skip
         }

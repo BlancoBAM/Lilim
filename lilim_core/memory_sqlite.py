@@ -17,14 +17,14 @@ DB lives at: ~/.local/share/lilim/memory.db
 import json
 import re
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
 # ── Constants ────────────────────────────────────────────────
 DB_PATH = Path.home() / ".local" / "share" / "lilim" / "memory.db"
 MAX_TURNS_STORED = 500          # Rolling window of stored turns
-MAX_CONTEXT_CHARS = 2500        # Max chars injected into prompts
+MAX_CONTEXT_CHARS = 1200        # Max chars injected into prompts
 FACT_IMPORTANCE_DECAY = 0.95    # Multiply importance by this each day unused
 
 SCHEMA = """
@@ -81,7 +81,7 @@ class MemorySQLite:
         Returns the row id.
         """
         keywords = self._extract_keywords(content)
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         with self._conn() as conn:
             cur = conn.execute(
@@ -99,7 +99,7 @@ class MemorySQLite:
                   importance: float = 0.8, session_id: str = "default") -> int:
         """Save an extracted fact with higher importance than a turn."""
         keywords = self._extract_keywords(content)
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         with self._conn() as conn:
             cur = conn.execute(
@@ -197,7 +197,7 @@ class MemorySQLite:
             return ""
 
         return (
-            "\n\n## Memory (from past conversations)\n"
+            "[Past Context]\n"
             + "\n".join(parts)
             + "\n"
         )
@@ -325,7 +325,7 @@ class MemorySQLite:
 
     def _touch(self, content: str):
         """Update last_used timestamp for a memory row (used in context loading)."""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             conn.execute(
                 "UPDATE memories SET last_used = ? WHERE content = ?",

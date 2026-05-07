@@ -20,6 +20,8 @@ Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
 Environment=HOME=/home/aegon
+# Enable inference timing logs in journald
+Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
 
 # Security Hardening
 NoNewPrivileges=yes
@@ -39,10 +41,12 @@ LockPersonality=yes
 # NOTE: MemoryDenyWriteExecute removed — Python + Rust model inference requires JIT
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
-# Resource Limits (for 8GB RAM system — both OI + ZeroClaw)
+# Resource Limits
+# CPUQuota removed — inference is fully CPU-bound; throttling devastates tok/s.
+# Candle GEMV reads ~1.7GB of weights per token; needs full CPU bandwidth.
+# MemoryMax kept to prevent OOM; model + runtime sits at ~2.5GB RSS.
 MemoryMax=4G
-MemoryHigh=3G
-CPUQuota=80%
+MemoryHigh=3.5G
 TasksMax=1024
 
 [Install]

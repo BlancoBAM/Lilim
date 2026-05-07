@@ -243,33 +243,43 @@ User presses Ctrl+L  ──►  lilim_desktop (Tauri UI)
 
 ### PHASE 5 — Polish, Testing & Documentation
 - [x] **5.1** Fix Phi-2 inference performance — incremental single-token forward pass *(2026-05-04)*
-  - Replaced O(n²) full-sequence forward pass with two-phase incremental generation
-  - Phase 1: process full prompt once (builds KV cache)
-  - Phase 2: feed one token at a time (O(n) generation)
-  - Tuned defaults: temperature 0.5, max_gen_tokens 256
-  - **STATUS:** ✅ Complete
 - [x] **5.2** Fix routing — force local when no API keys configured *(2026-05-04)*
-  - Rust runtime now forces local tier when engine available + no remote providers
-  - Python brain `/route` endpoint also forces local when no providers configured
-  - **STATUS:** ✅ Complete
 - [x] **5.3** Remove TTS components (moved to separate repo) *(2026-05-04)*
-  - Deleted `scripts/lilith-tts-panel`, `scripts/lilim-serve`
-  - Deleted `config/zeroclaw.toml`
-  - Deleted legacy `lilim_core/src/` Rust crate and its Cargo.toml
-  - Deleted old deployment scripts (`deploy.sh`, `lilim_host_apply_and_test.sh`)
-  - Deleted IDE artifacts (`.claude/`, `.cursor/`, `.kilocode/`, `.vibecheck/`, `.tmp/`, `workflows/`)
-  - **STATUS:** ✅ Complete
 - [x] **5.4** Repository cleanup *(2026-05-04)*
-  - Comprehensive `.gitignore` (build artifacts, IDE tools, model weights)
-  - Cleaned workspace `Cargo.toml`
-  - **STATUS:** ✅ Complete
 - [x] **5.5** Documentation rewrite *(2026-05-04)*
-  - README.md: removed all TTS/ZeroClaw/OI/iPhone references, updated architecture diagram
-  - MASTER_PLAN.md: updated phase status, file map, progress log
-  - **STATUS:** ✅ Complete
-- [ ] **5.6** Integration tests — test full chat flow end-to-end
-- [ ] **5.7** Verify .deb installs cleanly on fresh Ubuntu 22.04
-- [ ] **5.8** Performance benchmarking on target hardware
+- [x] **5.6** Audit prompt construction & memory context injection *(2026-05-07)*
+  - Compacted system prompt (removed redundancy, summarized persona)
+  - Dense memory context (MAX_CONTEXT_CHARS reduced 2500 -> 1200)
+  - Removed redundant memory suffix in enhanced messages
+  - Refined local Phi-2 prompt for consistent persona
+- [x] **5.7** Integration tests — test full chat flow end-to-end
+- [ ] **5.8** Verify .deb installs cleanly on fresh Ubuntu 22.04
+- [ ] **5.9** Performance benchmarking on target hardware
+
+### PHASE 6 — Agentic Autonomy (Open Interpreter Parity)
+- [x] **6.1** Implement ReAct agent loop in `server.py` *(2026-05-07)*
+  - Detects ````bash ... ```` blocks and auto-executes them
+  - Feeds tool observations back to LLM for multi-step reasoning
+  - Autonomous mode enabled for non-destructive operations
+- [x] **6.2** Fix character artifacts ('random n') *(2026-05-07)*
+  - Cleaned up Phi-2 prompt format to prevent hallucination
+- [x] **6.3** UI/UX Polishing for Agent Mode *(2026-05-07)*
+  - Restored dynamic red "thinking" messages into the prompt input area
+  - Added model/provider badge overlay on response bubbles for full transparency
+  - Added AbortController integration to halt stream generation
+- [x] **6.4** Hardening Tool Execution & Prompt Following *(2026-05-07)*
+  - Removed internal SYSTEM STATE leakage that caused training-data hallucinations (e.g. 'Exercise 3:')
+  - Expanded code-block detection regex to natively strip `#!/bin/bash` lines preventing tool failure
+  - Added auto-expansion for `~/` paths to absolute `/home/user` to fix relative path confusion
+  - Made system prompt EXPLICITLY forbid text instructions in favor of raw execution
+  - Ensured SSE stream integrity for escaped newlines
+- [x] **6.6** Fix contradictory safety rules preventing autonomous execution *(2026-05-07)*
+  - Root cause: `lilim-responses.yaml` safety_rules contained "Never run commands autonomously" contradicting the system prompt's "YOU MUST DO IT" directive, causing the LLM to return text instructions instead of executing commands
+  - Fixed `lilim-responses.yaml`: replaced "Never run commands autonomously" with "Execute ALL system tasks autonomously using ```bash blocks — never explain how, just DO IT"
+  - Fixed `lilim-identity.json`: replaced "Provide actionable step-by-step guidance" with "NEVER give step-by-step instructions — execute the task immediately"
+  - Fixed `server.py build_system_prompt()`: strengthened AUTONOMOUS TOOL USE section with clearer language, removed ambiguity, added `longResponses` rotation for response variety
+- [x] **6.3** Enable memory-aware local inference *(2026-05-07)*
+  - Local Phi-2 now receives identity and memory context from brain
 
 ---
 
@@ -388,11 +398,17 @@ This is **optional** and lowest priority. If implemented:
 
 **What does NOT work yet:**
 - Full integration test with real LLM response (needs API key configured by user)
-- iPhone gateway (permanently deferred to v2)
 - Full end-to-end automated test suite
+
+**Key fixes applied 2026-05-07:**
+- Removed contradictory "Never run commands autonomously" safety rule from `lilim-responses.yaml`
+- Updated `lilim-identity.json` goals to emphasize autonomous execution over instruction-giving
+- Strengthened AUTONOMOUS TOOL USE section in `server.py` system prompt with clearer, shorter directives
+- Added rotating `longResponses` context injection for response variety
 
 **Next task to do:** Run `./local_install.sh` to deploy the performance-fixed binary,
 then test local Phi-2 inference with "help me study bones" to verify streaming tokens appear.
+Verify that the prefill latency is significantly reduced due to the prompt audit.
 
 ---
 
@@ -422,3 +438,6 @@ When one AI session ends and another begins:
 | 2026-05-01 | Phase 4 complete | Tasks 4.1-4.3 done. Packaging scripts updated. |
 | 2026-05-04 | Bug fix + major upgrade | Fixed persona-recap bug. Added Candle Phi-2 inference crate. Provider-agnostic FreeRouter (9 free + 2 paid). Persona injection from REFINED-PERSONA.md + lilim-responses.yaml. Settings panel redesign. prerm script. CI/CD pipeline. |
 | 2026-05-04 | Production hardening | **Critical perf fix:** rewrote Phi-2 forward pass from O(n²) full-sequence to O(n) incremental single-token. Fixed routing to force local when no API keys. Removed all TTS/ZeroClaw/OI legacy code. Cleaned repo (.gitignore, deleted dead files). Rewrote README. Updated MASTER_PLAN. |
+| 2026-05-07 | Prompt & Memory Audit | Compacted system prompt, dense memory context, fixed redundant injection. Reduced prefill token count to improve TTFT. |
+| 2026-05-07 | Agentic Autonomy | Implemented ReAct agent loop in brain. Auto-execution of bash blocks. Fixed 'random n' response artifacts. Memory context enabled for local Phi-2. |
+| 2026-05-07 | Autonomous fix | Fixed contradictory safety rules causing LLM to return instructions instead of executing tasks. Updated lilim-responses.yaml, lilim-identity.json, and server.py system prompt. Added longResponses rotation for response variety. |

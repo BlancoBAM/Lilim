@@ -121,17 +121,11 @@ class PromptEnhancer:
         if self.memory:
             memory_context = self.memory.load_context(user_message)
 
-        # Step 3: Get system context for relevant categories
-        system_context = ""
-        if category in ("system_admin", "code_debugging", "file_management"):
-            system_context = self._get_system_context()
-
-        # Step 4: Build enhanced prompt
+        # Step 3: Build enhanced prompt (NO system context injection - that causes model hallucinations)
         enhanced = self._build_enhanced_prompt(
             user_message=user_message,
             category=category,
             memory_context=memory_context,
-            system_context=system_context,
             conversation_history=conversation_history,
         )
 
@@ -143,7 +137,6 @@ class PromptEnhancer:
                 "original_length": len(user_message),
                 "enhanced_length": len(enhanced),
                 "has_memory": bool(memory_context),
-                "has_system_context": bool(system_context),
             },
         }
 
@@ -205,38 +198,25 @@ class PromptEnhancer:
         if not context_parts:
             return ""
 
-        return "\n[System Info: " + " | ".join(context_parts) + "]"
+        return "\n[SYSTEM STATE: " + " | ".join(context_parts) + "]"
 
     def _build_enhanced_prompt(
         self,
         user_message: str,
         category: str,
         memory_context: str,
-        system_context: str,
+        system_context: str = "",
         conversation_history: list[dict] = None,
     ) -> str:
-        """Build the enhanced prompt from all context sources."""
-        parts = []
-
-        # For short/ambiguous messages, expand the prompt
-        if len(user_message.split()) < 5 and category != "conversation":
+        """Build the enhanced prompt."""
+        # Just return the message, but maybe add a task hint if it's very short
+        if len(user_message.split()) < 3 and category != "conversation":
             task_config = TASK_CATEGORIES.get(category, {})
             enrich_hint = task_config.get("enrich", "")
             if enrich_hint:
-                parts.append(f"[Task type: {category}. {enrich_hint}]")
-
-        # Add system context
-        if system_context:
-            parts.append(system_context)
-
-        # Add the original message
-        parts.append(user_message)
-
-        # Add memory context as a suffix hint (not visible to user)
-        if memory_context:
-            parts.append(f"\n[Relevant context from memory:{memory_context}]")
-
-        return "\n".join(parts)
+                return f"[Context: {enrich_hint}] {user_message}"
+        
+        return user_message
 
     def should_enhance(self, message: str) -> bool:
         """Determine if a message benefits from enhancement.

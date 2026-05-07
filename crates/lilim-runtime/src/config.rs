@@ -17,6 +17,7 @@ pub struct LilimConfig {
     #[serde(default)]
     pub brain: BrainConfig,
     #[serde(default)]
+    #[allow(dead_code)] // Reserved: used for security enforcement in future tool-execution hardening
     pub security: SecurityConfig,
 }
 
@@ -57,8 +58,10 @@ impl Default for BrainConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SecurityConfig {
     /// Whether shell commands require explicit UI confirmation
+    #[allow(dead_code)] // Read by tools.rs in future — intentionally kept
     pub require_shell_confirmation: bool,
     /// Max response size in bytes from brain (safety cap)
+    #[allow(dead_code)] // Read by proxy.rs in future — intentionally kept
     pub max_response_bytes: usize,
 }
 

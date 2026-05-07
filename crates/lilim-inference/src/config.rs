@@ -33,6 +33,11 @@ pub struct InferenceConfig {
     /// Minimum tokens/second before we recommend falling back to online.
     /// Set to 0.0 to disable speed-based fallback.
     pub min_tokens_per_sec: f64,
+
+    /// Run a single-token warmup pass after model load to pre-warm CPU
+    /// caches. Adds ~10s to startup but removes cold-start latency from
+    /// the first real user request.
+    pub warmup_on_startup: bool,
 }
 
 impl Default for InferenceConfig {
@@ -45,7 +50,8 @@ impl Default for InferenceConfig {
             top_p: 0.9,
             use_cuda: cfg!(feature = "cuda"),
             use_metal: cfg!(feature = "metal"),
-            min_tokens_per_sec: 0.5, // If slower than 0.5 tok/s, suggest online
+            min_tokens_per_sec: 0.5,
+            warmup_on_startup: true,
         }
     }
 }

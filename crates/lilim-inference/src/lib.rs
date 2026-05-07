@@ -60,7 +60,23 @@ impl InferenceEngine {
         match Phi2Engine::load(&config).await {
             Ok(engine) => {
                 info!("Phi-2 engine loaded ✓ ({} device)", config.device_label());
-                Self { inner: Some(engine), config }
+                let mut this = Self { inner: Some(engine), config };
+
+                // ── Model warmup ──────────────────────────────────────────
+                // Run a tiny dummy forward pass immediately after loading.
+                // This pre-warms CPU caches, memory mappings, and any JIT
+                // paths inside Candle/BLAS so the first *real* user request
+                // doesn't pay an extra cold-start penalty on top of its own
+                // prompt-processing time.
+                if this.config.warmup_on_startup {
+                    info!("Running model warmup pass…");
+                    match this.generate("hi", 1).await {
+                        Ok(_) => info!("Model warmup complete ✓"),
+                        Err(e) => warn!("Model warmup failed (non-fatal): {e}"),
+                    }
+                }
+
+                this
             }
             Err(e) => {
                 warn!("Failed to load Phi-2 engine: {:?}", e);

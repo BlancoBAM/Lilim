@@ -12,23 +12,11 @@ import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 
 const appWindow = getCurrentWindow();
 
-const GREETINGS = [
-  "Oh good, you're back. What chaos are we starting today?",
-  "Ah, it's you. What do you need this time?",
-  "Hey. You look like someone who’s about to ask me for something ridiculous.",
-  "Sup. Ready when you are… unfortunately."
-];
-
-const THINKING_MESSAGES = [
-  '*Consulting the void…*',
-  '*Rifling through the archives…*',
-  '*Summoning an answer from the depths…*',
-  '*Processing… don\u2019t rush me.*',
-  '*Thinking. Yes, I do that.*',
-  '*Searching the infernal library…*',
-  '*Crunching tokens locally…*',
-  '*Hold on, the gears are turning…*',
-];
+import {
+  GREETINGS,
+  THINKING_MESSAGES,
+  ERROR_MESSAGES
+} from '../responses';
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<LilimMessage[]>([
@@ -43,6 +31,7 @@ export function ChatInterface() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [thinkingMsg, setThinkingMsg] = useState('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Rotate thinking messages while streaming
@@ -91,11 +80,14 @@ export function ChatInterface() {
     setIsStreaming(true);
 
     const assistantId = (Date.now() + 1).toString();
+    const controller = new AbortController();
+    setAbortController(controller);
 
     try {
       let accumulated = '';
 
-      for await (const chunk of streamChat(userMessage.content)) {
+      // Pass the signal to the streamChat API (I'll need to update lilim.ts too)
+      for await (const chunk of streamChat(userMessage.content, controller.signal)) {
         if (chunk.start) {
           setMessages(prev => [
             ...prev,
@@ -103,7 +95,15 @@ export function ChatInterface() {
           ]);
           continue;
         }
-        if (chunk.end) continue;
+        if (chunk.end) {
+          // Provider is returned on the 'done' event
+          if (chunk.provider) {
+            setMessages(prev =>
+              prev.map(m => (m.id === assistantId ? { ...m, provider: chunk.provider } : m))
+            );
+          }
+          continue;
+        }
         if (!chunk.content) continue;
 
         accumulated += chunk.content;
@@ -112,22 +112,33 @@ export function ChatInterface() {
         );
       }
     } catch (error) {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content:
-            error instanceof Error
-              ? `*The flames flicker... ${error.message}*`
-              : '*The flames flicker... An unknown error occurred.*',
-          timestamp: new Date(),
-        },
-      ]);
+      if ((error as any).name === 'AbortError') {
+        console.log('Stream aborted');
+      } else {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content:
+              error instanceof Error
+                ? `*${ERROR_MESSAGES[Math.floor(Math.random() * ERROR_MESSAGES.length)]} (${error.message})*`
+                : `*${ERROR_MESSAGES[Math.floor(Math.random() * ERROR_MESSAGES.length)]}*`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
     } finally {
       setIsStreaming(false);
+      setAbortController(null);
     }
   }, [input, isStreaming]);
+
+  const handleStop = useCallback(() => {
+    if (abortController) {
+      abortController.abort();
+    }
+  }, [abortController]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -356,13 +367,20 @@ export function ChatInterface() {
                   }
                 >
                   {message.role !== 'user' && (
-                    <div
-                      className="absolute inset-0 opacity-10"
-                      style={{
-                        background:
-                          'linear-gradient(to top, rgba(80,20,0,0) 0%, rgba(140,60,0,0.4) 100%)',
-                      }}
-                    />
+                    <>
+                      <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                          background:
+                            'linear-gradient(to top, rgba(80,20,0,0) 0%, rgba(140,60,0,0.4) 100%)',
+                        }}
+                      />
+                      {message.provider && (
+                        <div className="absolute top-1 right-2 text-[8px] font-bold text-orange-500/50 uppercase tracking-tighter pointer-events-none">
+                          {message.provider}
+                        </div>
+                      )}
+                    </>
                   )}
                   {renderContent(message)}
                 </div>
@@ -372,7 +390,6 @@ export function ChatInterface() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Input bar ── */}
         <div className="relative z-20 px-3 pb-3 pt-2 border-t border-orange-500/20 bg-black/30">
           <div className="flex gap-2 items-end">
             <textarea
@@ -387,18 +404,24 @@ export function ChatInterface() {
               onKeyDown={handleKeyPress}
               placeholder={isStreaming ? (thinkingMsg || 'Lilim is thinking...') : 'Ask anything...'}
               disabled={isStreaming}
-              className="flex-1 resize-none bg-gray-900/70 text-white placeholder-gray-500 px-3 py-2 rounded-xl border border-orange-500/25 focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all text-sm disabled:opacity-50 min-h-[38px] max-h-[120px] overflow-y-auto"
+              className={`flex-1 resize-none bg-gray-900/70 text-white px-3 py-2 rounded-xl border border-orange-500/25 focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all text-sm disabled:opacity-50 min-h-[38px] max-h-[120px] overflow-y-auto ${
+                isStreaming ? 'placeholder-red-600 font-bold' : 'placeholder-gray-500'
+              }`}
               style={{ boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4)' }}
             />
             <motion.button
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.93 }}
-              onClick={handleSend}
-              disabled={isStreaming || !input.trim()}
-              className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-orange-600 to-red-700 text-white rounded-xl hover:from-orange-500 hover:to-red-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ boxShadow: '0 0 15px rgba(255,80,0,0.4)' }}
+              onClick={isStreaming ? handleStop : handleSend}
+              disabled={!isStreaming && !input.trim()}
+              className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl transition-all ${
+                isStreaming 
+                ? 'bg-red-600 hover:bg-red-500 text-white' 
+                : 'bg-gradient-to-br from-orange-600 to-red-700 text-white hover:from-orange-500 hover:to-red-600'
+              }`}
+              style={{ boxShadow: isStreaming ? '0 0 15px rgba(255,0,0,0.4)' : '0 0 15px rgba(255,80,0,0.4)' }}
             >
-              <Send size={16} />
+              {isStreaming ? <X size={18} /> : <Send size={16} />}
             </motion.button>
           </div>
         </div>

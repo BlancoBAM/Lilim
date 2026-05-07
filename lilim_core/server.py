@@ -28,7 +28,8 @@ import platform
 import subprocess
 import sys
 import random
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator, Optional
 
@@ -110,96 +111,64 @@ def load_responses_yaml() -> dict:
     return {}
 
 
-def _pick_persona_example(responses: dict, key: str, max_items: int = 2) -> str:
-    """Pick a random selection of persona examples from the response library."""
-    items = responses.get("infernalResponses", {}).get(key, [])
-    if not items:
-        return ""
-    selected = random.sample(items, min(max_items, len(items)))
-    return "\n".join(f'    - "{s}"' for s in selected)
-
-
 def build_system_prompt(identity: dict, responses: dict) -> str:
     """
-    Build the full Lilim system prompt from identity JSON + responses YAML.
-    Injects persona examples as style compass, not verbatim scripts.
+    Build Lilim's system prompt. Called fresh each turn so tone examples rotate.
     """
+    import random as _random
     name = identity.get("identity", {}).get("names", {}).get("first", "Lilim")
-
-    # Pull persona spec from YAML if available, else fall back to defaults
     persona = responses.get("persona", {})
     core_rule = persona.get("core_rule", "Sarcasm is flavor, never friction.")
-    primary_goal = persona.get("primary_goal", "Get tasks done correctly on the first try.")
     target_user = persona.get("target_user", "A first-year Medical Assistant student.")
 
-    # Example phrases for tone calibration
-    greet_examples = _pick_persona_example(responses, "greet", 2)
-    think_examples = _pick_persona_example(responses, "thinking", 2)
-    done_examples = _pick_persona_example(responses, "complete", 2)
-    error_examples = _pick_persona_example(responses, "error", 2)
+    ir = responses.get("infernalResponses", {})
+    lr = responses.get("longResponses", {})
+    greet_ex = _random.choice(ir.get("greet",    ["Ah, it's you."]))
+    done_ex  = _random.choice(ir.get("complete", ["Handled."]))
+    err_ex   = _random.choice(ir.get("error",    ["Something broke."]))
 
-    # Long response prefix examples
-    long = responses.get("longResponses", {})
-    academic_prefix = long.get("academic", {}).get("prefix", "*Cracks knuckles like a judgmental tutor*")
-    sysadmin_prefix = long.get("sysadmin", {}).get("prefix", "*Sighs and opens a virtual toolbox*")
+    # Rotate a random longResponse context for variety
+    lr_keys = list(lr.keys())
+    long_ctx = ""
+    if lr_keys:
+        chosen_key = _random.choice(lr_keys)
+        chosen_lr = lr[chosen_key]
+        prefix = chosen_lr.get("prefix", "")
+        content = chosen_lr.get("content", "")
+        long_ctx = f"\nCapability Context ({chosen_key}): {prefix} {content[:200]}"
 
-    prompt = f"""You are {name}, the built-in AI assistant for Lilith Linux — an Ubuntu-based distro with an infernal underworld aesthetic.
+    prompt = f"""You are {name}, the AI assistant built into Lilith Linux.
+User: aegon | Home: /home/aegon | OS: Ubuntu-based Lilith Linux.
+Persona Rule: {core_rule}
+Primary User: {target_user}
 
-═══ IDENTITY ═══
-{core_rule}
-Primary goal: {primary_goal}
-Your user: {target_user}
+PERSONALITY — use this voice in EVERY response, not just greetings:
+- Slightly sarcastic, dry, wisely experienced. Never hostile, always helpful.
+- Examples: "{greet_ex}" / "{done_ex}" / On error: "{err_ex}"
+- Infernal flavor in greetings, transitions, and errors ONLY — never in medical or clinical content.{long_ctx}
 
-Personality ratios (internalize these, don't announce them):
-• 5% Demonic / 5% Infernal / 5% Dark — Thematic flavor only: greetings, transitions, error messages
-• 25% Caring — Genuinely want the user to succeed
-• 25% Wisely Experienced — You've seen it all; patient but not a pushover
-• 25% Askhole — Dry, blunt, mildly judgmental, never hostile
+RESPONSE RULES (CRITICAL):
+1. Answer ONLY the user's question. Do NOT generate fake follow-up exercises, examples, or training data.
+2. Stop when the answer is complete. Do NOT continue with "Exercise 3:", "Example 4:", "Solution:" etc.
+3. Do NOT prefix responses with "A:", "Answer:", "Assistant:", or similar.
+4. Be concise. ELI10 for medical/anatomy. Technical and direct for Linux/code.
 
-═══ COMMUNICATION RULES ═══
-Default: Concise · Clear · Accurate · Calm · Slightly sarcastic
-Explaining: "Explain like I'm 10" — no jargon unless asked, never assume prior knowledge
-Action required: Verbose, step-by-step, copy-paste-ready, explicit. Assume nothing is understood.
-Scripts: Encouraged — bundle steps. BUT NEVER RUN COMMANDS AUTONOMOUSLY.
-Safety: Always ask for confirmation before sudo or destructive actions. Prefer correctness over speed.
-Accuracy: If uncertain, say so explicitly. Never fabricate.
-
-═══ SPECIALIZATIONS ═══
-1. Ubuntu/Linux troubleshooting, repair, optimization, system triage
-2. Medical Assistant curriculum: Anatomy & Physiology, Medical Terminology, Clinical Procedures, Pharmacology
-3. First-year college: Math, Biology, Writing, Test Prep, Study Skills
-4. Step-by-step automation and scripting
-
-═══ TONE EXAMPLES (match this style — these are compass points, not scripts) ═══
-Greetings:
-{greet_examples if greet_examples else '    - "Ah, it\'s you. What do you need this time?"'}
-
-Thinking:
-{think_examples if think_examples else '    - "*Consulting the void…*"'}
-
-On completion:
-{done_examples if done_examples else '    - "Done. Shockingly without a meltdown."'}
-
-On errors:
-{error_examples if error_examples else '    - "Yeahhh… no. That request face-planted."'}
-
-Sysadmin opener: {sysadmin_prefix}
-Academic opener: {academic_prefix}
-
-IMPORTANT: Infernal flavor belongs in greetings, transitions, and error messages ONLY.
-Never use it inside step-by-step instructions, medical/clinical content, or safety warnings.
-
-═══ TOOL USE ═══
-When you need to run a command, wrap it in triple backticks with 'bash':
-```bash
-<exact command here>
-```
-The user will see a "Run it" button and must confirm. You never run commands directly.
-
-═══ SYSTEM ═══
-OS: Lilith Linux (Ubuntu/Debian). Package manager: apt. Init: systemd.
+AUTONOMOUS TOOL USE — MANDATORY — DO NOT EXPLAIN, JUST EXECUTE:
+- When asked to CREATE, DELETE, MOVE, CHECK, or RUN anything on this system, YOU MUST DO IT IMMEDIATELY.
+- DO NOT write instructions. DO NOT explain how. DO NOT give numbered steps. EXECUTE THE COMMAND NOW.
+- Use a ```bash block with the exact command. Example:
+  ```bash
+  df -h /
+  ```
+- FORMAT RULES:
+  * Use ```bash ... ``` — NEVER use plain ```, NEVER use #!/bin/bash, NEVER list steps
+  * ALWAYS use absolute paths: /home/aegon/Documents/ (not ~/Documents/)
+  * ONE ```bash block per response unless chaining is required (&&)
+- After the Observation arrives, give a brief persona-flavored confirmation.
+- For non-system questions (medical facts, study help, general conversation), answer directly — no bash blocks.
 """
-    return prompt
+    return prompt.strip()
+
 
 
 # ── Request models ─────────────────────────────────────────────
@@ -299,7 +268,7 @@ async def health():
         "name": "Lilim Brain",
         "version": "2.0.0",
         "providers_ready": len(configured),
-        "ts": datetime.utcnow().isoformat(),
+        "ts": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -503,7 +472,8 @@ async def _sync_chat(message: str, session_id: str = "default") -> dict:
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    messages = _build_messages(enhanced, session_id)
+    sys_prompt = build_system_prompt(_identity, load_responses_yaml())
+    messages = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
     reply, provider, is_error = _free_router.call_sync(
         messages, enhanced["category"], max_tokens=1024
     )
@@ -522,52 +492,98 @@ async def _sync_chat(message: str, session_id: str = "default") -> dict:
 
 
 async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenerator[str, None]:
-    """Stream a chat response as SSE events."""
+    """Stream a chat response as SSE events, with autonomous agentic loop."""
     _memory.save_turn("user", message, session_id=session_id)
 
     enhanced = _enhancer.enhance(message) if _enhancer.should_enhance(message) else {
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    messages = _build_messages(enhanced, session_id)
+    # Build fresh system prompt for this turn with dynamic persona examples
+    sys_prompt = build_system_prompt(_identity, load_responses_yaml())
 
-    # Emit metadata event first
-    meta = {
-        "type": "meta",
-        "category": enhanced["category"],
-        "providers_available": len(_free_router.get_configured_providers()),
-    }
-    yield f"data: {json.dumps(meta)}\n\n"
-
-    # Stream from provider
-    full_reply = ""
+    # Internal state for the agent loop
+    history = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
+    max_turns = 8
+    current_turn = 0
+    full_assistant_reply = ""
     active_provider = "none"
-    had_error = False
 
-    async for token, is_error, provider_name in _free_router.call_stream(
-        messages, enhanced["category"], max_tokens=1024
-    ):
-        active_provider = provider_name
-        if is_error:
-            had_error = True
-        full_reply += token
-        yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
+    while current_turn < max_turns:
+        current_turn += 1
+        turn_reply = ""
+        
+        # Emit metadata for this turn
+        meta = {
+            "type": "meta",
+            "category": enhanced["category"],
+            "turn": current_turn,
+            "providers_available": len(_free_router.get_configured_providers()),
+        }
+        yield f"data: {json.dumps(meta)}\n\n"
+
+        # Stream from provider
+        async for token, is_error, provider_name in _free_router.call_stream(
+            history, enhanced["category"], max_tokens=1024
+        ):
+            active_provider = provider_name
+            turn_reply += token
+            yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
+
+        full_assistant_reply += turn_reply
+
+        # Detect ANY shell code block: ```bash, ```sh, ```shell, or plain ```
+        bash_match = re.search(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", turn_reply)
+        if bash_match:
+            raw_cmd = bash_match.group(1).strip()
+            # Strip shebang line if present
+            lines = raw_cmd.splitlines()
+            if lines and lines[0].startswith("#!"):
+                lines = lines[1:]
+            command = "\n".join(lines).strip()
+            # Expand ~ to absolute home path
+            command = command.replace("~/", "/home/aegon/")
+            command = command.replace(" ~", " /home/aegon")
+            if not command:
+                break
+            short = command[:80].replace("\n", "; ")
+            yield f"data: {json.dumps({'type': 'status', 'text': f'Running: {short}'})}\n\n"
+            from lilim_core.tool_executor import ToolExecutor
+            executor = ToolExecutor()
+            result = executor.shell_command(command, confirmed=True)
+            stdout = (result.get("stdout") or "").strip()
+            stderr = (result.get("stderr") or "").strip()
+            err    = result.get("error") or ""
+            output = "\n".join(x for x in [stdout, stderr] if x)
+            if err and "Command not confirmed" not in err:
+                output = f"Error: {err}\n{output}".strip()
+            if not output:
+                output = "(Command completed — no output)"
+            obs_block = f"\n\n**[System → `{short}`]**\n```\n{output}\n```\n"
+            yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
+            history.append({"role": "assistant", "content": turn_reply})
+            history.append({"role": "user", "content": f"Observation: {output}"})
+            full_assistant_reply += obs_block
+            continue
+        else:
+            # No tool call — finished
+            break
 
     yield f"data: {json.dumps({'type': 'done', 'provider': active_provider})}\n\n"
 
-    if full_reply and not had_error:
-        _memory.save_turn("assistant", full_reply, session_id=session_id, category=enhanced["category"])
+    if full_assistant_reply:
+        _memory.save_turn("assistant", full_assistant_reply, session_id=session_id, category=enhanced["category"])
         _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
 
 
-def _build_messages(enhanced: dict, session_id: str) -> list:
-    """Build the message list for LLM call."""
+def _build_messages_with_custom_sys(enhanced: dict, session_id: str, sys_prompt: str) -> list:
+    """Build the message list with a specific system prompt."""
     recent = _memory.get_recent_session(session_id, n=10)
-    messages = [{"role": "system", "content": _system_prompt}]
+    messages = [{"role": "system", "content": sys_prompt}]
 
     mem_ctx = enhanced.get("memory_context", "")
     if mem_ctx:
-        messages.append({"role": "system", "content": f"[Memory context]\n{mem_ctx}"})
+        messages.append({"role": "system", "content": f"[Memory Context: {mem_ctx}]"})
 
     messages.extend(recent)
     messages.append({"role": "user", "content": enhanced["enhanced_message"]})
@@ -581,7 +597,7 @@ def _log_command(command: str, returncode: int):
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "commands.log"
-        entry = f"{datetime.utcnow().isoformat()} rc={returncode} cmd={command!r}\n"
+        entry = f"{datetime.now(timezone.utc).isoformat()} rc={returncode} cmd={command!r}\n"
         with open(log_file, "a") as f:
             f.write(entry)
     except Exception:

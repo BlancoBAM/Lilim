@@ -54,6 +54,10 @@ if [ -f "$DEB_FILE" ]; then
     # Ensure updated Python brain is deployed
     sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
 
+    # Sync service file from workspace (dpkg may have an older version)
+    # Key changes: CPUQuota removed (throttle kills tok/s), RUST_LOG added
+    sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /usr/lib/systemd/system/lilith-ai.service
+
     echo "Restarting background service..."
     sudo systemctl daemon-reload
     sudo systemctl restart lilith-ai.service
