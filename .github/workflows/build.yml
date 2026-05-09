@@ -101,18 +101,23 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: Verify Tauri build output
+      - name: Verify and Locate Tauri binary
         run: |
-          echo "=== Checking release directory ==="
-          ls -la lilim_desktop/src-tauri/target/release/ | grep -E "^-.*x" || echo "No executables found"
-          echo "=== Checking bundle directory ==="
-          find lilim_desktop/src-tauri/target/release/bundle -type f -executable 2>/dev/null | head -20 || echo "No bundles found"
+          # Find the executable in the release dir.
+          # It's usually 'Lilim' or 'tauri-applilim-desktop'
+          BIN_PATH=$(find lilim_desktop/src-tauri/target/release/ -maxdepth 2 -type f -executable -not -name "*.so" -not -name "*.d" | head -n 1)
+          if [ -z "$BIN_PATH" ]; then
+            echo "ERROR: Could not find Tauri binary in target/release/"
+            exit 1
+          fi
+          echo "Found binary: $BIN_PATH"
+          cp "$BIN_PATH" ./lilim-ui-executable
 
       - name: Upload Tauri binary
         uses: actions/upload-artifact@v4
         with:
           name: lilim-ui
-          path: lilim_desktop/src-tauri/target/release/tauri-lilim-desktop
+          path: ./lilim-ui-executable
 
   # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
   bundle-model:

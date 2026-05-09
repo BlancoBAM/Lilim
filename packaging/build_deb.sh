@@ -42,17 +42,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-  # The CI pipeline uploads the binary. We use find with -iname to be case-insensitive.
-  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -iname "lilim" | head -n 1)
+  # The CI pipeline uploads the binary as 'lilim-ui-executable'
+  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "lilim-ui-executable" | head -n 1)
   if [ -z "$TAURI_BIN" ]; then
-    # Maybe it's named after the Cargo package name
-    TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "tauri-applilim-desktop" | head -n 1)
+    # Fallback to case-insensitive find
+    TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -iname "lilim" | head -n 1)
   fi
   if [ -z "$TAURI_BIN" ]; then
     # Fallback to local dev path (case insensitive)
     TAURI_BIN=$(find "${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -iname "lilim" | head -n 1)
   fi
-else
   # Default local dev path
   TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
 fi
