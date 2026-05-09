@@ -42,17 +42,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ -n "${TAURI_BUNDLE_DIR:-}" ]; then
-  # The CI pipeline uploads the 'bundle' directory. The actual binary might be inside something else,
-  # but actually the easiest is just to find the executable named 'lilim' or 'tauri-app' in the bundle,
-  # or better yet, since the CI downloaded the artifacts to `/tmp/artifacts/lilim-desktop-linux/`,
-  # we know the binary `lilim` should be in the root of the tauri build.
-  # Let's just use `find` to grab the binary. It's usually named `lilim`.
-  # For safety, let's just use the known name. The UI app is named `lilim` in tauri.conf.json
-  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "lilim" | head -n 1)
+  # The CI pipeline uploads the binary. We use find with -iname to be case-insensitive.
+  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -iname "lilim" | head -n 1)
   if [ -z "$TAURI_BIN" ]; then
-    # Maybe it's named something else.
-    TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
+    # Maybe it's named after the Cargo package name
+    TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "tauri-applilim-desktop" | head -n 1)
+  fi
+  if [ -z "$TAURI_BIN" ]; then
+    # Fallback to local dev path (case insensitive)
+    TAURI_BIN=$(find "${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -iname "lilim" | head -n 1)
   fi
 else
   # Default local dev path

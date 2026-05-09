@@ -105,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lilim-ui
-          path: lilim_desktop/src-tauri/target/release/lilim
+          path: lilim_desktop/src-tauri/target/release/Lilim
 
   # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
   bundle-model:
