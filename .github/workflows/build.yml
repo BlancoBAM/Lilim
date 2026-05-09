@@ -65,7 +65,7 @@ jobs:
       - name: Upload lilim-runtime binary
         uses: actions/upload-artifact@v4
         with:
-          name: lilim-runtime-linux-x86_64
+          name: lilim-runtime
           path: target/release/lilim-runtime
 
   # ── Tauri Desktop Build ─────────────────────────────────────────────────────
@@ -75,12 +75,6 @@ jobs:
     needs: [test-python, build-rust]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download lilim-runtime artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lilim-runtime-linux-x86_64
-          path: /tmp/artifacts/lilim-runtime-linux-x86_64/
 
       - name: Install system dependencies
         run: |
@@ -107,11 +101,11 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: Upload Tauri bundle
+      - name: Upload Tauri binary
         uses: actions/upload-artifact@v4
         with:
-          name: lilim-desktop-linux
-          path: lilim_desktop/src-tauri/target/release/bundle/
+          name: lilim-ui
+          path: lilim_desktop/src-tauri/target/release/lilim
 
   # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
   bundle-model:
@@ -182,20 +176,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download runtime
         uses: actions/download-artifact@v4
         with:
-          path: /tmp/artifacts/
+          name: lilim-runtime
+          path: bin/runtime
+
+      - name: Download UI
+        uses: actions/download-artifact@v4
+        with:
+          name: lilim-ui
+          path: bin/ui
+
+      - name: Download Model
+        uses: actions/download-artifact@v4
+        with:
+          name: phi2-model-gguf
+          path: model
 
       - name: Build .deb
         run: |
           chmod +x packaging/build_deb.sh
           bash packaging/build_deb.sh \
-            --runtime /tmp/artifacts/lilim-runtime-linux-x86_64/lilim-runtime \
-            --tauri-bundle /tmp/artifacts/lilim-desktop-linux/ \
-            --model-dir /tmp/artifacts/phi2-model-gguf/
+            --runtime bin/runtime/lilim-runtime \
+            --tauri-bundle bin/ui/ \
+            --model-dir model/
         env:
-          PHI2_MODEL_DIR: /tmp/artifacts/phi2-model-gguf/
+          PHI2_MODEL_DIR: model/
 
       - name: Upload .deb package
         uses: actions/upload-artifact@v4
