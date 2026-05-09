@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # ── Python Tests ────────────────────────────────────────────────────────────
+  # ── Python Tests ─────────────────────────────────────────────────────────────
   test-python:
     name: Python Brain Tests
     runs-on: ubuntu-22.04
@@ -103,14 +103,16 @@ jobs:
 
       - name: Verify Tauri build output
         run: |
-          ls -R lilim_desktop/src-tauri/target/release/ | grep -v "\.d" | head -n 50
-          find lilim_desktop/src-tauri/target/release/ -maxdepth 2 -type f -executable
+          echo "=== Checking release directory ==="
+          ls -la lilim_desktop/src-tauri/target/release/ | grep -E "^-.*x" || echo "No executables found"
+          echo "=== Checking bundle directory ==="
+          find lilim_desktop/src-tauri/target/release/bundle -type f -executable 2>/dev/null | head -20 || echo "No bundles found"
 
       - name: Upload Tauri binary
         uses: actions/upload-artifact@v4
         with:
           name: lilim-ui
-          path: lilim_desktop/src-tauri/target/release/Lilim*
+          path: lilim_desktop/src-tauri/target/release/tauri-lilim-desktop
 
   # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
   bundle-model:
