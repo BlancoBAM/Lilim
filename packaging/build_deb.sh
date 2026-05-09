@@ -56,7 +56,7 @@ done
   fi
 
 ## Build real runtime binary into the package (require it to be present)
-if [ -x "$RUNTIME_BIN" ]; then
+if [ -f "$RUNTIME_BIN" ]; then
   mkdir -p "$DEB_ROOT/usr/bin"
   cp "$RUNTIME_BIN" "$DEB_ROOT/usr/bin/lilim-runtime"
   chmod +x "$DEB_ROOT/usr/bin/lilim-runtime"
@@ -66,8 +66,9 @@ else
 fi
 
 # Desktop UI (Tauri binary)
-if [ -x "$TAURI_BIN" ]; then
+if [ -f "$TAURI_BIN" ]; then
   cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
+  chmod +x "$DEB_ROOT/usr/bin/lilim"
 else
   echo "WARNING: Tauri binary not found at $TAURI_BIN. Skipping UI." >&2
 fi
