@@ -14,8 +14,52 @@ set -x
 rm -rf "$DEB_ROOT"/ || true
 mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
 
-## Build real runtime binary into the package (require it to be present)
 RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
+TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/bundle/appimage/lilim_0.1.0_amd64.AppImage" # fallback
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --runtime)
+      RUNTIME_BIN="$2"
+      shift 2
+      ;;
+    --tauri-bundle)
+      # In the CI we get the bundle dir, the actual binary inside should be copied, or we just grab the executable.
+      # Wait, the workflow uploads `lilim_desktop/src-tauri/target/release/bundle/`
+      # but we actually just need the raw binary `tauri-app` or whatever it's called.
+      # Let's just point to the directory, and we'll extract the binary.
+      TAURI_BUNDLE_DIR="$2"
+      shift 2
+      ;;
+    --model-dir)
+      MODEL_DIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      shift
+      ;;
+  esac
+done
+
+if [ -n "${TAURI_BUNDLE_DIR:-}" ]; then
+  # The CI pipeline uploads the 'bundle' directory. The actual binary might be inside something else,
+  # but actually the easiest is just to find the executable named 'lilim' or 'tauri-app' in the bundle,
+  # or better yet, since the CI downloaded the artifacts to `/tmp/artifacts/lilim-desktop-linux/`,
+  # we know the binary `lilim` should be in the root of the tauri build.
+  # Let's just use `find` to grab the binary. It's usually named `lilim`.
+  # For safety, let's just use the known name. The UI app is named `lilim` in tauri.conf.json
+  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "lilim" | head -n 1)
+  if [ -z "$TAURI_BIN" ]; then
+    # Maybe it's named something else.
+    TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
+  fi
+else
+  # Default local dev path
+  TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
+fi
+
+## Build real runtime binary into the package (require it to be present)
 if [ -x "$RUNTIME_BIN" ]; then
   mkdir -p "$DEB_ROOT/usr/bin"
   cp "$RUNTIME_BIN" "$DEB_ROOT/usr/bin/lilim-runtime"
@@ -26,7 +70,6 @@ else
 fi
 
 # Desktop UI (Tauri binary)
-TAURI_BIN="$ROOT_DIR/lilim_desktop/src-tauri/target/release/tauri-applilim-desktop"
 if [ -x "$TAURI_BIN" ]; then
   cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
 else
@@ -41,6 +84,13 @@ cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
 # Systemd Service
 mkdir -p "$DEB_ROOT/lib/systemd/system"
 cp "$ROOT_DIR/systemd/system/lilith-ai.service" "$DEB_ROOT/lib/systemd/system/"
+
+# Model (if provided via --model-dir)
+if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
+  echo "Bundling Phi-2 model from $MODEL_DIR..."
+  mkdir -p "$DEB_ROOT/usr/lib/lilim/models/phi-2-q4"
+  cp -r "$MODEL_DIR/"* "$DEB_ROOT/usr/lib/lilim/models/phi-2-q4/"
+fi
 
 ## Desktop file & Icon
 mkdir -p "$DEB_ROOT/usr/share/applications"

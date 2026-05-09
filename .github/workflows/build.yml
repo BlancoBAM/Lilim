@@ -121,7 +121,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/phi2-model/
-          key: phi2-gguf-microsoft-phi-2-v1
+          key: phi2-gguf-thebloke-v2
 
       - name: Download Phi-2 GGUF from HuggingFace
         if: steps.cache-model.outputs.cache-hit != 'true'
@@ -130,14 +130,25 @@ jobs:
           pip install huggingface_hub
           python3 -c "
           from huggingface_hub import hf_hub_download
-          import shutil, os
+          import os
 
           dest = '/tmp/phi2-model'
-          files = ['model.gguf', 'tokenizer.json', 'tokenizer_config.json']
 
-          for f in files:
+          # Download GGUF
+          try:
+              hf_hub_download(
+                  repo_id='TheBloke/phi-2-GGUF',
+                  filename='phi-2.Q4_K_M.gguf',
+                  local_dir=dest
+              )
+              print('Downloaded: phi-2.Q4_K_M.gguf')
+          except Exception as e:
+              print(f'Warning: could not download gguf: {e}')
+
+          # Download tokenizer files
+          for f in ['tokenizer.json', 'tokenizer_config.json']:
               try:
-                  path = hf_hub_download(
+                  hf_hub_download(
                       repo_id='microsoft/phi-2',
                       filename=f,
                       local_dir=dest
