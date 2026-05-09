@@ -1,37 +1,52 @@
-# ── Build artifacts ──────────────────────────────────────
+# ── Rust build artifacts ──────────────────────────────────
 target/
 dist/
+
+# ── Debian packaging intermediates ─────────────────────────
 packaging/deb_root/
 packaging/dist/
 packaging/packaging/
 
-# ── Python ──────────────────────────────────────────────
+# ── Python ──────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 
-# ── Node ────────────────────────────────────────────────
+# ── Node / Tauri ────────────────────────────────────────────
 node_modules/
+lilim_desktop/src-tauri/target/
 
-# ── IDE & tool artifacts ────────────────────────────────
+# ── IDE & tool config (local only) ─────────────────────────
 .claude/
 .cursor/
 .kilocode/
 .vibecheck/
 .vscode/
-.tmp/
 .idea/
+.tmp/
 *.swp
 *.swo
 *~
 
-# ── OS ──────────────────────────────────────────────────
+# ── OS artifacts ────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# ── Generated ───────────────────────────────────────────
+# ── Generated packages ───────────────────────────────────────
 *.deb
+*.AppImage
+*.rpm
 
-# ── Model weights (never commit 1.7GB files) ───────────
+# ── Model weights (never commit, downloaded at runtime) ──────
 *.gguf
+*.bin
+*.safetensors
+
+# ── Scratch / dev junk ───────────────────────────────────────
+scratch/
+scratch_test/
+scratch.rs
+con.txt
+MASTER_PLAN.md
+CLAUDE.md

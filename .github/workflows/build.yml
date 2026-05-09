@@ -98,8 +98,10 @@ jobs:
         run: npm run tauri build
         working-directory: lilim_desktop
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          # Tauri v2 signing — optional, only needed for auto-update signature verification.
+          # Set these secrets in GitHub repo settings if you want signed bundles.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Upload Tauri bundle
         uses: actions/upload-artifact@v4

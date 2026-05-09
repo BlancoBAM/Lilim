@@ -8,7 +8,7 @@ import bannerImage from '../assets/c80b4d356e3c7b98f2baabf558ea7bacc2421ec9.png'
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
 import topLeftLogo from '../assets/51350c1f0fe5a2742ba35cd8899037600d9d9f62.png';
 import { streamChat, runShellCommand, type LilimMessage } from '../api/lilim';
-import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const appWindow = getCurrentWindow();
 
@@ -32,6 +32,7 @@ export function ChatInterface() {
   const [showSettings, setShowSettings] = useState(false);
   const [thinkingMsg, setThinkingMsg] = useState('');
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [showNoBrainBanner, setShowNoBrainBanner] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Rotate thinking messages while streaming
@@ -48,16 +49,22 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* ── Force explicit window sizing to bypass OS cache ── */
+  /* ── Startup health check — show banner if no providers configured ── */
   useEffect(() => {
-    const initWindow = async () => {
+    const checkHealth = async () => {
       try {
-        await appWindow.setSize(new LogicalSize(380, 760));
-      } catch (err) {
-        console.error('Failed to set window size:', err);
+        const res = await fetch('http://127.0.0.1:8080/health');
+        if (res.ok) {
+          const data = await res.json();
+          if ((data.providers_ready ?? 1) === 0) {
+            setShowNoBrainBanner(true);
+          }
+        }
+      } catch {
+        // Backend not reachable — handled by streamChat error path
       }
     };
-    initWindow();
+    checkHealth();
   }, []);
 
   /* ── Window controls ── */
@@ -180,29 +187,50 @@ export function ChatInterface() {
       return <p className="whitespace-pre-wrap relative z-10">{message.content}</p>;
     }
 
-    // Parse ```bash blocks to show confirmation UI
     const content = message.content;
-    const bashMatch = content.match(/```bash\n?([\s\S]*?)```/);
-    if (bashMatch) {
-      const [fullMatch, command] = bashMatch;
-      const before = content.slice(0, content.indexOf(fullMatch));
-      const after = content.slice(content.indexOf(fullMatch) + fullMatch.length);
 
-      return (
-        <div className="relative z-10 space-y-2">
-          {before && <p className="whitespace-pre-wrap">{before.trim()}</p>}
-          <div className="bg-black/40 border border-orange-500/40 rounded-lg p-3">
+    // Detect if ANY bash block in this message was already auto-executed by the
+    // ReAct agent loop. The observation marker **[System →`...`]** is injected
+    // immediately after each auto-executed block.
+    const wasAutoExecuted = content.includes('**[System \u2192') || content.includes('**[System →');
+
+    // Build rendered segments by parsing the content for code blocks
+    const segments: React.ReactNode[] = [];
+    let segIdx = 0;
+
+    // Regex: captures optional lang tag + code body
+    const CODE_BLOCK_RE = /```(bash|sh|shell)?\n?([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = CODE_BLOCK_RE.exec(content)) !== null) {
+      const lang = (match[1] || '').toLowerCase();
+      const code = match[2].trim();
+      const isBash = lang === 'bash' || lang === 'sh' || lang === 'shell';
+
+      // Text before this block
+      if (match.index > lastIndex) {
+        const before = content.slice(lastIndex, match.index);
+        if (before.trim()) {
+          segments.push(
+            <p key={`t-${segIdx++}`} className="whitespace-pre-wrap">{before.trim()}</p>
+          );
+        }
+      }
+
+      if (isBash && !wasAutoExecuted) {
+        // Bash block that hasn't been auto-executed yet → show confirmation UI
+        segments.push(
+          <div key={`bash-${segIdx++}`} className="bg-black/40 border border-orange-500/40 rounded-lg p-3">
             <p className="text-orange-300 text-xs mb-2 flex items-center gap-1">
               <Flame size={12} /> System command requested:
             </p>
             <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono mb-3 overflow-x-auto">
-              <code>{command.trim()}</code>
+              <code>{code}</code>
             </pre>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  handleRunCommand(command.trim());
-                }}
+                onClick={() => handleRunCommand(code)}
                 className="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-xs transition-colors"
               >
                 ✓ Run it
@@ -215,29 +243,40 @@ export function ChatInterface() {
               </button>
             </div>
           </div>
-          {after && <p className="whitespace-pre-wrap">{after.trim()}</p>}
-        </div>
-      );
+        );
+      } else {
+        // Auto-executed bash block OR plain code block → just show as code
+        const label = isBash && wasAutoExecuted ? '▶ executed' : (lang || 'code');
+        segments.push(
+          <div key={`code-${segIdx++}`}>
+            {isBash && wasAutoExecuted && (
+              <p className="text-green-400/70 text-[10px] mb-1 font-mono">✓ {label}</p>
+            )}
+            <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono overflow-x-auto">
+              <code>{code}</code>
+            </pre>
+          </div>
+        );
+      }
+
+      lastIndex = match.index + match[0].length;
     }
 
-    // Inline code blocks (triple backtick without bash)
-    const codeMatch = content.match(/```([\s\S]*?)```/);
-    if (codeMatch) {
-      const [fullMatch, code] = codeMatch;
-      const before = content.slice(0, content.indexOf(fullMatch));
-      const after = content.slice(content.indexOf(fullMatch) + fullMatch.length);
-      return (
-        <div className="relative z-10 space-y-2">
-          {before && <p className="whitespace-pre-wrap">{before.trim()}</p>}
-          <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono overflow-x-auto">
-            <code>{code.trim()}</code>
-          </pre>
-          {after && <p className="whitespace-pre-wrap">{after.trim()}</p>}
-        </div>
-      );
+    // Remaining text after last code block
+    if (lastIndex < content.length) {
+      const tail = content.slice(lastIndex).trim();
+      if (tail) {
+        segments.push(
+          <p key={`t-${segIdx++}`} className="whitespace-pre-wrap">{tail}</p>
+        );
+      }
     }
 
-    return <p className="relative z-10 whitespace-pre-wrap">{content}</p>;
+    if (segments.length === 0) {
+      return <p className="relative z-10 whitespace-pre-wrap">{content}</p>;
+    }
+
+    return <div className="relative z-10 space-y-2">{segments}</div>;
   };
 
   return (
@@ -270,59 +309,78 @@ export function ChatInterface() {
         {/* ── Title-bar drag region ── */}
         <div
           data-tauri-drag-region
-          className="relative z-20 flex items-center justify-between px-3 pt-2 pb-1 select-none cursor-grab active:cursor-grabbing"
+          className="relative z-20 flex flex-col px-3 pt-2 pb-1 select-none"
         >
-          {/* Logo + title */}
-          <div className="flex items-center gap-2" data-tauri-drag-region>
-            <motion.img
-              src={topLeftLogo}
-              alt="Lilim"
-              className="w-7 h-7 object-contain"
-              animate={{
-                filter: [
-                  'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
-                  'drop-shadow(0 0 10px rgba(255,69,0,1))',
-                  'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
-                ],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <img src={bannerImage} alt="Lilith" className="h-6 object-contain opacity-90" />
+          {/* Top row: logo + window controls */}
+          <div className="flex items-center justify-between cursor-grab active:cursor-grabbing" data-tauri-drag-region>
+            {/* Logo + title */}
+            <div className="flex items-center gap-2" data-tauri-drag-region>
+              <motion.img
+                src={topLeftLogo}
+                alt="Lilim"
+                className="w-7 h-7 object-contain"
+                animate={{
+                  filter: [
+                    'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
+                    'drop-shadow(0 0 10px rgba(255,69,0,1))',
+                    'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
+                  ],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <img src={bannerImage} alt="Lilith" className="h-6 object-contain opacity-90" />
+            </div>
+
+            {/* Window controls */}
+            <div className="flex items-center gap-1">
+              {isStreaming && (
+                <motion.span
+                  className="text-orange-400 text-xs mr-2"
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  🔥
+                </motion.span>
+              )}
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-400 flex items-center justify-center transition-colors group"
+                title="Settings"
+              >
+                <Settings size={10} className="text-blue-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <button
+                onClick={handleMinimize}
+                className="w-6 h-6 rounded-full bg-yellow-500/80 hover:bg-yellow-400 flex items-center justify-center transition-colors group"
+                title="Minimize"
+              >
+                <Minus size={10} className="text-yellow-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <button
+                onClick={handleClose}
+                className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-400 flex items-center justify-center transition-colors group"
+                title="Close"
+              >
+                <X size={10} className="text-red-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            </div>
           </div>
 
-          {/* Window controls */}
-          <div className="flex items-center gap-1">
-            {isStreaming && (
-              <motion.span
-                className="text-orange-400 text-xs mr-2"
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              >
-                🔥
-              </motion.span>
-            )}
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-400 flex items-center justify-center transition-colors group"
-              title="Settings"
-            >
-              <Settings size={10} className="text-blue-900 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-            <button
-              onClick={handleMinimize}
-              className="w-6 h-6 rounded-full bg-yellow-500/80 hover:bg-yellow-400 flex items-center justify-center transition-colors group"
-              title="Minimize"
-            >
-              <Minus size={10} className="text-yellow-900 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-            <button
-              onClick={handleClose}
-              className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-400 flex items-center justify-center transition-colors group"
-              title="Close"
-            >
-              <X size={10} className="text-red-900 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          </div>
+          {/* No-provider banner — shown when providers_ready is 0 */}
+          {showNoBrainBanner && (
+            <div className="mt-1.5 flex items-center gap-2 bg-amber-900/50 border border-amber-500/40 rounded-lg px-2 py-1.5 text-[10px] text-amber-200">
+              <span className="flex-1">
+                ⚠ No AI provider — local mode only. Add a key in{' '}
+                <button
+                  onClick={() => { setShowSettings(true); setShowNoBrainBanner(false); }}
+                  className="underline text-amber-300 hover:text-amber-100"
+                >
+                  Settings
+                </button>.
+              </span>
+              <button onClick={() => setShowNoBrainBanner(false)} className="text-amber-400 hover:text-amber-200 font-bold">✕</button>
+            </div>
+          )}
         </div>
 
         {/* Thin glowing divider under title bar */}
@@ -392,23 +450,34 @@ export function ChatInterface() {
 
         <div className="relative z-20 px-3 pb-3 pt-2 border-t border-orange-500/20 bg-black/30">
           <div className="flex gap-2 items-end">
-            <textarea
-              rows={1}
-              value={input}
-              onChange={e => {
-                setInput(e.target.value);
-                // Auto-grow
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-              }}
-              onKeyDown={handleKeyPress}
-              placeholder={isStreaming ? (thinkingMsg || 'Lilim is thinking...') : 'Ask anything...'}
-              disabled={isStreaming}
-              className={`flex-1 resize-none bg-gray-900/70 text-white px-3 py-2 rounded-xl border border-orange-500/25 focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all text-sm disabled:opacity-50 min-h-[38px] max-h-[120px] overflow-y-auto ${
-                isStreaming ? 'placeholder-red-600 font-bold' : 'placeholder-gray-500'
-              }`}
-              style={{ boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4)' }}
-            />
+            <div className="flex-1 flex flex-col gap-1">
+              {isStreaming && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-2 text-[10px] text-white font-bold italic"
+                >
+                  {thinkingMsg}
+                </motion.div>
+              )}
+              <textarea
+                rows={1}
+                value={input}
+                onChange={e => {
+                  setInput(e.target.value);
+                  // Auto-grow
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                }}
+                onKeyDown={handleKeyPress}
+                placeholder={isStreaming ? "" : 'Ask anything...'}
+                disabled={isStreaming}
+                className={`w-full resize-none bg-gray-900/70 text-white px-3 py-2.5 rounded-xl border border-orange-500/25 focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30 transition-all text-sm disabled:opacity-50 min-h-[42px] max-h-[120px] overflow-y-auto ${
+                  isStreaming ? 'placeholder-transparent' : 'placeholder-gray-500'
+                }`}
+                style={{ boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4)' }}
+              />
+            </div>
             <motion.button
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.93 }}

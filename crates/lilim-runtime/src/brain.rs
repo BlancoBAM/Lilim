@@ -59,6 +59,7 @@ impl BrainProcess {
     }
 
     /// Check if the brain process is still running.
+    #[allow(dead_code)]
     pub fn is_alive(&mut self) -> bool {
         match &mut self.child {
             None => false,

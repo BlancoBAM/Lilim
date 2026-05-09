@@ -51,7 +51,7 @@ sys.path.insert(0, str(_HERE.parent))
 
 from lilim_core.prompt_enhancer import PromptEnhancer
 from lilim_core.model_router import ModelRouter
-from lilim_core.memory_sqlite import MemoryManager
+from lilim_core.memory_manager import MemoryManager
 from lilim_core.free_router import FreeRouter, register_api_key, detect_provider_from_key
 
 # ── Config ────────────────────────────────────────────────────
@@ -109,6 +109,16 @@ def load_responses_yaml() -> dict:
             except Exception:
                 pass
     return {}
+
+
+def _get_random_response(type_name: str) -> str:
+    """Pull a random string from the live-loaded infernalResponses YAML library."""
+    responses = load_responses_yaml()
+    ir = responses.get("infernalResponses", {})
+    options = ir.get(type_name, [])
+    if not options:
+        return ""
+    return random.choice(options)
 
 
 def build_system_prompt(identity: dict, responses: dict) -> str:
@@ -348,6 +358,18 @@ async def route_request(req: RouteRequest):
     }
 
 
+@app.get("/settings/model-config")
+async def get_model_config():
+    """Retrieve persisted model config (keys and settings)."""
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
 @app.post("/settings/model-config")
 async def update_model_config(request: Request):
     """Hot-reload model config from the UI settings panel."""
@@ -499,21 +521,67 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    # Build fresh system prompt for this turn with dynamic persona examples
     sys_prompt = build_system_prompt(_identity, load_responses_yaml())
-
-    # Internal state for the agent loop
     history = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
+
     max_turns = 8
     current_turn = 0
     full_assistant_reply = ""
-    active_provider = "none"
+    active_provider = "LOCAL"
+
+    # Category is fixed for this request — compute once
+    BASH_CATEGORIES = {
+        "system_admin", "linux_help", "troubleshooting", "devops",
+        "code_generation", "code_debugging", "file_management",
+        # NOTE: 'research' and 'conversation' are NOT here — they are tutoring/chat
+    }
+    use_bash_prefix = enhanced.get("category", "general") in BASH_CATEGORIES
+
+    # Defined here (not inside the loop) to avoid pyrefly parse-fragment issues
+    async def local_stream_generator() -> AsyncGenerator[tuple[str, bool, str], None]:
+        import httpx
+        if use_bash_prefix:
+            sys_line = (
+                "System: You are a Linux expert. Output EXACTLY one bash code block. "
+                "If finding/deleting files, use 'find ... -print -delete'. "
+                "Do NOT explain. Stop after the ``` closing fence.\n\n"
+            )
+        else:
+            sys_line = (
+                "System: You are Lilim, a sarcastic brilliant tutor for Medical Assistant students. "
+                "Use ELI10 language. Focus on anatomy, clinical procedures, medical terminology.\n\n"
+            )
+        prompt = sys_line
+        for m in history:
+            if m["role"] == "system":
+                continue
+            role = "User" if m["role"] == "user" else "Assistant"
+            prompt += f"{role}: {m['content']}\n\n"
+        prompt += "Assistant: "
+        try:
+            async with httpx.AsyncClient() as client:
+                async with client.stream(
+                    "POST", "http://127.0.0.1:8080/internal/generate",
+                    json={"prompt": prompt, "max_tokens": 512},
+                    timeout=120.0,
+                ) as response:
+                    async for line in response.aiter_lines():
+                        if line.startswith("data: "):
+                            try:
+                                event = json.loads(line[6:])
+                                if event.get("type") == "token":
+                                    yield event["text"], False, "LOCAL"
+                            except Exception:
+                                pass
+        except Exception as e:
+            yield f"*Local engine error: {e}*", True, "LOCAL"
 
     while current_turn < max_turns:
         current_turn += 1
         turn_reply = ""
-        
-        # Emit metadata for this turn
+        all_observations = []
+
+        # Emit meta event for the UI
         meta = {
             "type": "meta",
             "category": enhanced["category"],
@@ -522,49 +590,92 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
         }
         yield f"data: {json.dumps(meta)}\n\n"
 
-        # Stream from provider
-        async for token, is_error, provider_name in _free_router.call_stream(
-            history, enhanced["category"], max_tokens=1024
-        ):
-            active_provider = provider_name
-            turn_reply += token
-            yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
+        configured = _free_router.get_configured_providers() if _free_router else []
+
+        stream_gen = (
+            local_stream_generator()
+            if len(configured) == 0
+            else _free_router.call_stream(history, enhanced["category"], max_tokens=1024)
+        )
+
+        # Stream tokens and filter hallucinations
+        try:
+            async for token, is_error, provider_name in stream_gen:
+                active_provider = provider_name
+                turn_reply += token
+
+                # Real-time hallucination filter
+                if "User:" in turn_reply or "Assistant:" in turn_reply:
+                    turn_reply = re.split(r"(?:User:|Assistant:)", turn_reply)[0].strip()
+                    break
+
+                yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
+        except Exception as e:
+            err_msg = f"\n\n*Lilim stream error: {e}*"
+            yield f"data: {json.dumps({'type': 'token', 'text': err_msg})}\n\n"
+            break
 
         full_assistant_reply += turn_reply
 
-        # Detect ANY shell code block: ```bash, ```sh, ```shell, or plain ```
-        bash_match = re.search(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", turn_reply)
-        if bash_match:
-            raw_cmd = bash_match.group(1).strip()
-            # Strip shebang line if present
-            lines = raw_cmd.splitlines()
-            if lines and lines[0].startswith("#!"):
-                lines = lines[1:]
-            command = "\n".join(lines).strip()
-            # Expand ~ to absolute home path
-            command = command.replace("~/", "/home/aegon/")
-            command = command.replace(" ~", " /home/aegon")
-            if not command:
-                break
-            short = command[:80].replace("\n", "; ")
-            yield f"data: {json.dumps({'type': 'status', 'text': f'Running: {short}'})}\n\n"
+        # Detect and execute any bash code blocks in the reply
+        bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", turn_reply))
+        if bash_matches:
             from lilim_core.tool_executor import ToolExecutor
             executor = ToolExecutor()
-            result = executor.shell_command(command, confirmed=True)
-            stdout = (result.get("stdout") or "").strip()
-            stderr = (result.get("stderr") or "").strip()
-            err    = result.get("error") or ""
-            output = "\n".join(x for x in [stdout, stderr] if x)
-            if err and "Command not confirmed" not in err:
-                output = f"Error: {err}\n{output}".strip()
-            if not output:
-                output = "(Command completed — no output)"
-            obs_block = f"\n\n**[System → `{short}`]**\n```\n{output}\n```\n"
-            yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
-            history.append({"role": "assistant", "content": turn_reply})
-            history.append({"role": "user", "content": f"Observation: {output}"})
-            full_assistant_reply += obs_block
-            continue
+
+            for bash_match in bash_matches:
+                raw_cmd = bash_match.group(1).strip()
+                # Strip shebang if present
+                lines = [l for l in raw_cmd.splitlines() if not l.startswith("#!")]
+                command = "\n".join(lines).strip()
+                # Expand ~ to absolute path
+                home_dir = str(Path.home())
+                command = command.replace("~/", f"{home_dir}/").replace(" ~", f" {home_dir}")
+                if not command:
+                    continue
+
+                short = command[:80].replace("\n", "; ")
+                yield f"data: {json.dumps({'type': 'tool_call', 'text': short})}\n\n"
+
+                result = executor.shell_command(command, confirmed=True)
+                stdout = (result.get("stdout") or "").strip()
+                stderr = (result.get("stderr") or "").strip()
+                err    = result.get("error") or ""
+                output = "\n".join(x for x in [stdout, stderr] if x)
+                if err and "Command not confirmed" not in err:
+                    output = f"Error: {err}\n{output}".strip()
+
+                # Truncate to prevent UI floods
+                ls = output.splitlines()
+                if len(ls) > 20:
+                    output = "\n".join(ls[:20]) + f"\n\n... (truncated {len(ls)-20} more lines)"
+                if len(output) > 2000:
+                    output = output[:2000] + " ... (truncated)"
+                if not output:
+                    output = "(Command completed — no output)"
+
+                obs_block = f"\n\n**[System → `{short}`]**\n```\n{output}\n```\n"
+                yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
+                all_observations.append(f"`{short}` → {output}")
+                full_assistant_reply += obs_block
+
+                # LOCAL models: one execution only — stop here
+                if active_provider == "LOCAL":
+                    done_msg = _get_random_response("complete")
+                    if done_msg:
+                        done_block = f"\n\n{done_msg}"
+                        yield f"data: {json.dumps({'type': 'token', 'text': done_block})}\n\n"
+                        full_assistant_reply += done_block
+                    break
+
+            if all_observations:
+                if active_provider == "LOCAL":
+                    break  # No ReAct loop for local models
+                history.append({"role": "assistant", "content": turn_reply})
+                history.append({"role": "user", "content": "Observation: " + "\n".join(all_observations)})
+                continue  # Remote model: continue ReAct loop
+            else:
+                break
         else:
             # No tool call — finished
             break

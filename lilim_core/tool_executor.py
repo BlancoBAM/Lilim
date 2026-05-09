@@ -100,20 +100,64 @@ class ToolExecutor:
             }
 
         try:
-            result = subprocess.run(
+            # We use Popen with limited reading to prevent memory exhaustion (OOM)
+            # if a command produces millions of lines of output (e.g. recursive 'find' errors).
+            process = subprocess.Popen(
                 command,
                 shell=True,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=self.timeout,
+                bufsize=1  # line buffered
             )
-            self._audit_log(command, result.returncode)
+
+            stdout_lines = []
+            stderr_lines = []
+            max_total_chars = 100_000 # ~100KB safety limit for raw capture
+
+            # Helper to read from stream with limit
+            def read_stream(stream, target_list):
+                count = 0
+                while count < max_total_chars:
+                    line = stream.readline()
+                    if not line:
+                        break
+                    target_list.append(line)
+                    count += len(line)
+                if count >= max_total_chars:
+                    target_list.append("\n... (raw output truncated for safety) ...")
+                    process.terminate()
+
+            # For simplicity in this local context, we read sequentially. 
+            # In a heavy production system we'd use threads or select().
+            read_stream(process.stdout, stdout_lines)
+            read_stream(process.stderr, stderr_lines)
+
+            try:
+                rc = process.wait(timeout=self.timeout)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                rc = -1
+                stderr_lines.append(f"\n[Timed out after {self.timeout}s]")
+
+            stdout = "".join(stdout_lines)
+            stderr = "".join(stderr_lines)
+
+            self._audit_log(command, rc)
             return {
                 "command": command,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "returncode": result.returncode,
-                "error": None,
+                "stdout": stdout,
+                "stderr": stderr,
+                "returncode": rc,
+                "error": None if rc == 0 else f"Process exited with code {rc}",
+            }
+        except Exception as e:
+            return {
+                "command": command,
+                "stdout": "",
+                "stderr": "",
+                "returncode": -1,
+                "error": str(e),
             }
         except subprocess.TimeoutExpired:
             self._audit_log(command, "TIMEOUT")

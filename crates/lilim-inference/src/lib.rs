@@ -60,7 +60,7 @@ impl InferenceEngine {
         match Phi2Engine::load(&config).await {
             Ok(engine) => {
                 info!("Phi-2 engine loaded ✓ ({} device)", config.device_label());
-                let mut this = Self { inner: Some(engine), config };
+                let this = Self { inner: Some(engine), config };
 
                 // ── Model warmup ──────────────────────────────────────────
                 // Run a tiny dummy forward pass immediately after loading.

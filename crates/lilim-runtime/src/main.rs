@@ -115,6 +115,7 @@ async fn main() -> anyhow::Result<()> {
         // ── Chat (smart local/remote routing) ─────────────────────
         .route("/chat", post(handle_chat))
         .route("/chat/sync", post(handle_chat_sync))
+        .route("/internal/generate", post(inference::handle_internal_generate))
 
         // ── Model status (for Settings panel) ───────────────────
         .route("/model/status", get(handle_model_status))

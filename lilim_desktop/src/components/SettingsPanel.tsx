@@ -156,20 +156,27 @@ function ProviderRow({
   const handleSave = async () => {
     if (!keyInput.trim() || keyInput === '●●●●●●●●●●●●') return;
     setSaving(true);
+    const trimmedKey = keyInput.trim();
     try {
-      const result = await registerApiKey(keyInput.trim(), providerId);
-      if (result) {
-        // Persist to localStorage config
-        const cfg = loadConfig();
-        cfg[`${providerId}Key`] = keyInput.trim();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      // ALWAYS persist locally first — don't gate on backend response
+      const cfg = loadConfig();
+      cfg[`${providerId}Key`] = trimmedKey;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+
+      // Try to register with backend (best-effort)
+      try {
+        await registerApiKey(trimmedKey, providerId);
         await saveModelConfig(cfg);
-        onSave(keyInput.trim(), providerId);
-        setSaved(true);
-        setEditing(false);
-        setKeyInput('●●●●●●●●●●●●');
-        setTimeout(() => setSaved(false), 3000);
+      } catch {
+        // Backend call failed — local save already succeeded above
       }
+
+      // Update parent state and show confirmation
+      onSave(trimmedKey, providerId);
+      setSaved(true);
+      setEditing(false);
+      setKeyInput('●●●●●●●●●●●●');
+      // Confirmation persists — no auto-hide
     } finally {
       setSaving(false);
     }
@@ -184,14 +191,13 @@ function ProviderRow({
             style={{ backgroundColor: display?.color ?? '#666', boxShadow: isConfigured ? `0 0 6px ${display?.color}` : 'none' }}
           />
           <span className="text-sm text-white font-medium">{display?.label ?? providerId}</span>
-          {isConfigured && !saved && (
-            <CheckCircle size={12} className="text-green-400" />
-          )}
-          {saved && (
+          {(isConfigured || saved) && !editing && (
             <motion.span
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="text-xs text-green-400"
-            >✓ Saved</motion.span>
+              initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-1 text-xs text-green-400 font-semibold"
+            >
+              <CheckCircle size={12} /> {saved ? '✓ Saved!' : '✓ Configured'}
+            </motion.span>
           )}
         </div>
         <a
@@ -273,10 +279,20 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const [providers, model] = await Promise.all([
+      const [providers, model, backendConfig] = await Promise.all([
         getProvidersStatus(),
         getModelStatus(),
+        import('../api/lilim').then(api => api.getModelConfig()),
       ]);
+
+      // Sync backend config to local state and localStorage
+      if (backendConfig && Object.keys(backendConfig).length > 0) {
+        const merged = { ...loadConfig(), ...backendConfig };
+        setConfig(merged);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        if (merged.strategy) setStrategy(merged.strategy as any);
+      }
+
       if (providers) setProviderStatuses(providers.providers);
       if (model) {
         setModelStatus({

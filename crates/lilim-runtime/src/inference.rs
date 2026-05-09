@@ -22,60 +22,43 @@ use tracing::{info, warn};
 
 use crate::AppState;
 
-/// Handle POST /chat with smart local/remote routing.
+/// Handle POST /chat by always proxying to the Python brain so the Agent Loop runs.
 pub async fn handle_chat_routed(
     State(state): State<Arc<AppState>>,
     body: Value,
 ) -> Response {
-    let message = body.get("message").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let session_id = body.get("session_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default")
-        .to_string();
-
-    // Ask the Python brain for routing decision (fast, no LLM call)
-    let route = get_route_decision(&state, &message, &session_id).await;
-
-    // Decide: local Candle inference or proxy to Python brain
-    let has_engine = state.inference_engine.as_ref().map(|e| e.is_available()).unwrap_or(false);
-    let remote_available = route.as_ref()
-        .and_then(|r| r.get("remote_available"))
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    let tier = route.as_ref()
-        .and_then(|r| r.get("tier"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("local");
-
-    // Force local if: (a) router says local, OR (b) engine available but no remote providers
-    let use_local = tier == "local" || tier.starts_with("local")
-        || (has_engine && !remote_available);
-
-    if use_local {
-        if let Some(ref engine) = state.inference_engine {
-            if engine.is_available() {
-                // Build full prompt with system prompt + memory context
-                let full_prompt = build_local_prompt(&route, &message);
-                let max_tokens = state.inference_engine
-                    .as_ref()
-                    .map(|_| lilim_inference::InferenceConfig::default().max_gen_tokens)
-                    .unwrap_or(256);
-                info!("Routing to local Phi-2 engine (max {} tokens)", max_tokens);
-                return stream_local_inference(engine, &full_prompt, max_tokens).await;
-            }
-        }
-        // Fall through to Python brain if local engine unavailable
-        warn!("Local routing requested but engine unavailable — falling back to Python brain");
-    }
-
-    // Remote: proxy the full request to the Python brain (which uses FreeRouter)
-    info!("Routing to Python brain (remote providers)");
+    // ALWAYS route to Python brain so the ReAct loop runs for all requests.
     let url = format!("{}/chat", state.brain_base_url);
     crate::proxy::proxy_sse_stream(&url, &state.http_client, body).await
 }
 
+/// Handle POST /internal/generate from the Python brain for local model requests.
+pub async fn handle_internal_generate(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Response {
+    let prompt = body.get("prompt").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let max_tokens = body.get("max_tokens").and_then(|v| v.as_u64()).unwrap_or(256) as usize;
+
+    if let Some(ref engine) = state.inference_engine {
+        if engine.is_available() {
+            info!("Local Phi-2 engine generating {} tokens", max_tokens);
+            return stream_local_inference(engine, &prompt, max_tokens).await;
+        }
+    }
+    
+    // Return error SSE if engine not available
+    let events = format!(
+        "data: {}\n\ndata: {}\n\n",
+        serde_json::json!({"type": "token", "text": "*Local engine unavailable*"}),
+        serde_json::json!({"type": "done", "provider": "LOCAL"})
+    );
+    sse_response(Body::from(events))
+}
+
 /// Ask the Python brain's /route endpoint for a routing decision.
 /// Returns None if brain is unreachable (graceful degradation to remote).
+#[allow(dead_code)]
 async fn get_route_decision(state: &AppState, message: &str, session_id: &str) -> Option<Value> {
     let url = format!("{}/route", state.brain_base_url);
     let body = json!({"message": message, "session_id": session_id});
@@ -111,6 +94,7 @@ async fn get_route_decision(state: &AppState, message: &str, session_id: &str) -
 ///
 /// We therefore pass only the raw user message. The Phi-2 instruct format
 /// (applied in phi2.rs) already provides enough framing for good answers.
+#[allow(dead_code)]
 fn build_local_prompt(route: &Option<Value>, original_message: &str) -> String {
     // If the brain provided an enhanced message (with memory context), use it.
     // Otherwise fall back to the original message.

@@ -112,8 +112,11 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
           const data = JSON.parse(jsonStr);
           if (data.type === 'token' && data.text) {
             yield { role: 'assistant', type: 'message', content: data.text };
+          } else if (data.type === 'tool_call') {
+            // Auto-executed command from the ReAct agent loop — show as inline status
+            yield { role: 'assistant', type: 'message', content: `\n*⚡ Executing: \`${data.text}\`*\n` };
           } else if (data.type === 'status') {
-            // Agentic status — show as italic
+            // Legacy status messages
             yield { role: 'assistant', type: 'message', content: `\n*${data.text}*\n` };
           } else if (data.type === 'done') {
             yield { role: 'assistant', type: 'message', content: '', end: true, provider: data.provider };
@@ -202,9 +205,6 @@ export async function registerApiKey(
   }
 }
 
-/**
- * Save model config to backend (hot-reload).
- */
 export async function saveModelConfig(config: Record<string, unknown>): Promise<void> {
   try {
     await fetch(`${API_BASE_URL}/settings/model-config`, {
@@ -214,6 +214,19 @@ export async function saveModelConfig(config: Record<string, unknown>): Promise<
     });
   } catch {
     // best-effort
+  }
+}
+
+/**
+ * Get model config from backend.
+ */
+export async function getModelConfig(): Promise<Record<string, string>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/settings/model-config`);
+    if (!response.ok) return {};
+    return response.json();
+  } catch {
+    return {};
   }
 }
 
