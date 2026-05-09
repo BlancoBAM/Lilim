@@ -43,18 +43,17 @@ while [[ $# -gt 0 ]]; do
 done
 
   # The CI pipeline uploads the binary as 'lilim-ui-executable'
-  TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -name "lilim-ui-executable" | head -n 1)
-  if [ -z "$TAURI_BIN" ]; then
-    # Fallback to case-insensitive find
-    TAURI_BIN=$(find "$TAURI_BUNDLE_DIR" -type f -iname "lilim" | head -n 1)
-  fi
-  if [ -z "$TAURI_BIN" ]; then
-    # Fallback to local dev path (case insensitive)
+  TAURI_BIN_FOUND=$(find "${TAURI_BUNDLE_DIR:-.}" -type f -name "lilim-ui-executable" | head -n 1)
+  if [ -n "$TAURI_BIN_FOUND" ]; then
+    TAURI_BIN="$TAURI_BIN_FOUND"
+  elif [ -z "${TAURI_BIN:-}" ] || [ ! -x "$TAURI_BIN" ]; then
+    # Fallback to case-insensitive find in local release dir
     TAURI_BIN=$(find "${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -iname "lilim" | head -n 1)
+    if [ -z "$TAURI_BIN" ]; then
+      # Absolute default
+      TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
+    fi
   fi
-  # Default local dev path
-  TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
-fi
 
 ## Build real runtime binary into the package (require it to be present)
 if [ -x "$RUNTIME_BIN" ]; then
