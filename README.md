@@ -97,7 +97,7 @@ sudo dpkg -i lilim_*.deb
 # Launch 'Lilim' from your app menu or press Ctrl+Shift+L
 ```
 
-### Option B: AppImage — Portable
+### O̶p̶t̶i̶o̶n̶ B̶:̶ A̶p̶p̶I̶m̶a̶g̶e̶ (NOT WORKING CURRENTLY-Included only in case someone wants to fix it to use outside Lilith)
 Standalone executable including the AI model and Python environment. No root required.
 ```bash
 chmod +x lilim_*.AppImage
