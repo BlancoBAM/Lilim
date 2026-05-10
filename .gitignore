@@ -50,3 +50,5 @@ scratch.rs
 con.txt
 MASTER_PLAN.md
 CLAUDE.md
+workflows/
+scripts/
