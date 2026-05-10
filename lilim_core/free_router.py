@@ -325,6 +325,7 @@ class FreeRouter:
         self._load_config()
         self._failure_counts: dict = {}   # provider → consecutive failures
         self._last_success: dict = {}     # provider → timestamp of last success
+        self._last_provider_idx = 0       # For round-robin
 
     def _load_config(self):
         """Load config and apply API keys from config file."""
@@ -448,16 +449,31 @@ class FreeRouter:
             yield ("*litellm not installed — pip install litellm*", True, "none")
             return
 
+        balancing = self.config.get("balancing_strategy", "failover")
         configured = self.get_configured_providers()
         if not configured:
             yield (self._no_provider_message(), True, "none")
             return
 
-        for provider in configured:
+        # Determine start index for search
+        start_idx = 0
+        if balancing == "round-robin":
+            start_idx = (self._last_provider_idx + 1) % len(configured)
+        
+        # Try providers starting from start_idx
+        tried_count = 0
+        current_idx = start_idx
+        
+        while tried_count < len(configured):
+            provider = configured[current_idx]
+            tried_count += 1
+            
+            # Check for backoff
             failures = self._failure_counts.get(provider.name, 0)
             if failures >= 3:
                 last_fail = self._last_success.get(f"fail_{provider.name}", 0)
                 if time.time() - last_fail < 300:
+                    current_idx = (current_idx + 1) % len(configured)
                     continue
                 self._failure_counts[provider.name] = 0
 
@@ -467,37 +483,35 @@ class FreeRouter:
                 provider, model_str, messages, stream=True, max_tokens=max_tokens
             )
 
-            logger.info(f"Trying provider: {provider.name} / {model_str}")
+            logger.info(f"Trying provider: {provider.name} ({balancing}) / {model_str}")
             try:
                 stream = await acompletion(**kwargs)
                 async for chunk in stream:
                     delta = chunk.choices[0].delta.content or ""
                     if delta:
                         yield (delta, False, provider.name)
+                
                 self.record_success(provider.name)
+                self._last_provider_idx = current_idx
                 return  # Done — don't try next provider
 
             except Exception as e:
                 err_str = str(e).lower()
                 self.record_failure(provider.name)
-
-                # Decide if we should try next provider or give up
+                
+                # If rate limited or auth error, try next provider in loop
                 if any(sig in err_str for sig in [
                     "rate limit", "429", "quota", "exceeded",
-                    "insufficient_quota", "too many requests"
+                    "insufficient_quota", "too many requests",
+                    "auth", "401", "403", "invalid api key", "unauthorized",
+                    "timeout", "timed out", "connection"
                 ]):
-                    logger.warning(f"{provider.name} rate limited — trying next provider")
-                    continue
-                elif any(sig in err_str for sig in [
-                    "auth", "401", "403", "invalid api key", "unauthorized"
-                ]):
-                    logger.error(f"{provider.name} auth error — key may be invalid")
-                    continue
-                elif any(sig in err_str for sig in ["timeout", "timed out", "connection"]):
-                    logger.warning(f"{provider.name} timeout — trying next provider")
+                    logger.warning(f"Provider {provider.name} failed — trying next in cycle")
+                    current_idx = (current_idx + 1) % len(configured)
                     continue
                 else:
-                    logger.error(f"{provider.name} unexpected error: {e}")
+                    # For other errors, we might want to fail the request or try next
+                    current_idx = (current_idx + 1) % len(configured)
                     continue
 
         # All providers exhausted

@@ -592,9 +592,28 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
 
         configured = _free_router.get_configured_providers() if _free_router else []
 
+        # Routing decision: local vs remote
+        use_local = len(configured) == 0
+        
+        # If remote is available, check strategy
+        if not use_local and MODEL_CONFIG_PATH.exists():
+            try:
+                with open(MODEL_CONFIG_PATH) as f:
+                    ui_cfg = json.load(f)
+                    strategy = ui_cfg.get("strategy", "local-first")
+                    if strategy == "local-first":
+                        # Use router to check complexity
+                        comp = _router._estimate_complexity(message, enhanced["category"])
+                        if comp < _router.config.get("complexity_threshold", 0.6):
+                            use_local = True
+                    elif strategy == "local-only":
+                        use_local = True
+            except Exception:
+                pass
+
         stream_gen = (
             local_stream_generator()
-            if len(configured) == 0
+            if use_local
             else _free_router.call_stream(history, enhanced["category"], max_tokens=1024)
         )
 

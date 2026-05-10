@@ -1,0 +1,247 @@
+name: Build & Package Lilim
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # ── Python Tests ─────────────────────────────────────────────────────────────
+  test-python:
+    name: Python Brain Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn pydantic "litellm>=1.0" pyyaml
+
+      - name: Run Python unit tests
+        run: python -m unittest discover -s tests -v
+        working-directory: ${{ github.workspace }}
+
+  # ── Rust Build ──────────────────────────────────────────────────────────────
+  build-rust:
+    name: Build Rust Runtime
+    runs-on: ubuntu-22.04
+    needs: test-python
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config libssl-dev \
+            libwebkit2gtk-4.1-dev librsvg2-dev \
+            patchelf
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build lilim-runtime (release)
+        run: cargo build --release -p lilim-runtime
+        env:
+          RUSTFLAGS: "-C target-cpu=native"
+
+      - name: Upload lilim-runtime binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lilim-runtime
+          path: target/release/lilim-runtime
+
+  # ── Tauri Desktop Build ─────────────────────────────────────────────────────
+  build-tauri:
+    name: Build Tauri Desktop App
+    runs-on: ubuntu-22.04
+    needs: [test-python, build-rust]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+            libappindicator3-dev patchelf
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: lilim_desktop/package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci
+        working-directory: lilim_desktop
+
+      - name: Build Tauri app
+        run: npm run tauri build
+        working-directory: lilim_desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Verify and Locate Tauri binary
+        run: |
+          # Find the executable in the release dir.
+          # It's usually 'Lilim' or 'tauri-applilim-desktop'
+          BIN_PATH=$(find lilim_desktop/src-tauri/target/release/ -maxdepth 2 -type f -executable -not -name "*.so" -not -name "*.d" | head -n 1)
+          if [ -z "$BIN_PATH" ]; then
+            echo "ERROR: Could not find Tauri binary in target/release/"
+            exit 1
+          fi
+          echo "Found binary: $BIN_PATH"
+          cp "$BIN_PATH" ./lilim-ui-executable
+
+      - name: Upload Tauri binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lilim-ui
+          path: ./lilim-ui-executable
+
+  # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
+  bundle-model:
+    name: Download & Bundle Phi-2 Model
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Phi-2 model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: /tmp/phi2-model/
+          key: phi2-gguf-thebloke-v2
+
+      - name: Download Phi-2 GGUF from HuggingFace
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/phi2-model
+          pip install huggingface_hub
+          python3 -c "
+          from huggingface_hub import hf_hub_download
+          import os
+
+          dest = '/tmp/phi2-model'
+
+          # Download GGUF
+          try:
+              hf_hub_download(
+                  repo_id='TheBloke/phi-2-GGUF',
+                  filename='phi-2.Q4_K_M.gguf',
+                  local_dir=dest
+              )
+              print('Downloaded: phi-2.Q4_K_M.gguf')
+          except Exception as e:
+              print(f'Warning: could not download gguf: {e}')
+
+          # Download tokenizer files
+          for f in ['tokenizer.json', 'tokenizer_config.json']:
+              try:
+                  hf_hub_download(
+                      repo_id='microsoft/phi-2',
+                      filename=f,
+                      local_dir=dest
+                  )
+                  print(f'Downloaded: {f}')
+              except Exception as e:
+                  print(f'Warning: could not download {f}: {e}')
+          "
+
+      - name: Verify model files
+        run: |
+          ls -lh /tmp/phi2-model/
+          du -sh /tmp/phi2-model/
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phi2-model-gguf
+          path: /tmp/phi2-model/
+          retention-days: 30
+
+  # ── Build Packages ──────────────────────────────────────────────────────────
+  build-release:
+    name: Build .deb & AppImage
+    runs-on: ubuntu-22.04
+    needs: [ build-rust, build-tauri, bundle-model ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download runtime
+        uses: actions/download-artifact@v4
+        with:
+          name: lilim-runtime
+          path: bin/runtime
+
+      - name: Download UI
+        uses: actions/download-artifact@v4
+        with:
+          name: lilim-ui
+          path: bin/ui
+
+      - name: Download Model
+        uses: actions/download-artifact@v4
+        with:
+          name: phi2-model-gguf
+          path: model
+
+      - name: Build Debian package
+        run: |
+          chmod +x packaging/build_deb.sh
+          bash packaging/build_deb.sh \
+            --runtime bin/runtime/lilim-runtime \
+            --tauri-bundle bin/ui/ \
+            --model-dir model/
+        env:
+          PHI2_MODEL_DIR: model/
+
+      - name: Build AppImage
+        run: |
+          chmod +x packaging/build_appimage.sh
+          # Build AppImage from the .deb we just created
+          DEB_FILE=$(ls dist/*.deb | head -n 1)
+          bash packaging/build_appimage.sh "$DEB_FILE"
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: lilim-linux-amd64-packages
+          path: dist/*
+
+      - name: Create Release (on main push)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "Lilim Build ${{ github.run_number }}"
+          files: |
+            dist/*.deb
+            dist/*.AppImage
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

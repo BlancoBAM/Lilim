@@ -275,6 +275,13 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [strategy, setStrategy] = useState<'local-first' | 'free-first' | 'quality-first'>(
     (config.strategy as 'local-first' | 'free-first' | 'quality-first') ?? 'local-first'
   );
+  const [balancing, setBalancing] = useState<'failover' | 'round-robin'>(
+    (config.balancing_strategy as 'failover' | 'round-robin') ?? 'failover'
+  );
+  const [strategySaving, setStrategySaving] = useState(false);
+  const [strategySaved, setStrategySaved] = useState(false);
+  const [cfSaving, setCfSaving] = useState(false);
+  const [cfSaved, setCfSaved] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     setLoading(true);
@@ -320,10 +327,33 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   };
 
   const handleStrategySave = async () => {
-    const updated = { ...config, strategy };
-    setConfig(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    await saveModelConfig(updated);
+    setStrategySaving(true);
+    setStrategySaved(false);
+    try {
+      const updated = { ...config, strategy, balancing_strategy: balancing };
+      setConfig(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      await saveModelConfig(updated);
+      setStrategySaved(true);
+      setTimeout(() => setStrategySaved(false), 3000);
+    } finally {
+      setStrategySaving(false);
+    }
+  };
+
+  const handleCfSave = async (accountId: string) => {
+    setCfSaving(true);
+    setCfSaved(false);
+    try {
+      const updated = { ...config, cloudflareAccountId: accountId };
+      setConfig(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      await saveModelConfig(updated);
+      setCfSaved(true);
+      setTimeout(() => setCfSaved(false), 3000);
+    } finally {
+      setCfSaving(false);
+    }
   };
 
   const configuredCount = providerStatuses.filter(p => p.configured).length;
@@ -438,11 +468,37 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             {strategy === 'free-first' && 'Always tries free providers before paid ones. Good if local is slow.'}
             {strategy === 'quality-first' && 'Uses the best available model for every query.'}
           </p>
+          <div className="pt-2 border-t border-orange-500/10">
+            <p className="text-[10px] text-orange-200/60 mb-2 font-medium">Multi-Provider Balancing</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {(['failover', 'round-robin'] as const).map(b => (
+                <button
+                  key={b}
+                  onClick={() => setBalancing(b)}
+                  className={`py-1.5 rounded-lg text-[10px] transition-colors ${
+                    balancing === b ? 'bg-orange-700/60 text-white border border-orange-500/40' : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                  }`}
+                >
+                  {b === 'failover' ? '🛡 Sequential Failover' : '⚖ Balanced (Round-Robin)'}
+                </button>
+              ))}
+            </div>
+            <p className="text-[9px] text-gray-600 mt-1.5 leading-tight">
+              {balancing === 'failover' ? 'Uses one provider until exhausted, then tries the next. Maximizes stability.' : 'Cycles through all providers per request. Maximizes aggregate rate limits.'}
+            </p>
+          </div>
+
           <button
             onClick={handleStrategySave}
-            className="w-full py-1.5 bg-orange-800/40 hover:bg-orange-800/60 text-orange-300 text-xs rounded-lg transition-colors"
+            disabled={strategySaving}
+            className={`w-full py-1.5 flex items-center justify-center gap-2 text-xs rounded-lg transition-colors mt-2 ${
+              strategySaved 
+                ? 'bg-green-700 text-white' 
+                : 'bg-orange-800/40 hover:bg-orange-800/60 text-orange-300'
+            }`}
           >
-            Save Strategy
+            {strategySaving ? <RefreshCw size={12} className="animate-spin" /> : strategySaved ? <CheckCircle size={12} /> : <Save size={12} />}
+            {strategySaved ? 'Settings Saved!' : 'Save Routing Settings'}
           </button>
         </Section>
 
@@ -492,17 +548,27 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           <div className="rounded-lg border border-orange-500/10 bg-black/20 p-3">
             <p className="text-xs text-orange-300 mb-1">Cloudflare Account ID</p>
             <p className="text-[10px] text-gray-500 mb-2">Required alongside the Cloudflare API token.</p>
-            <input
-              type="text"
-              placeholder="Your Cloudflare Account ID"
-              defaultValue={config['cloudflareAccountId'] ?? ''}
-              onChange={e => {
-                const updated = { ...config, cloudflareAccountId: e.target.value };
-                setConfig(updated);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-              }}
-              className="w-full bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none placeholder-gray-600"
-            />
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                placeholder="Your Cloudflare Account ID"
+                defaultValue={config['cloudflareAccountId'] ?? ''}
+                id="cf-account-id"
+                className="flex-1 bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none placeholder-gray-600"
+              />
+              <button
+                onClick={() => {
+                  const val = (document.getElementById('cf-account-id') as HTMLInputElement)?.value;
+                  handleCfSave(val);
+                }}
+                disabled={cfSaving}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  cfSaved ? 'bg-green-700 text-white' : 'bg-orange-800/40 hover:bg-orange-800/60 text-orange-300'
+                }`}
+              >
+                {cfSaving ? <RefreshCw size={12} className="animate-spin" /> : cfSaved ? <CheckCircle size={12} /> : <Save size={12} />}
+              </button>
+            </div>
           </div>
         )}
 

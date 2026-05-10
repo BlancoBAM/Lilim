@@ -87,36 +87,28 @@
 
 ## Installation
 
-### Lilith Linux (Recommended)
+Lilim is optimized for Lilith Linux (Ubuntu 22.04+). Choose your preferred format:
 
-Download the latest `.deb` from [Releases](https://github.com/BlancoBAM/Lilim/releases) and install:
-
+### Option A: Debian Package (.deb) — Recommended
+Standard installation with automatic background service management.
 ```bash
+# Download from Releases and install
 sudo dpkg -i lilim_*.deb
-sudo systemctl enable --now lilith-ai
+# Launch 'Lilim' from your app menu or press Ctrl+Shift+L
 ```
 
-Press **`Ctrl+Shift+L`** to launch.
+### Option B: AppImage — Portable
+Standalone executable including the AI model and Python environment. No root required.
+```bash
+chmod +x lilim_*.AppImage
+./lilim_*.AppImage
+```
 
-### Build from Source
-
-**Prerequisites:**
-- Linux (Ubuntu 22.04+ / Lilith Linux)
-- Rust 1.75+ — [rustup.rs](https://rustup.rs)
-- Python 3.10+
-- Node.js 18+
-
+### Option C: Build from Source
+**Prerequisites:** Rust 1.75+, Python 3.10+, Node.js 18+.
 ```bash
 git clone https://github.com/BlancoBAM/Lilim.git
 cd Lilim
-
-# Install system dependencies
-sudo apt install -y \
-  python3-pip python3-venv nodejs npm \
-  pkg-config libssl-dev \
-  libwebkit2gtk-4.1-dev librsvg2-dev
-
-# Build and install (takes ~5 min first time)
 ./local_install.sh
 ```
 
@@ -286,13 +278,14 @@ Lilim/
 
 ## CI/CD
 
-Every push to `main` triggers:
+Every push to `main` triggers an automated pipeline:
 
-1. **Python Tests** — `unittest` suite
-2. **Rust Build** — `cargo build --release -p lilim-runtime`
-3. **Tauri Desktop Build** — `npm run tauri build`
-4. **Debian Package** — assembled via `packaging/build_deb.sh`
-5. **GitHub Release** — `.deb` auto-published to Releases
+1. **Python Tests** — Comprehensive brain unit tests.
+2. **Rust Build** — Optimized runtime gateway build.
+3. **Tauri Desktop Build** — Frontend and native shell build.
+4. **Debian Package** — Standard system installer creation.
+5. **AppImage Build** — Portable, zero-dependency bundle creation.
+6. **GitHub Release** — Both `.deb` and `.AppImage` are auto-published.
 
 ---
 
