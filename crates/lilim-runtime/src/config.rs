@@ -80,8 +80,9 @@ fn config_candidates() -> Vec<PathBuf> {
 
     // AppImage / Portable mode: check relative to LILIM_INSTALL
     if let Ok(root) = std::env::var("LILIM_INSTALL") {
-        paths.push(PathBuf::from(root).join("etc/lilith/lilim.yaml"));
-        paths.push(PathBuf::from(root).join("config/lilim.yaml"));
+        let root_path = PathBuf::from(root);
+        paths.push(root_path.join("etc/lilith/lilim.yaml"));
+        paths.push(root_path.join("config/lilim.yaml"));
     }
 
     paths.push(PathBuf::from("/etc/lilith/lilim.yaml"));
