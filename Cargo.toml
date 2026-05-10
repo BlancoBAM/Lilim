@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/lilim-runtime",
-    "crates/lilim-inference", "scratch_test",
+    "crates/lilim-inference",
 ]
 exclude = ["lilim_desktop/src-tauri"]
 resolver = "2"
