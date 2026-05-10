@@ -30,7 +30,7 @@ impl BrainProcess {
 
     /// Spawn the Python brain and wait until its /health endpoint responds.
     pub fn start(&mut self) -> Result<()> {
-        let python = find_python()?;
+        let python = find_python(&self.install_root)?;
         let module = self.install_root.join("lilim_core").join("server.py");
 
         if !module.exists() {
@@ -129,8 +129,18 @@ impl Drop for BrainProcess {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-fn find_python() -> Result<PathBuf> {
-    // Prefer venv python, then system python3
+fn find_python(install_root: &PathBuf) -> Result<PathBuf> {
+    // 1. Try bundled venv in install_root
+    let venv_python = install_root.join("venv").join("bin").join("python3");
+    if venv_python.exists() {
+        return Ok(venv_python);
+    }
+    let venv_python_alt = install_root.join("venv").join("bin").join("python");
+    if venv_python_alt.exists() {
+        return Ok(venv_python_alt);
+    }
+
+    // 2. Try system-wide paths
     let candidates = [
         "/usr/lib/lilim/venv/bin/python3",
         "/usr/lib/lilim/venv/bin/python",

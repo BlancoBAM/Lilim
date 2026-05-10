@@ -30,15 +30,13 @@ HERE="$(dirname "$(readlink -f "${0}")")"
 # Setup environment
 export LILIM_INSTALL="$HERE/usr/lib/lilim"
 export PATH="$HERE/usr/bin:$PATH"
-export LILIM_BRAIN_PORT=5005
+export LILIM_BRAIN_PORT=8081
 
 echo "Starting Lilim AppImage environment..."
 
 # 1. Start the Rust runtime in the background
 # It will automatically spawn the Python brain.
-# We tell it to use the system python if no venv is found, 
-# or we can point it to a bundled venv.
-"$HERE/usr/bin/lilim-runtime" --port 5005 &
+"$HERE/usr/bin/lilim-runtime" --port 8080 &
 RUNTIME_PID=$!
 
 # Ensure cleanup on exit
@@ -50,7 +48,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM EXIT
 
 # 2. Start the UI
-# The UI will connect to the runtime at localhost:5005
+# The UI will connect to the runtime at localhost:8080
 "$HERE/usr/bin/lilim" "$@"
 EOF
 

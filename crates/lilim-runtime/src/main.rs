@@ -65,7 +65,18 @@ async fn main() -> anyhow::Result<()> {
     info!("══════════════════════════════════════");
 
     // Load config
-    let cfg = config::load()?;
+    let mut cfg = config::load()?;
+
+    // Override port from CLI if present: --port <N>
+    let args: Vec<String> = std::env::args().collect();
+    for i in 0..args.len() {
+        if args[i] == "--port" && i + 1 < args.len() {
+            if let Ok(p) = args[i + 1].parse::<u16>() {
+                cfg.server.port = p;
+            }
+        }
+    }
+
     let bind_addr = format!("{}:{}", cfg.server.host, cfg.server.port);
     let brain_port = cfg.brain.port;
     let brain_base_url = format!("http://{}:{}", cfg.brain.host, brain_port);
