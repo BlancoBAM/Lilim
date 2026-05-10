@@ -10,6 +10,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   # ── Python Tests ─────────────────────────────────────────────────────────────
   test-python:
@@ -220,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lilim-linux-amd64-deb
-          path: dist/lilim_*.deb
+          path: dist/*.deb
 
       - name: Create Release (on main push)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -228,7 +232,7 @@ jobs:
         with:
           tag_name: "build-${{ github.run_number }}"
           name: "Lilim Build ${{ github.run_number }}"
-          files: dist/lilim_*.deb
+          files: dist/*.deb
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

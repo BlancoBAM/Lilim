@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="${ROOT_DIR:-$(pwd)}"
 DEB_ROOT="$ROOT_DIR/packaging/deb_root"
 DEB_OUTPUT="$ROOT_DIR/dist"
-DEB_NAME="lilim-linux-component.deb"
+DEB_NAME="lilim_0.1.0_amd64.deb"
 
 echo "Building Debian package into $DEB_OUTPUT/$DEB_NAME"
 mkdir -p "$DEB_ROOT" "$DEB_OUTPUT"
