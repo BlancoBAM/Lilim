@@ -76,9 +76,15 @@ impl Default for SecurityConfig {
 
 /// Candidate config file paths in priority order.
 fn config_candidates() -> Vec<PathBuf> {
-    let mut paths = vec![
-        PathBuf::from("/etc/lilith/lilim.yaml"),
-    ];
+    let mut paths = Vec::new();
+
+    // AppImage / Portable mode: check relative to LILIM_INSTALL
+    if let Ok(root) = std::env::var("LILIM_INSTALL") {
+        paths.push(PathBuf::from(root).join("etc/lilith/lilim.yaml"));
+        paths.push(PathBuf::from(root).join("config/lilim.yaml"));
+    }
+
+    paths.push(PathBuf::from("/etc/lilith/lilim.yaml"));
 
     if let Some(config_dir) = dirs::config_dir() {
         paths.push(config_dir.join("lilim").join("lilim.yaml"));

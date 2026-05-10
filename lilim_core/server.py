@@ -55,17 +55,38 @@ from lilim_core.memory_manager import MemoryManager
 from lilim_core.free_router import FreeRouter, register_api_key, detect_provider_from_key
 
 # ── Config ────────────────────────────────────────────────────
-CONFIG_PATHS = [
-    Path("/etc/lilith/lilim-identity.json"),
-    Path.home() / ".config" / "lilim" / "lilim-identity.json",
-    _HERE.parent / "config" / "lilim-identity.json",
-]
+def _get_config_paths():
+    paths = []
+    if "LILIM_INSTALL" in os.environ:
+        root = Path(os.environ["LILIM_INSTALL"])
+        paths.append(root / "etc/lilith/lilim-identity.json")
+        paths.append(root / "config/lilim-identity.json")
+    
+    paths.extend([
+        Path("/etc/lilith/lilim-identity.json"),
+        Path.home() / ".config" / "lilim" / "lilim-identity.json",
+        _HERE.parent / "config" / "lilim-identity.json",
+    ])
+    return paths
 
-RESPONSES_YAML_PATHS = [
-    Path("/usr/share/lilim/lilim-responses.yaml"),
-    Path("/etc/lilith/lilim-responses.yaml"),
-    _HERE.parent / "config" / "lilim-responses.yaml",
-]
+CONFIG_PATHS = _get_config_paths()
+
+def _get_responses_paths():
+    paths = []
+    if "LILIM_INSTALL" in os.environ:
+        root = Path(os.environ["LILIM_INSTALL"])
+        paths.append(root / "usr/share/lilim/lilim-responses.yaml")
+        paths.append(root / "etc/lilith/lilim-responses.yaml")
+        paths.append(root / "config/lilim-responses.yaml")
+
+    paths.extend([
+        Path("/usr/share/lilim/lilim-responses.yaml"),
+        Path("/etc/lilith/lilim-responses.yaml"),
+        _HERE.parent / "config" / "lilim-responses.yaml",
+    ])
+    return paths
+
+RESPONSES_YAML_PATHS = _get_responses_paths()
 
 MODEL_CONFIG_PATH = Path.home() / ".config" / "lilim" / "model-config.json"
 PORT = int(os.environ.get("LILIM_BRAIN_PORT", "8081"))

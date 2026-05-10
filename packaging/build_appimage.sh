@@ -26,22 +26,34 @@ dpkg-deb -x "$DEB_FILE" "$APPDIR"
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/usr/bin/env bash
 HERE="$(dirname "$(readlink -f "${0}")")"
+LOG_FILE="/tmp/lilim-appimage.log"
 
 # Setup environment
 export LILIM_INSTALL="$HERE/usr/lib/lilim"
 export PATH="$HERE/usr/bin:$PATH"
 export LILIM_BRAIN_PORT=8081
+export RUST_LOG=info
 
-echo "Starting Lilim AppImage environment..."
+echo "$(date) - Starting Lilim AppImage..." > "$LOG_FILE"
 
 # 1. Start the Rust runtime in the background
 # It will automatically spawn the Python brain.
-"$HERE/usr/bin/lilim-runtime" --port 8080 &
+"$HERE/usr/bin/lilim-runtime" --port 8080 >> "$LOG_FILE" 2>&1 &
 RUNTIME_PID=$!
+
+# Wait for backend to be ready (health check)
+echo "Waiting for backend..." >> "$LOG_FILE"
+for i in {1..30}; do
+    if curl -s http://127.0.0.1:8080/health > /dev/null; then
+        echo "Backend ready." >> "$LOG_FILE"
+        break
+    fi
+    sleep 0.5
+done
 
 # Ensure cleanup on exit
 cleanup() {
-    echo "Shutting down Lilim components..."
+    echo "Shutting down Lilim components..." >> "$LOG_FILE"
     kill $RUNTIME_PID 2>/dev/null || true
     exit
 }
@@ -49,18 +61,36 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # 2. Start the UI
 # The UI will connect to the runtime at localhost:8080
-"$HERE/usr/bin/lilim" "$@"
+"$HERE/usr/bin/lilim" "$@" >> "$LOG_FILE" 2>&1
 EOF
 
 chmod +x "$APPDIR/AppRun"
 
 # 3. Add Desktop File & Icon to AppDir root (required by AppImage)
-cp "$APPDIR/usr/share/applications/lilim.desktop" "$APPDIR/"
-if [ -f "$APPDIR/usr/share/pixmaps/lilim.png" ]; then
-    cp "$APPDIR/usr/share/pixmaps/lilim.png" "$APPDIR/"
+# We copy from the installed paths and fix them
+DESKTOP_FILE="$APPDIR/usr/share/applications/lilim.desktop"
+if [ -f "$DESKTOP_FILE" ]; then
+    cp "$DESKTOP_FILE" "$APPDIR/lilim.desktop"
+    # Fix Exec and Icon for AppImage
+    sed -i 's|^Exec=.*|Exec=lilim|' "$APPDIR/lilim.desktop"
+    sed -i 's|^Icon=.*|Icon=lilim|' "$APPDIR/lilim.desktop"
+fi
+
+# Create a symlink for the Exec entry
+ln -sf AppRun "$APPDIR/lilim"
+
+# Handle Icon
+ICON_FILE="$APPDIR/usr/share/pixmaps/lilim.png"
+if [ -f "$ICON_FILE" ]; then
+    cp "$ICON_FILE" "$APPDIR/lilim.png"
 else
-    # Fallback to a generic icon if not found
-    touch "$APPDIR/lilim.png"
+    # Fallback: check if tauri built one in src-tauri
+    TAURI_ICON="$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png"
+    if [ -f "$TAURI_ICON" ]; then
+        cp "$TAURI_ICON" "$APPDIR/lilim.png"
+    else
+        touch "$APPDIR/lilim.png"
+    fi
 fi
 
 # 4. Handle Python dependencies inside the AppImage
