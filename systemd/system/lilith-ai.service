@@ -6,10 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=aegon
-Group=aegon
-ExecStart=/usr/bin/lilim-runtime
-WorkingDirectory=/home/aegon/.local/share/lilim
+# run-lilim.sh detects the desktop user at runtime — no hardcoded username
+ExecStart=/usr/lib/lilim/run-lilim.sh
 Restart=on-failure
 RestartSec=10
 TimeoutStartSec=90
@@ -19,7 +17,6 @@ TimeoutStopSec=30
 Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
-Environment=HOME=/home/aegon
 # Enable inference timing logs in journald
 Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
 
@@ -28,7 +25,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=full
 ProtectHome=no
-ReadWritePaths=/home/aegon /var/log/lilim /tmp
+ReadWritePaths=/home /var/log/lilim /tmp
 ReadOnlyPaths=/etc/lilith /usr/lib/lilim
 InaccessiblePaths=/root
 

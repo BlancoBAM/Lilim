@@ -12,7 +12,15 @@ mkdir -p "$DEB_ROOT" "$DEB_OUTPUT"
 set -x
 # Ensure a clean Debian layout exists
 rm -rf "$DEB_ROOT"/ || true
-mkdir -p "$DEB_ROOT/usr/local/bin" "$DEB_ROOT/DEBIAN" "$DEB_ROOT/etc/lilith" "$DEB_ROOT/usr/lib/lilim" || true
+mkdir -p \
+  "$DEB_ROOT/usr/local/bin" \
+  "$DEB_ROOT/DEBIAN" \
+  "$DEB_ROOT/etc/lilith" \
+  "$DEB_ROOT/usr/lib/lilim" \
+  "$DEB_ROOT/usr/bin" \
+  "$DEB_ROOT/usr/share/applications" \
+  "$DEB_ROOT/usr/share/pixmaps" \
+  "$DEB_ROOT/lib/systemd/system" || true
 
 RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
 TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/bundle/appimage/lilim_0.1.0_amd64.AppImage" # fallback
@@ -79,8 +87,29 @@ mkdir -p "$DEB_ROOT/etc/lilith"
 cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
 
 # Systemd Service
-mkdir -p "$DEB_ROOT/lib/systemd/system"
 cp "$ROOT_DIR/systemd/system/lilith-ai.service" "$DEB_ROOT/lib/systemd/system/"
+
+# User-agnostic runtime wrapper (resolves desktop user at service start)
+cat > "$DEB_ROOT/usr/lib/lilim/run-lilim.sh" << 'WRAPPER'
+#!/usr/bin/env bash
+set -e
+TARGET_USER=""
+for candidate in $(ls /home/ 2>/dev/null); do
+    if id "$candidate" &>/dev/null && [ "$candidate" != "root" ]; then
+        TARGET_USER="$candidate"
+        break
+    fi
+done
+TARGET_USER="${TARGET_USER:-lilith}"
+LILIM_HOME="/home/${TARGET_USER}/.local/share/lilim"
+mkdir -p "$LILIM_HOME"
+chown "${TARGET_USER}:${TARGET_USER}" "$LILIM_HOME" 2>/dev/null || true
+export HOME="/home/${TARGET_USER}"
+exec sudo -u "${TARGET_USER}" \
+    --preserve-env=LILIM_INSTALL,LILIM_VENV,PYTHONUNBUFFERED,RUST_LOG,HOME \
+    /usr/bin/lilim-runtime
+WRAPPER
+chmod +x "$DEB_ROOT/usr/lib/lilim/run-lilim.sh"
 
 # Model (if provided via --model-dir)
 if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
@@ -90,11 +119,19 @@ if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
 fi
 
 ## Desktop file & Icon
-mkdir -p "$DEB_ROOT/usr/share/applications"
-mkdir -p "$DEB_ROOT/usr/share/pixmaps"
-
-if [ -f "/home/aegon/Downloads/lilim-icon.png" ]; then
-    cp "/home/aegon/Downloads/lilim-icon.png" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
+# Search repo assets rather than a hardcoded user path
+ICON_SRC=""
+for icon_path in \
+    "$ROOT_DIR/assets/lilim-icon.png" \
+    "$ROOT_DIR/assets/icon.png" \
+    "$(find "$ROOT_DIR" -maxdepth 3 -name "lilim-icon.png" 2>/dev/null | head -1)"; do
+    if [ -n "$icon_path" ] && [ -f "$icon_path" ]; then
+        ICON_SRC="$icon_path"
+        break
+    fi
+done
+if [ -n "$ICON_SRC" ]; then
+    cp "$ICON_SRC" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
 fi
 
 cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
@@ -107,32 +144,52 @@ Type=Application
 Categories=Utility;
 DES
 
-# Debian control file
-cat > "$DEB_ROOT/DEBIAN/control" <<'CTRL'
+# Debian control file — libwebkit2gtk-4.0-37 does not exist on Ubuntu 26.04;
+# use 4.1-0 or libwebkitgtk-6.0-4 instead.
+cat > "$DEB_ROOT/DEBIAN/control" << 'CTRL'
 Package: lilim
 Version: 0.1.0
 Section: base
 Priority: optional
 Architecture: amd64
-Maintainer: Lilim Maintainers <maintainer@example.com>
-Depends: python3, python3-venv, systemd, libwebkit2gtk-4.0-37 | libwebkit2gtk-4.1-0
-Description: Lilim component for production-ready AI assistant
- This package includes the production-ready Lilim runtime components, the Python brain, and the Tauri desktop UI.
+Maintainer: BlancoBAM <blancobam@protonmail.com>
+Depends: python3, python3-venv, systemd, libwebkit2gtk-4.1-0 | libwebkitgtk-6.0-4
+Description: Lilim AI Assistant for Lilith Linux
+ Production-ready runtime: Rust backend proxy, Python AI brain,
+ and Tauri desktop UI. Includes embedded Phi-2 local inference model.
 CTRL
 
-cat > "$DEB_ROOT/DEBIAN/postinst" <<'POSTINST'
+# postinst — dynamically detects the primary desktop user; no hardcoded name
+cat > "$DEB_ROOT/DEBIAN/postinst" << 'POSTINST'
 #!/usr/bin/env bash
 set -e
-echo "Creating python venv for Lilim..."
+echo "[lilim] Setting up Lilim AI Assistant..."
+
+# Determine primary user dynamically
+TARGET_USER=""
+for candidate in $(ls /home/ 2>/dev/null); do
+    if id "$candidate" &>/dev/null && [ "$candidate" != "root" ]; then
+        TARGET_USER="$candidate"
+        break
+    fi
+done
+TARGET_USER="${TARGET_USER:-lilith}"
+echo "[lilim] Installing for user: $TARGET_USER"
+
+echo "[lilim] Creating Python virtual environment..."
 python3 -m venv /usr/lib/lilim/venv
-/usr/lib/lilim/venv/bin/pip install fastapi uvicorn litellm apscheduler
+/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler
+
 mkdir -p /var/log/lilim
-chown -R aegon:aegon /var/log/lilim
-mkdir -p /home/aegon/.local/share/lilim
-chown -R aegon:aegon /home/aegon/.local/share/lilim
+chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
+
+mkdir -p "/home/${TARGET_USER}/.local/share/lilim"
+chown -R "${TARGET_USER}:${TARGET_USER}" "/home/${TARGET_USER}/.local/share/lilim"
+
 systemctl daemon-reload
-systemctl enable lilith-ai.service
-systemctl restart lilith-ai.service
+systemctl enable lilith-ai.service || true
+systemctl restart lilith-ai.service || true
+echo "[lilim] Installation complete."
 POSTINST
 chmod +x "$DEB_ROOT/DEBIAN/postinst"
 
