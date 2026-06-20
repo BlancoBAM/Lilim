@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/lilith-icon.png" alt="Lilim" width="120" />
+  <img src="assets/lilith-icon.png" alt="Lilim" width="200" />
 </p>
 
 <h1 align="center">Lilim</h1>
