@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
+# local_install.sh — Build and install Lilim from source on this machine.
+# Run from the repo root: ./local_install.sh
 set -euo pipefail
-
-echo "=========================================="
-echo "Lilim Local Development Installation"
-echo "=========================================="
-echo
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKIP_UI=false
 
-# Parse flags
+echo "=========================================="
+echo "  Lilim — Local Build & Install"
+echo "=========================================="
+echo
+
 for arg in "$@"; do
     case "$arg" in
         --skip-ui) SKIP_UI=true ;;
@@ -17,57 +18,83 @@ for arg in "$@"; do
     esac
 done
 
-# 1. Build the Rust runtime (from workspace root)
-echo "[1/5] Building Rust runtime with Candle inference..."
-cargo build --release --manifest-path="$ROOT_DIR/Cargo.toml"
-echo "      ✓ Runtime built"
+# ── 1. Rust runtime ───────────────────────────────────────────
+echo "[1/5] Building Rust runtime..."
+cargo build --release --manifest-path="$ROOT_DIR/Cargo.toml" -p lilim-runtime
+echo "      ✓ Runtime built: $ROOT_DIR/target/release/lilim-runtime"
 
-# 2. Build the Tauri Desktop UI (unless --skip-ui)
+# ── 2. Tauri Desktop UI ───────────────────────────────────────
 if [ "$SKIP_UI" = true ]; then
-    echo "[2/5] Skipping Tauri Desktop UI build (--skip-ui)"
+    echo "[2/5] Skipping Tauri UI (--skip-ui)"
 else
     echo "[2/5] Building Tauri Desktop UI..."
     cd "$ROOT_DIR/lilim_desktop"
     npm install --silent 2>/dev/null
     npm run tauri build
     cd "$ROOT_DIR"
-    echo "      ✓ UI built"
+
+    # Find what Tauri actually produced
+    TAURI_BIN=""
+    for bin_name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+        found=$(find "$ROOT_DIR/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -name "$bin_name" 2>/dev/null | head -n 1)
+        if [ -n "$found" ]; then
+            TAURI_BIN="$found"
+            break
+        fi
+    done
+    if [ -z "$TAURI_BIN" ]; then
+        echo "ERROR: Tauri build succeeded but could not find the output binary." >&2
+        echo "       Searched: $ROOT_DIR/lilim_desktop/src-tauri/target/release/" >&2
+        exit 1
+    fi
+    echo "      ✓ UI built: $TAURI_BIN"
 fi
 
-# 3. Create the Debian package
+# ── 3. Debian package ─────────────────────────────────────────
 echo "[3/5] Building Debian package..."
-cd "$ROOT_DIR"
-./packaging/build_deb.sh
-echo "      ✓ Package built"
+export ROOT_DIR
+bash "$ROOT_DIR/packaging/build_deb.sh"
 
-# 4. Stop existing service (avoid port conflict)
-echo "[4/5] Stopping existing service..."
+DEB_FILE="$ROOT_DIR/dist/lilim_0.1.0_amd64.deb"
+if [ ! -f "$DEB_FILE" ]; then
+    echo "❌ Error: Debian package was not created at $DEB_FILE" >&2
+    exit 1
+fi
+echo "      ✓ Package built: $DEB_FILE"
+
+# ── 4. Stop any existing service ──────────────────────────────
+echo "[4/5] Stopping existing service (if any)..."
 sudo systemctl stop lilith-ai.service 2>/dev/null || true
 sleep 1
 
-# 5. Install the package
-echo "[5/5] Installing Lilim locally..."
-DEB_FILE="$ROOT_DIR/dist/lilim-linux-component.deb"
-if [ -f "$DEB_FILE" ]; then
-    sudo dpkg -i "$DEB_FILE"
+# ── 5. Install ────────────────────────────────────────────────
+echo "[5/5] Installing..."
+sudo dpkg -i "$DEB_FILE"
 
-    # Ensure updated Python brain is deployed
-    sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
-
-    # Sync service file from workspace (dpkg may have an older version)
-    # Key changes: CPUQuota removed (throttle kills tok/s), RUST_LOG added
-    sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /usr/lib/systemd/system/lilith-ai.service
-
-    echo "Restarting background service..."
-    sudo systemctl daemon-reload
-    sudo systemctl restart lilith-ai.service
-
-    echo "=========================================="
-    echo "✅ Success! Lilim is updated."
-    echo "Please completely close your current Lilim Desktop App and relaunch it."
-    echo
-    echo "Monitor service: journalctl -u lilith-ai.service -f"
-else
-    echo "❌ Error: Debian package was not built successfully."
-    exit 1
+# Ensure the Python venv exists and is populated
+if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
+    echo "      Setting up Python virtual environment..."
+    sudo python3 -m venv /usr/lib/lilim/venv
+    sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml
+    echo "      ✓ Python venv ready"
 fi
+
+# Sync live Python brain files (ensures latest code is installed)
+sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
+
+# Sync systemd service from workspace
+sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /lib/systemd/system/lilith-ai.service
+
+# Reload & restart
+sudo systemctl daemon-reload
+sudo systemctl enable lilith-ai.service
+sudo systemctl restart lilith-ai.service
+
+echo
+echo "=========================================="
+echo "✅ Lilim installed successfully!"
+echo
+echo "  Launch:          lilim"
+echo "  Or find it in:   Applications menu"
+echo "  Service logs:    journalctl -u lilith-ai -f"
+echo "=========================================="

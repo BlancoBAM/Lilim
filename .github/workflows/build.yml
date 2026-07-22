@@ -63,8 +63,9 @@ jobs:
 
       - name: Build lilim-runtime (release)
         run: cargo build --release -p lilim-runtime
-        env:
-          RUSTFLAGS: "-C target-cpu=native"
+        # NOTE: Do NOT use -C target-cpu=native — the binary runs on end-user
+        # hardware which may differ from the CI runner's CPU architecture.
+        # Using native causes SIGILL on machines without the same CPU features.
 
       - name: Upload lilim-runtime binary
         uses: actions/upload-artifact@v4
@@ -107,15 +108,30 @@ jobs:
 
       - name: Verify and Locate Tauri binary
         run: |
-          # Find the executable in the release dir.
-          # It's usually 'Lilim' or 'tauri-applilim-desktop'
-          BIN_PATH=$(find lilim_desktop/src-tauri/target/release/ -maxdepth 2 -type f -executable -not -name "*.so" -not -name "*.d" | head -n 1)
+          RELEASE_DIR="lilim_desktop/src-tauri/target/release"
+          # Search by known binary names first (most reliable)
+          BIN_PATH=""
+          for name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+            candidate="$RELEASE_DIR/$name"
+            if [ -f "$candidate" ] && [ -x "$candidate" ]; then
+              BIN_PATH="$candidate"
+              break
+            fi
+          done
+          # Generic fallback: find any ELF executable, excluding debug artifacts
           if [ -z "$BIN_PATH" ]; then
-            echo "ERROR: Could not find Tauri binary in target/release/"
+            BIN_PATH=$(find "$RELEASE_DIR" -maxdepth 1 -type f -executable \
+              ! -name "*.so" ! -name "*.d" ! -name ".cargo-lock" \
+              | head -n 1)
+          fi
+          if [ -z "$BIN_PATH" ]; then
+            echo "ERROR: Could not find Tauri binary"
+            ls -la "$RELEASE_DIR/"
             exit 1
           fi
           echo "Found binary: $BIN_PATH"
           cp "$BIN_PATH" ./lilim-ui-executable
+          chmod +x ./lilim-ui-executable
 
       - name: Upload Tauri binary
         uses: actions/upload-artifact@v4

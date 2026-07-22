@@ -87,34 +87,68 @@
 
 ## Installation
 
-Lilim is optimized for Lilith Linux (Ubuntu 22.04+). Choose your preferred format:
+> **Platform:** Lilim is built for **Lilith Linux** (Ubuntu 22.04/24.04 base). It should also work on any Ubuntu-based system.
 
-### Option A: Debian Package (.deb) — Recommended
-Standard installation with automatic background service management.
+### Method 1 — Build & Install from Source (Recommended)
+
+This is the most reliable method. One command builds everything and installs it.
+
+**Prerequisites (install once):**
 ```bash
-# Download from Releases and install
-sudo dpkg -i lilim_*.deb
-# Launch 'Lilim' from your app menu or press Ctrl+Shift+L
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Node.js, Tauri dependencies
+sudo apt install -y nodejs npm python3-venv \
+    libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+    libappindicator3-dev patchelf
 ```
 
-### O̶p̶t̶i̶o̶n̶ B̶:̶ A̶p̶p̶I̶m̶a̶g̶e̶ (NOT WORKING CURRENTLY-Included only in case someone wants to fix it to use outside Lilith)
-Standalone executable including the AI model and Python environment. No root required.
-```bash
-chmod +x lilim_*.AppImage
-./lilim_*.AppImage
-```
-
-### Option C: Build from Source
-**Prerequisites:** Rust 1.75+, Python 3.10+, Node.js 18+.
+**Install Lilim:**
 ```bash
 git clone https://github.com/BlancoBAM/Lilim.git
 cd Lilim
 ./local_install.sh
 ```
 
-The script builds the Rust runtime, Tauri desktop app, and Python brain, then installs and starts the `lilith-ai` systemd service.
+The script will:
+1. Build the Rust runtime (`lilim-runtime`)
+2. Build the Tauri desktop app
+3. Create a Debian package with the icon and service files
+4. Install it system-wide
+5. Start the `lilith-ai` background service automatically
 
-> **First launch:** Lilim will download the Phi-2 GGUF model (~1.7 GB, one-time). Subsequent starts load from disk in ~10s.
+**Launch:**
+```bash
+lilim
+# or press Ctrl+Shift+L from the desktop
+```
+
+---
+
+### Method 2 — Download from GitHub Releases
+
+Pre-built `.deb` packages are available from [Releases](https://github.com/BlancoBAM/Lilim/releases).
+
+> ⚠️ **Note:** Pre-built binaries are compiled on GitHub Actions runners (ubuntu-22.04 x86_64). They may not work on machines with significantly older CPUs. If you see `SIGILL` or `Illegal instruction`, build from source using Method 1 above.
+
+```bash
+# Download the latest release
+wget https://github.com/BlancoBAM/Lilim/releases/latest/download/lilim_0.1.0_amd64.deb
+
+# Install
+sudo dpkg -i lilim_0.1.0_amd64.deb
+
+# Set up Python environment (required on first install)
+sudo python3 -m venv /usr/lib/lilim/venv
+sudo /usr/lib/lilim/venv/bin/pip install fastapi uvicorn litellm apscheduler pyyaml
+
+# Start the service
+sudo systemctl enable --now lilith-ai
+```
+
+---
 
 ### Desktop Dev Mode
 

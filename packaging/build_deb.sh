@@ -50,17 +50,19 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-  # The CI pipeline uploads the binary as 'lilim-ui-executable'
-  TAURI_BIN_FOUND=$(find "${TAURI_BUNDLE_DIR:-.}" -type f -name "lilim-ui-executable" | head -n 1)
-  if [ -n "$TAURI_BIN_FOUND" ]; then
-    TAURI_BIN="$TAURI_BIN_FOUND"
-  elif [ -z "${TAURI_BIN:-}" ] || [ ! -x "$TAURI_BIN" ]; then
-    # Fallback to case-insensitive find in local release dir
-    TAURI_BIN=$(find "${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -iname "lilim" | head -n 1)
-    if [ -z "$TAURI_BIN" ]; then
-      # Absolute default
-      TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/lilim"
+  # Search for the Tauri binary by its actual known names (in priority order)
+  # Tauri names the binary after the Cargo package name: tauri-applilim-desktop
+  for bin_name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+    found=$(find "${ROOT_DIR}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -name "$bin_name" 2>/dev/null | head -n 1)
+    if [ -n "$found" ]; then
+      TAURI_BIN="$found"
+      break
     fi
+  done
+  # Also check CI upload name as last resort
+  if [ -z "$TAURI_BIN" ] || [ ! -f "$TAURI_BIN" ]; then
+    TAURI_BIN_FOUND=$(find "${TAURI_BUNDLE_DIR:-.}" -type f -name "lilim-ui-executable" 2>/dev/null | head -n 1)
+    [ -n "$TAURI_BIN_FOUND" ] && TAURI_BIN="$TAURI_BIN_FOUND"
   fi
 
 ## Build real runtime binary into the package (require it to be present)
@@ -74,11 +76,14 @@ else
 fi
 
 # Desktop UI (Tauri binary)
-if [ -f "$TAURI_BIN" ]; then
+if [ -n "$TAURI_BIN" ] && [ -f "$TAURI_BIN" ]; then
   cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
   chmod +x "$DEB_ROOT/usr/bin/lilim"
 else
-  echo "WARNING: Tauri binary not found at $TAURI_BIN. Skipping UI." >&2
+  echo "ERROR: Tauri UI binary not found. Searched in:"
+  echo "  $ROOT_DIR/lilim_desktop/src-tauri/target/release/"
+  echo "Run: cd lilim_desktop && npm run tauri build" >&2
+  exit 1
 fi
 
 # Python Brain & Configuration
@@ -119,12 +124,13 @@ if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
 fi
 
 ## Desktop file & Icon
-# Search repo assets rather than a hardcoded user path
+# Priority: committed repo icon > user Pictures > Tauri generated icons
 ICON_SRC=""
 for icon_path in \
     "$ROOT_DIR/assets/lilim-icon.png" \
-    "$ROOT_DIR/assets/icon.png" \
-    "$(find "$ROOT_DIR" -maxdepth 3 -name "lilim-icon.png" 2>/dev/null | head -1)"; do
+    "$HOME/Pictures/lilim.png" \
+    "$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png" \
+    "$ROOT_DIR/assets/icon.png"; do
     if [ -n "$icon_path" ] && [ -f "$icon_path" ]; then
         ICON_SRC="$icon_path"
         break
@@ -132,16 +138,23 @@ for icon_path in \
 done
 if [ -n "$ICON_SRC" ]; then
     cp "$ICON_SRC" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
+    echo "Icon: $ICON_SRC"
+else
+    echo "WARNING: No icon found, desktop entry will use generic icon" >&2
 fi
 
 cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
 [Desktop Entry]
-Name=Lilim Assistant
+Version=1.0
+Type=Application
+Name=Lilim
 Comment=AI Assistant for Lilith Linux
 Exec=/usr/bin/lilim
 Icon=lilim
-Type=Application
-Categories=Utility;
+Categories=Utility;AI;
+Terminal=false
+StartupWMClass=Lilim
+StartupNotify=true
 DES
 
 # Debian control file — libwebkit2gtk-4.0-37 does not exist on Ubuntu 26.04;
