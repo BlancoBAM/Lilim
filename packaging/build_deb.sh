@@ -20,6 +20,7 @@ mkdir -p \
   "$DEB_ROOT/usr/bin" \
   "$DEB_ROOT/usr/share/applications" \
   "$DEB_ROOT/usr/share/pixmaps" \
+  "$DEB_ROOT/usr/share/icons/hicolor/scalable/apps" \
   "$DEB_ROOT/lib/systemd/system" || true
 
 RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
@@ -124,23 +125,40 @@ if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
 fi
 
 ## Desktop file & Icon
-# Priority: committed repo icon > user Pictures > Tauri generated icons
-ICON_SRC=""
-for icon_path in \
-    "$ROOT_DIR/assets/lilim-icon.png" \
-    "$HOME/Pictures/lilim.png" \
-    "$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png" \
-    "$ROOT_DIR/assets/icon.png"; do
-    if [ -n "$icon_path" ] && [ -f "$icon_path" ]; then
-        ICON_SRC="$icon_path"
+# Priority: SVG (crisp at any scale) > committed PNG > user Pictures PNG
+ICON_SRC_SVG=""
+for svg_path in \
+    "$ROOT_DIR/assets/lilim-col.svg" \
+    "$ROOT_DIR/assets/lilim-icon.svg" \
+    "$HOME/Pictures/lilim-col.svg" \
+    "$HOME/Pictures/lilim.svg"; do
+    if [ -f "$svg_path" ]; then
+        ICON_SRC_SVG="$svg_path"
         break
     fi
 done
-if [ -n "$ICON_SRC" ]; then
-    cp "$ICON_SRC" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
-    echo "Icon: $ICON_SRC"
-else
-    echo "WARNING: No icon found, desktop entry will use generic icon" >&2
+
+ICON_SRC_PNG=""
+for png_path in \
+    "$ROOT_DIR/assets/lilim-icon.png" \
+    "$HOME/Pictures/lilim.png" \
+    "$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png"; do
+    if [ -f "$png_path" ]; then
+        ICON_SRC_PNG="$png_path"
+        break
+    fi
+done
+
+if [ -n "$ICON_SRC_SVG" ]; then
+    # Install scalable SVG — desktop environments prefer this for crisp display
+    cp "$ICON_SRC_SVG" "$DEB_ROOT/usr/share/icons/hicolor/scalable/apps/lilim.svg"
+    echo "Icon (SVG): $ICON_SRC_SVG"
+fi
+if [ -n "$ICON_SRC_PNG" ]; then
+    cp "$ICON_SRC_PNG" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
+    echo "Icon (PNG fallback): $ICON_SRC_PNG"
+elif [ -z "$ICON_SRC_SVG" ]; then
+    echo "WARNING: No icon found" >&2
 fi
 
 cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
@@ -213,6 +231,11 @@ chown -R "${TARGET_USER}:${TARGET_USER}" /usr/lib/lilim/venv 2>/dev/null || true
 systemctl daemon-reload
 systemctl enable lilith-ai.service || true
 systemctl restart lilith-ai.service || true
+
+# Refresh icon cache so the launcher shows the Lilim icon immediately
+gtk-update-icon-cache -f /usr/share/icons/hicolor/ 2>/dev/null || true
+update-desktop-database /usr/share/applications/ 2>/dev/null || true
+
 echo "[lilim] Installation complete. Service running as: $TARGET_USER"
 POSTINST
 chmod +x "$DEB_ROOT/DEBIAN/postinst"
