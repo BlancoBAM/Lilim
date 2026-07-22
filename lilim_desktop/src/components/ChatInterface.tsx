@@ -4,7 +4,7 @@ import { Send, X, Minus, Flame, Settings } from 'lucide-react';
 import { FlameBackground } from './FlameBackground';
 import { EmberOverlay } from './EmberOverlay';
 import { SettingsPanel } from './SettingsPanel';
-import bannerImage from '../assets/c80b4d356e3c7b98f2baabf558ea7bacc2421ec9.png';
+import bannerImage from '../assets/lilim-banner.svg';
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
 import topLeftLogo from '../assets/51350c1f0fe5a2742ba35cd8899037600d9d9f62.png';
 import { streamChat, runShellCommand, type LilimMessage } from '../api/lilim';
@@ -328,14 +328,14 @@ export function ChatInterface() {
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               />
-              <img src={bannerImage} alt="Lilith" className="h-6 object-contain opacity-90" />
+              <img src={bannerImage} alt="Lilith" className="h-9 object-contain opacity-95" />
             </div>
 
-            {/* Window controls */}
-            <div className="flex items-center gap-1">
+            {/* Window controls — icon-only, always visible */}
+            <div className="flex items-center gap-2.5">
               {isStreaming && (
                 <motion.span
-                  className="text-orange-400 text-xs mr-2"
+                  className="text-orange-400 text-xs mr-1"
                   animate={{ opacity: [0.4, 1, 0.4] }}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
@@ -344,24 +344,24 @@ export function ChatInterface() {
               )}
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-400 flex items-center justify-center transition-colors group"
+                className="flex items-center justify-center text-blue-300/80 hover:text-blue-200 transition-colors"
                 title="Settings"
               >
-                <Settings size={10} className="text-blue-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Settings size={13} />
               </button>
               <button
                 onClick={handleMinimize}
-                className="w-6 h-6 rounded-full bg-yellow-500/80 hover:bg-yellow-400 flex items-center justify-center transition-colors group"
+                className="flex items-center justify-center text-amber-400/80 hover:text-amber-300 transition-colors"
                 title="Minimize"
               >
-                <Minus size={10} className="text-yellow-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Minus size={13} />
               </button>
               <button
                 onClick={handleClose}
-                className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-400 flex items-center justify-center transition-colors group"
+                className="flex items-center justify-center text-red-400/80 hover:text-red-300 transition-colors"
                 title="Close"
               >
-                <X size={10} className="text-red-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <X size={13} />
               </button>
             </div>
           </div>

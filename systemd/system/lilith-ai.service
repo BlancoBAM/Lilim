@@ -1,13 +1,15 @@
 [Unit]
 Description=Lilim AI Assistant Runtime (Rust Proxy & Python Brain)
-Documentation=file:///usr/share/doc/lilith-ai/USER_MANUAL.md
-After=network-online.target
+After=network-online.target graphical-session.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-# run-lilim.sh detects the desktop user at runtime — no hardcoded username
-ExecStart=/usr/lib/lilim/run-lilim.sh
+# Run directly as the desktop user — no sudo wrapper needed.
+# The User= directive handles privilege separation cleanly.
+User=aegon
+Group=aegon
+ExecStart=/usr/bin/lilim-runtime
 Restart=on-failure
 RestartSec=10
 TimeoutStartSec=90
@@ -17,31 +19,21 @@ TimeoutStopSec=30
 Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
-# Enable inference timing logs in journald
 Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
+Environment=HOME=/home/aegon
 
-# Security Hardening
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
-ProtectHome=no
-ReadWritePaths=/home /var/log/lilim /tmp
-ReadOnlyPaths=/etc/lilith /usr/lib/lilim
-InaccessiblePaths=/root
+# Data directories
+WorkingDirectory=/home/aegon
 
-# Additional Security
-ProtectKernelTunables=yes
-ProtectKernelModules=yes
-ProtectControlGroups=yes
-RestrictRealtime=yes
-LockPersonality=yes
-# NOTE: MemoryDenyWriteExecute removed — Python + Rust model inference requires JIT
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Security — relaxed enough for user-level service
+NoNewPrivileges=no
+PrivateTmp=no
+ProtectSystem=no
+ProtectHome=read-only
+ReadWritePaths=/home/aegon /var/log/lilim /tmp /usr/lib/lilim/venv
+ReadOnlyPaths=/etc/lilith /usr/lib/lilim/lilim_core /usr/lib/lilim/run-lilim.sh
 
 # Resource Limits
-# CPUQuota removed — inference is fully CPU-bound; throttling devastates tok/s.
-# Candle GEMV reads ~1.7GB of weights per token; needs full CPU bandwidth.
-# MemoryMax kept to prevent OOM; model + runtime sits at ~2.5GB RSS.
 MemoryMax=4G
 MemoryHigh=3.5G
 TasksMax=1024

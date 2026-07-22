@@ -186,12 +186,20 @@ for candidate in $(ls /home/ 2>/dev/null); do
         break
     fi
 done
-TARGET_USER="${TARGET_USER:-lilith}"
+TARGET_USER="${TARGET_USER:-$(logname 2>/dev/null || echo lilith)}"
 echo "[lilim] Installing for user: $TARGET_USER"
+
+# Patch the service file with the real username
+SERVICE_FILE="/lib/systemd/system/lilith-ai.service"
+sed -i "s|^User=aegon|User=${TARGET_USER}|g" "$SERVICE_FILE"
+sed -i "s|^Group=aegon|Group=${TARGET_USER}|g" "$SERVICE_FILE"
+sed -i "s|^WorkingDirectory=.*|WorkingDirectory=/home/${TARGET_USER}|g" "$SERVICE_FILE"
+sed -i "s|^Environment=HOME=.*|Environment=HOME=/home/${TARGET_USER}|g" "$SERVICE_FILE"
+sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /tmp /usr/lib/lilim/venv|g" "$SERVICE_FILE"
 
 echo "[lilim] Creating Python virtual environment..."
 python3 -m venv /usr/lib/lilim/venv
-/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler
+/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml
 
 mkdir -p /var/log/lilim
 chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
@@ -199,10 +207,13 @@ chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
 mkdir -p "/home/${TARGET_USER}/.local/share/lilim"
 chown -R "${TARGET_USER}:${TARGET_USER}" "/home/${TARGET_USER}/.local/share/lilim"
 
+# Allow user to write to the venv (for pip updates)
+chown -R "${TARGET_USER}:${TARGET_USER}" /usr/lib/lilim/venv 2>/dev/null || true
+
 systemctl daemon-reload
 systemctl enable lilith-ai.service || true
 systemctl restart lilith-ai.service || true
-echo "[lilim] Installation complete."
+echo "[lilim] Installation complete. Service running as: $TARGET_USER"
 POSTINST
 chmod +x "$DEB_ROOT/DEBIAN/postinst"
 
