@@ -163,7 +163,8 @@ npm run tauri dev
 > **Unaltered screen recording** — no cuts, no edits. This recording uses the **local Phi-2 model** running on CPU. Response speed will vary based on your hardware.
 > With remote models (Groq, Gemini, OpenRouter, etc.) speed depends on your network connection and the rate limits / tier of your API account.
 
-<video src="assets/lilim-sr.mp4" controls width="100%"></video>
+<!-- VIDEO_EMBED_PLACEHOLDER -->
+**[▶ Download / Watch: lilim-sr.mp4](https://github.com/BlancoBAM/Lilim/raw/main/assets/lilim-sr.mp4)**
 
 ---
 
