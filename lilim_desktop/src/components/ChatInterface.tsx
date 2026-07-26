@@ -313,22 +313,13 @@ export function ChatInterface() {
         >
           {/* Top row: logo + window controls */}
           <div className="flex items-center justify-between cursor-grab active:cursor-grabbing" data-tauri-drag-region>
-            {/* Logo + title */}
-            <div className="flex items-center gap-2" data-tauri-drag-region>
-              <motion.img
-                src={topLeftLogo}
+            {/* Banner — stretches to fill available header space */}
+            <div className="flex-1 flex items-center" data-tauri-drag-region>
+              <img
+                src={bannerImage}
                 alt="Lilim"
-                className="w-7 h-7 object-contain"
-                animate={{
-                  filter: [
-                    'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
-                    'drop-shadow(0 0 10px rgba(255,69,0,1))',
-                    'drop-shadow(0 0 4px rgba(255,69,0,0.8))',
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-full max-h-10 object-contain object-left opacity-95"
               />
-              <img src={bannerImage} alt="Lilith" className="h-9 object-contain opacity-95" />
             </div>
 
             {/* Window controls — icon-only, always visible */}

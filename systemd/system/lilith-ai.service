@@ -1,39 +1,29 @@
 [Unit]
 Description=Lilim AI Assistant Runtime (Rust Proxy & Python Brain)
-After=network-online.target graphical-session.target
-Wants=network-online.target
+After=network.target
+Wants=network.target
 
 [Service]
 Type=simple
-# Run directly as the desktop user — no sudo wrapper needed.
-# The User= directive handles privilege separation cleanly.
 User=aegon
 Group=aegon
+WorkingDirectory=/home/aegon
 ExecStart=/usr/bin/lilim-runtime
 Restart=on-failure
 RestartSec=10
 TimeoutStartSec=90
 TimeoutStopSec=30
 
-# Environment Configuration
 Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
 Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
 Environment=HOME=/home/aegon
 
-# Data directories
-WorkingDirectory=/home/aegon
+# Safe security directives (no namespace requirements)
+NoNewPrivileges=yes
 
-# Security — relaxed enough for user-level service
-NoNewPrivileges=no
-PrivateTmp=no
-ProtectSystem=no
-ProtectHome=read-only
-ReadWritePaths=/home/aegon /var/log/lilim /tmp /usr/lib/lilim/venv
-ReadOnlyPaths=/etc/lilith /usr/lib/lilim/lilim_core /usr/lib/lilim/run-lilim.sh
-
-# Resource Limits
+# Resource limits
 MemoryMax=4G
 MemoryHigh=3.5G
 TasksMax=1024

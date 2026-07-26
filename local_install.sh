@@ -83,7 +83,7 @@ sudo dpkg -i "$DEB_FILE"
 if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
     echo "      Setting up Python virtual environment..."
     sudo python3 -m venv /usr/lib/lilim/venv
-    sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml
+    sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
     echo "      ✓ Python venv ready"
 fi
 

@@ -38,12 +38,12 @@
 | 🧠 **Local Phi-2 Inference** | Microsoft Phi-2 (2.7B, GGUF Q4_K_M) runs on-device via HuggingFace Candle. No Ollama. No Python inference. No API key required. |
 | 🌐 **Free Provider Routing** | Auto-routes to 9 free-tier providers (Groq, OpenRouter, Gemini, Cerebras…) when configured. Falls back to local seamlessly. |
 | 🤖 **Autonomous Tool Use** | Executes shell commands, reads files, and checks system state — with safety confirmation for destructive operations. |
+| 🔍 **Web Search & Browsing** | Searches DuckDuckGo and fetches/reads any URL on request. No API key required. |
 | 🧬 **Persistent Memory** | SQLite-backed long-term memory. Remembers context across sessions with semantic retrieval. |
 | ✨ **Prompt Enhancement** | Transparently enriches vague prompts with context, task type, and system state before sending to the model. |
 | ⌨️ **Global Hotkey** | `Ctrl+Shift+L` summons Lilim from anywhere on the desktop. |
 | 🛡️ **Security First** | Rust-native API gateway, command blocklists, sandboxed execution, and audit logging at `/var/log/lilim/`. |
 | 📅 **Task Scheduling** | Schedule one-time and recurring tasks via natural language, backed by `systemd-run`. |
-| 🎓 **Academic Specialization** | Calibrated for first-year Medical Assistant students — ELI10 explanations, anatomy, clinical procedures, pharmacology. |
 
 ---
 
@@ -87,25 +87,24 @@
 
 ## Installation
 
-> **Platform:** Lilim is built for **Lilith Linux** (Ubuntu 22.04/24.04 base). It should also work on any Ubuntu-based system.
+> **Primary platform:** Lilith Linux (Ubuntu 22.04/24.04 base). Also works on any Ubuntu/Debian-based system for development and testing.
 
 ### Method 1 — Build & Install from Source (Recommended)
 
-This is the most reliable method. One command builds everything and installs it.
+One command builds the Rust runtime, Tauri UI, and Python brain, packages everything, and installs it.
 
 **Prerequisites (install once):**
 ```bash
-# Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
+# Rust toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && source ~/.cargo/env
 
-# Node.js, Tauri dependencies
+# System build dependencies
 sudo apt install -y nodejs npm python3-venv \
     libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
     libappindicator3-dev patchelf
 ```
 
-**Install Lilim:**
+**Clone and install:**
 ```bash
 git clone https://github.com/BlancoBAM/Lilim.git
 cd Lilim
@@ -113,39 +112,31 @@ cd Lilim
 ```
 
 The script will:
-1. Build the Rust runtime (`lilim-runtime`)
+1. Compile the Rust runtime (`lilim-runtime`)
 2. Build the Tauri desktop app
-3. Create a Debian package with the icon and service files
-4. Install it system-wide
-5. Start the `lilith-ai` background service automatically
+3. Package everything into a `.deb` with the icon and service files
+4. Install system-wide via `dpkg`
+5. Create the Python virtualenv with all dependencies
+6. Enable and start the `lilith-ai` background service
 
 **Launch:**
 ```bash
 lilim
-# or press Ctrl+Shift+L from the desktop
+# or press Ctrl+Shift+L from anywhere on the desktop
 ```
 
 ---
 
-### Method 2 — Download from GitHub Releases
+### Method 2 — Install from GitHub Release (.deb)
 
-Pre-built `.deb` packages are available from [Releases](https://github.com/BlancoBAM/Lilim/releases).
+Pre-built packages from [Releases](https://github.com/BlancoBAM/Lilim/releases).
 
-> ⚠️ **Note:** Pre-built binaries are compiled on GitHub Actions runners (ubuntu-22.04 x86_64). They may not work on machines with significantly older CPUs. If you see `SIGILL` or `Illegal instruction`, build from source using Method 1 above.
+> ⚠️ Pre-built binaries target ubuntu-22.04 x86_64. If you see `Illegal instruction` (`SIGILL`), build from source (Method 1).
 
 ```bash
-# Download the latest release
 wget https://github.com/BlancoBAM/Lilim/releases/latest/download/lilim_0.1.0_amd64.deb
-
-# Install
 sudo dpkg -i lilim_0.1.0_amd64.deb
-
-# Set up Python environment (required on first install)
-sudo python3 -m venv /usr/lib/lilim/venv
-sudo /usr/lib/lilim/venv/bin/pip install fastapi uvicorn litellm apscheduler pyyaml
-
-# Start the service
-sudo systemctl enable --now lilith-ai
+# The postinst script creates the Python venv and starts the service automatically.
 ```
 
 ---
@@ -199,15 +190,26 @@ Lilim: *Applying logic. Brace yourself.*
        Take your time — it's not a race.
 ```
 
-### Configuring API Keys (for remote models)
+### Configuring API Keys (optional — for faster remote models)
 
-Click the ⚙ gear icon → enter your key → click Save (✓ green confirmation appears).
+Click the ⚙ icon in the top-right → enter your key → Save (green ✓ confirms). All keys are stored locally.
 
-Free providers (no credit card):
-- **OpenRouter** — 30+ free models via one key → [openrouter.ai](https://openrouter.ai)
+Free providers (no credit card required):
+- **OpenRouter** — 30+ free models → [openrouter.ai](https://openrouter.ai)
 - **Groq** — fastest free inference → [console.groq.com](https://console.groq.com)
 - **Google Gemini** — 500 req/day free → [aistudio.google.com](https://aistudio.google.com)
 - **Cerebras** — ultra-fast → [cloud.cerebras.ai](https://cloud.cerebras.ai)
+
+### Web Search & Browsing
+
+Just ask Lilim to look something up or read a page:
+
+```
+You:   Search for the latest Rust release notes
+You:   Fetch https://doc.rust-lang.org/stable/book/ and summarise chapter 1
+```
+
+No API key needed — web search uses DuckDuckGo, fetching uses httpx.
 
 ---
 
@@ -314,12 +316,10 @@ Lilim/
 
 Every push to `main` triggers an automated pipeline:
 
-1. **Python Tests** — Comprehensive brain unit tests.
-2. **Rust Build** — Optimized runtime gateway build.
-3. **Tauri Desktop Build** — Frontend and native shell build.
-4. **Debian Package** — Standard system installer creation.
-5. **AppImage Build** — Portable, zero-dependency bundle creation.
-6. **GitHub Release** — Both `.deb` and `.AppImage` are auto-published.
+1. **Python Tests** — Brain unit tests.
+2. **Rust Build** — Optimised runtime gateway (`lilim-runtime`).
+3. **Tauri Desktop Build** — Frontend + native shell.
+4. **Debian Package** — Standard `.deb` installer, auto-published to GitHub Releases.
 
 ---
 

@@ -32,11 +32,12 @@ while [[ $# -gt 0 ]]; do
       RUNTIME_BIN="$2"
       shift 2
       ;;
+    --ui-binary)
+      # Direct path to the Tauri binary (preferred over --tauri-bundle)
+      TAURI_BIN="$2"
+      shift 2
+      ;;
     --tauri-bundle)
-      # In the CI we get the bundle dir, the actual binary inside should be copied, or we just grab the executable.
-      # Wait, the workflow uploads `lilim_desktop/src-tauri/target/release/bundle/`
-      # but we actually just need the raw binary `tauri-app` or whatever it's called.
-      # Let's just point to the directory, and we'll extract the binary.
       TAURI_BUNDLE_DIR="$2"
       shift 2
       ;;
@@ -51,7 +52,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-  # Search for the Tauri binary by its actual known names (in priority order)
+# Resolve Tauri binary if not set directly via --ui-binary
+if [ -z "${TAURI_BIN:-}" ] || [ ! -f "${TAURI_BIN:-}" ]; then
   RELEASE_DIR="${ROOT_DIR}/lilim_desktop/src-tauri/target/release"
   for bin_name in "tauri-lilim-desktop" "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
     candidate="$RELEASE_DIR/$bin_name"
@@ -60,17 +62,19 @@ done
       break
     fi
   done
-  # Final fallback: any ELF binary in the release dir
-  if [ -z "$TAURI_BIN" ] || [ ! -f "$TAURI_BIN" ]; then
-    TAURI_BIN=$(find "$RELEASE_DIR" -maxdepth 1 -type f -executable \
+  # ELF fallback: any executable binary in the release dir
+  if [ -z "${TAURI_BIN:-}" ] || [ ! -f "${TAURI_BIN:-}" ]; then
+    TAURI_BIN=$(find "${RELEASE_DIR}" -maxdepth 1 -type f -executable \
       ! -name "*.so" ! -name "*.d" ! -name ".cargo-lock" \
       -exec sh -c 'file "$1" | grep -q ELF && echo "$1"' _ {} \; 2>/dev/null | head -n 1)
   fi
-  # Also check CI upload name as last resort
-  if [ -z "$TAURI_BIN" ] || [ ! -f "$TAURI_BIN" ]; then
-    TAURI_BIN_FOUND=$(find "${TAURI_BUNDLE_DIR:-.}" -type f -name "lilim-ui-executable" 2>/dev/null | head -n 1)
-    [ -n "$TAURI_BIN_FOUND" ] && TAURI_BIN="$TAURI_BIN_FOUND"
+  # CI artifact fallback: lilim-ui-executable in TAURI_BUNDLE_DIR
+  if [ -z "${TAURI_BIN:-}" ] || [ ! -f "${TAURI_BIN:-}" ]; then
+    if [ -n "${TAURI_BUNDLE_DIR:-}" ] && [ -f "${TAURI_BUNDLE_DIR}/lilim-ui-executable" ]; then
+      TAURI_BIN="${TAURI_BUNDLE_DIR}/lilim-ui-executable"
+    fi
   fi
+fi
 
 ## Build real runtime binary into the package (require it to be present)
 if [ -f "$RUNTIME_BIN" ]; then
@@ -223,7 +227,7 @@ sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /
 
 echo "[lilim] Creating Python virtual environment..."
 python3 -m venv /usr/lib/lilim/venv
-/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml
+/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
 
 mkdir -p /var/log/lilim
 chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim

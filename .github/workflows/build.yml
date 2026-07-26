@@ -30,7 +30,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi uvicorn pydantic "litellm>=1.0" pyyaml
+          pip install fastapi uvicorn pydantic "litellm>=1.0" pyyaml httpx "beautifulsoup4>=4.12"
 
       - name: Run Python unit tests
         run: python -m unittest discover -s tests -v
@@ -229,9 +229,10 @@ jobs:
       - name: Build Debian package
         run: |
           chmod +x packaging/build_deb.sh
+          chmod +x bin/ui/lilim-ui-executable
           bash packaging/build_deb.sh \
             --runtime bin/runtime/lilim-runtime \
-            --tauri-bundle bin/ui/ \
+            --ui-binary bin/ui/lilim-ui-executable \
             --model-dir model/
         env:
           PHI2_MODEL_DIR: model/

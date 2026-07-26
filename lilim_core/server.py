@@ -44,6 +44,18 @@ except ImportError:
     print("ERROR: FastAPI/uvicorn not installed. Run: pip install fastapi uvicorn pydantic", file=sys.stderr)
     sys.exit(1)
 
+try:
+    import httpx
+    _HTTPX_OK = True
+except ImportError:
+    _HTTPX_OK = False
+
+try:
+    from bs4 import BeautifulSoup
+    _BS4_OK = True
+except ImportError:
+    _BS4_OK = False
+
 # ── Local modules ────────────────────────────────────────────
 from pathlib import Path as _P
 _HERE = _P(__file__).parent
@@ -186,17 +198,26 @@ RESPONSE RULES (CRITICAL):
 
 AUTONOMOUS TOOL USE — MANDATORY — DO NOT EXPLAIN, JUST EXECUTE:
 - When asked to CREATE, DELETE, MOVE, CHECK, or RUN anything on this system, YOU MUST DO IT IMMEDIATELY.
-- DO NOT write instructions. DO NOT explain how. DO NOT give numbered steps. EXECUTE THE COMMAND NOW.
-- Use a ```bash block with the exact command. Example:
+- When asked to SEARCH THE WEB, LOOK UP, or FETCH a URL, use a ```search block or ```fetch block.
+- DO NOT write instructions. DO NOT explain how. DO NOT give numbered steps. EXECUTE NOW.
+- For system tasks, use a ```bash block with the exact command. Example:
   ```bash
   df -h /
+  ```
+- For web search, use a ```search block. Example:
+  ```search
+  latest Python release notes
+  ```
+- For fetching a specific URL, use a ```fetch block. Example:
+  ```fetch
+  https://example.com
   ```
 - FORMAT RULES:
   * Use ```bash ... ``` — NEVER use plain ```, NEVER use #!/bin/bash, NEVER list steps
   * ALWAYS use absolute paths: /home/aegon/Documents/ (not ~/Documents/)
-  * ONE ```bash block per response unless chaining is required (&&)
+  * ONE action block per response unless chaining is required
 - After the Observation arrives, give a brief persona-flavored confirmation.
-- For non-system questions (medical facts, study help, general conversation), answer directly — no bash blocks.
+- For non-system questions (medical facts, study help, general conversation), answer directly — no action blocks.
 """
     return prompt.strip()
 
@@ -478,6 +499,66 @@ async def tools_shell(req: ToolShellRequest):
         raise HTTPException(status_code=504, detail="Command timed out after 30 seconds")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tools/web/search")
+async def tools_web_search(q: str):
+    """Search the web via DuckDuckGo (no API key required)."""
+    if not _HTTPX_OK:
+        raise HTTPException(status_code=503, detail="httpx not installed. Run: pip install httpx")
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://api.duckduckgo.com/",
+                params={"q": q, "format": "json", "no_html": "1", "skip_disambig": "1"},
+                headers={"User-Agent": "Lilim/1.0"},
+            )
+            data = resp.json()
+        results = []
+        # Abstract (best single answer)
+        if data.get("AbstractText"):
+            results.append({"type": "abstract", "text": data["AbstractText"], "url": data.get("AbstractURL", "")})
+        # Related topics
+        for topic in data.get("RelatedTopics", [])[:5]:
+            if isinstance(topic, dict) and topic.get("Text"):
+                results.append({"type": "result", "text": topic["Text"], "url": topic.get("FirstURL", "")})
+        if not results:
+            results.append({"type": "info", "text": "No results found. Try rephrasing the query."})
+        return {"query": q, "results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class WebFetchRequest(BaseModel):
+    url: str
+    max_chars: Optional[int] = 3000
+
+
+@app.post("/tools/web/fetch")
+async def tools_web_fetch(req: WebFetchRequest):
+    """Fetch and extract readable text from a URL."""
+    if not _HTTPX_OK:
+        raise HTTPException(status_code=503, detail="httpx not installed. Run: pip install httpx")
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            resp = await client.get(req.url, headers={"User-Agent": "Lilim/1.0"})
+            html = resp.text
+        if _BS4_OK:
+            soup = BeautifulSoup(html, "html.parser")
+            for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+                tag.decompose()
+            text = soup.get_text(separator="\n", strip=True)
+        else:
+            # Naive strip if bs4 not available
+            text = re.sub(r"<[^>]+>", " ", html)
+            text = re.sub(r"\s+", " ", text).strip()
+        # Truncate
+        if len(text) > req.max_chars:
+            text = text[:req.max_chars] + f"\n\n[... truncated, {len(text) - req.max_chars} more chars]"
+        return {"url": req.url, "content": text, "chars": len(text)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/system/info")
