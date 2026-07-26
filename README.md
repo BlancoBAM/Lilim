@@ -158,7 +158,18 @@ npm run tauri dev
 - **Global hotkey:** `Ctrl+Shift+L` (anywhere on desktop)
 - **Manual:** Click the Lilim icon in your app launcher
 
+### Demo
+
+> **Unaltered screen recording** — no cuts, no edits. This recording uses the **local Phi-2 model** running on CPU. Response speed will vary based on your hardware.
+> With remote models (Groq, Gemini, OpenRouter, etc.) speed depends on your network connection and the rate limits / tier of your API account.
+
+<video src="assets/lilim-sr.mp4" controls width="100%"></video>
+
+---
+
 ### Screenshots
+
+> ⚠️ **Legacy design** — these screenshots show an earlier version of the UI with the original banner text and the macOS-style circular navigation buttons. The screen recording above reflects the current design.
 
 <p float="left">
   <img src="assets/chat-greet.png" width="32%" />
