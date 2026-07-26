@@ -79,21 +79,50 @@ sleep 1
 echo "[5/5] Installing..."
 sudo dpkg -i "$DEB_FILE"
 
-# Ensure the Python venv exists and is populated
+# ── Post-install verification: ensure every component is on disk ──────────
+echo "      Verifying installation..."
+
+# Runtime binary (most critical — service won't start without it)
+if [ ! -f /usr/bin/lilim-runtime ]; then
+    echo "      ⚠ Runtime binary missing from deb — copying directly..."
+    sudo cp "$ROOT_DIR/target/release/lilim-runtime" /usr/bin/lilim-runtime
+    sudo chmod +x /usr/bin/lilim-runtime
+fi
+
+# Desktop UI binary
+if [ ! -f /usr/bin/lilim ]; then
+    echo "      ⚠ UI binary missing from deb — copying directly..."
+    RELEASE_DIR="$ROOT_DIR/lilim_desktop/src-tauri/target/release"
+    for bin_name in "tauri-lilim-desktop" "tauri-applilim-desktop" "Lilim" "lilim"; do
+        if [ -f "$RELEASE_DIR/$bin_name" ]; then
+            sudo cp "$RELEASE_DIR/$bin_name" /usr/bin/lilim
+            sudo chmod +x /usr/bin/lilim
+            break
+        fi
+    done
+fi
+
+# Python brain
+sudo mkdir -p /usr/lib/lilim/lilim_core /etc/lilith
+sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
+sudo cp -r "$ROOT_DIR/config/"* /etc/lilith/ 2>/dev/null || true
+
+# Python venv
 if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
     echo "      Setting up Python virtual environment..."
     sudo python3 -m venv /usr/lib/lilim/venv
-    sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
-    echo "      ✓ Python venv ready"
 fi
+sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
 
-# Sync live Python brain files (ensures latest code is installed)
-sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
-
-# Sync systemd service from workspace
+# Service file (always sync from repo to pick up latest)
 sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /lib/systemd/system/lilith-ai.service
+# Patch the User= line to this machine's actual user
+CURRENT_USER="$(logname 2>/dev/null || echo "$SUDO_USER" || echo "$USER")"
+sudo sed -i "s|^User=.*|User=${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
+sudo sed -i "s|^Group=.*|Group=${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
+sudo sed -i "s|^WorkingDirectory=.*|WorkingDirectory=/home/${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
+sudo sed -i "s|Environment=HOME=.*|Environment=HOME=/home/${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
 
-# Reload & restart
 sudo systemctl daemon-reload
 sudo systemctl enable lilith-ai.service
 sudo systemctl restart lilith-ai.service
