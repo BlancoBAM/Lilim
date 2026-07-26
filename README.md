@@ -164,7 +164,7 @@ npm run tauri dev
 > With remote models (Groq, Gemini, OpenRouter, etc.) speed depends on your network connection and the rate limits / tier of your API account.
 
 <!-- VIDEO_EMBED_PLACEHOLDER -->
-**[▶ Download / Watch: lilim-sr.mp4](https://github.com/BlancoBAM/Lilim/raw/main/assets/lilim-sr.mp4)**
+<video src="https://github.com/user-attachments/assets/1bd1d9e6-9f3a-4434-a3ef-880da2ae4ee9" controls width="100%"></video>
 
 ---
 
