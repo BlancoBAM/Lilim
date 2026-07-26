@@ -202,7 +202,7 @@ jobs:
 
   # ── Build Packages ──────────────────────────────────────────────────────────
   build-release:
-    name: Build .deb & AppImage
+    name: Build .deb & Source Tarball
     runs-on: ubuntu-22.04
     needs: [ build-rust, build-tauri, bundle-model ]
     steps:
@@ -237,12 +237,15 @@ jobs:
         env:
           PHI2_MODEL_DIR: model/
 
-      - name: Build AppImage
+      - name: Build source tarball
         run: |
-          chmod +x packaging/build_appimage.sh
-          # Build AppImage from the .deb we just created
-          DEB_FILE=$(ls dist/*.deb | head -n 1)
-          bash packaging/build_appimage.sh "$DEB_FILE"
+          mkdir -p dist
+          # Clean source archive — no build artifacts, no git history
+          git archive --format=tar.gz \
+            --prefix=lilim-src/ \
+            --output=dist/lilim-source.tar.gz \
+            HEAD
+          echo "Source tarball: $(du -sh dist/lilim-source.tar.gz | cut -f1)"
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
@@ -258,7 +261,7 @@ jobs:
           name: "Lilim Build ${{ github.run_number }}"
           files: |
             dist/*.deb
-            dist/*.AppImage
+            dist/lilim-source.tar.gz
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
