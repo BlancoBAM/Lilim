@@ -6,7 +6,6 @@ import { EmberOverlay } from './EmberOverlay';
 import { SettingsPanel } from './SettingsPanel';
 import bannerImage from '../assets/lilim-banner.svg';
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
-import topLeftLogo from '../assets/51350c1f0fe5a2742ba35cd8899037600d9d9f62.png';
 import { streamChat, runShellCommand, type LilimMessage } from '../api/lilim';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
