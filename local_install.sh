@@ -33,18 +33,26 @@ else
     npm run tauri build
     cd "$ROOT_DIR"
 
-    # Find what Tauri actually produced
+    # Find what Tauri actually produced — check all known binary names
     TAURI_BIN=""
-    for bin_name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
-        found=$(find "$ROOT_DIR/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -name "$bin_name" 2>/dev/null | head -n 1)
-        if [ -n "$found" ]; then
-            TAURI_BIN="$found"
+    RELEASE_DIR="$ROOT_DIR/lilim_desktop/src-tauri/target/release"
+    for bin_name in "tauri-lilim-desktop" "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+        candidate="$RELEASE_DIR/$bin_name"
+        if [ -f "$candidate" ] && [ -x "$candidate" ]; then
+            TAURI_BIN="$candidate"
             break
         fi
     done
+    # Final fallback: any ELF binary in the release dir (not a .so or debug file)
+    if [ -z "$TAURI_BIN" ]; then
+        TAURI_BIN=$(find "$RELEASE_DIR" -maxdepth 1 -type f -executable \
+            ! -name "*.so" ! -name "*.d" ! -name ".cargo-lock" \
+            -exec sh -c 'file "$1" | grep -q ELF && echo "$1"' _ {} \; 2>/dev/null | head -n 1)
+    fi
     if [ -z "$TAURI_BIN" ]; then
         echo "ERROR: Tauri build succeeded but could not find the output binary." >&2
-        echo "       Searched: $ROOT_DIR/lilim_desktop/src-tauri/target/release/" >&2
+        echo "       Searched: $RELEASE_DIR/" >&2
+        ls -la "$RELEASE_DIR/" >&2
         exit 1
     fi
     echo "      ✓ UI built: $TAURI_BIN"

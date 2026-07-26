@@ -111,7 +111,7 @@ jobs:
           RELEASE_DIR="lilim_desktop/src-tauri/target/release"
           # Search by known binary names first (most reliable)
           BIN_PATH=""
-          for name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+          for name in "tauri-lilim-desktop" "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
             candidate="$RELEASE_DIR/$name"
             if [ -f "$candidate" ] && [ -x "$candidate" ]; then
               BIN_PATH="$candidate"

@@ -52,14 +52,20 @@ while [[ $# -gt 0 ]]; do
 done
 
   # Search for the Tauri binary by its actual known names (in priority order)
-  # Tauri names the binary after the Cargo package name: tauri-applilim-desktop
-  for bin_name in "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
-    found=$(find "${ROOT_DIR}/lilim_desktop/src-tauri/target/release" -maxdepth 1 -type f -name "$bin_name" 2>/dev/null | head -n 1)
-    if [ -n "$found" ]; then
-      TAURI_BIN="$found"
+  RELEASE_DIR="${ROOT_DIR}/lilim_desktop/src-tauri/target/release"
+  for bin_name in "tauri-lilim-desktop" "tauri-applilim-desktop" "Lilim" "lilim" "tauri-app"; do
+    candidate="$RELEASE_DIR/$bin_name"
+    if [ -f "$candidate" ] && [ -x "$candidate" ]; then
+      TAURI_BIN="$candidate"
       break
     fi
   done
+  # Final fallback: any ELF binary in the release dir
+  if [ -z "$TAURI_BIN" ] || [ ! -f "$TAURI_BIN" ]; then
+    TAURI_BIN=$(find "$RELEASE_DIR" -maxdepth 1 -type f -executable \
+      ! -name "*.so" ! -name "*.d" ! -name ".cargo-lock" \
+      -exec sh -c 'file "$1" | grep -q ELF && echo "$1"' _ {} \; 2>/dev/null | head -n 1)
+  fi
   # Also check CI upload name as last resort
   if [ -z "$TAURI_BIN" ] || [ ! -f "$TAURI_BIN" ]; then
     TAURI_BIN_FOUND=$(find "${TAURI_BUNDLE_DIR:-.}" -type f -name "lilim-ui-executable" 2>/dev/null | head -n 1)
