@@ -87,7 +87,7 @@ TASK_CATEGORIES = {
             "previous conversation", "what did i say", "show history",
             "our chat", "last time we talked", "what did we discuss",
             "conversation history", "show me our", "entirety", "earlier",
-            "what did you say", "what was said", "remind me", "last session",
+            "what did you say", "what was said", "last session",
             "what happened", "our last", "recap", "summary of",
         ],
         "enrich": "Recall from Lilim's memory. No bash. Summarise what you remember.",
