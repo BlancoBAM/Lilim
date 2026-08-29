@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Minus, Flame, Settings } from 'lucide-react';
+import { Send, X, Minus, Flame, Settings, User } from 'lucide-react';
 import { FlameBackground } from './FlameBackground';
 import { EmberOverlay } from './EmberOverlay';
 import { SettingsPanel } from './SettingsPanel';
 import bannerImage from '../assets/lilim-banner.svg';
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
-import { streamChat, runShellCommand, type LilimMessage } from '../api/lilim';
+import {
+  streamChat, runShellCommand, sendObservation,
+  getUserProfile, saveUserProfile,
+  type LilimMessage
+} from '../api/lilim';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const appWindow = getCurrentWindow();
@@ -32,6 +36,11 @@ export function ChatInterface() {
   const [thinkingMsg, setThinkingMsg] = useState('');
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [showNoBrainBanner, setShowNoBrainBanner] = useState(false);
+  // Pending confirmation state — set when server sends tool_pending
+  const [pendingCommand, setPendingCommand] = useState<{ command: string; short: string } | null>(null);
+  // First-launch profile modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileDraft, setProfileDraft] = useState({ display_name: '', github_username: '' });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Rotate thinking messages while streaming
@@ -48,7 +57,7 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* ── Startup health check — show banner if no providers configured ── */
+  /* ── Startup: health check + first-launch profile detection ── */
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -63,7 +72,28 @@ export function ChatInterface() {
         // Backend not reachable — handled by streamChat error path
       }
     };
+
+    const checkProfile = async () => {
+      // Only show the profile modal once (stored in localStorage)
+      const seen = localStorage.getItem('lilim_profile_seen');
+      if (seen) return;
+      const profile = await getUserProfile();
+      if (profile) {
+        setProfileDraft({
+          display_name: profile.display_name || profile.system_username,
+          github_username: profile.github_username || '',
+        });
+        // If no GitHub username is set yet, prompt the user
+        if (!profile.github_username) {
+          setShowProfileModal(true);
+        } else {
+          localStorage.setItem('lilim_profile_seen', '1');
+        }
+      }
+    };
+
     checkHealth();
+    checkProfile();
   }, []);
 
   /* ── Window controls ── */
@@ -92,7 +122,6 @@ export function ChatInterface() {
     try {
       let accumulated = '';
 
-      // Pass the signal to the streamChat API (I'll need to update lilim.ts too)
       for await (const chunk of streamChat(userMessage.content, controller.signal)) {
         if (chunk.start) {
           setMessages(prev => [
@@ -101,9 +130,19 @@ export function ChatInterface() {
           ]);
           continue;
         }
+        // @ts-ignore — check for pending command payload
+        if (chunk.pending_command) {
+          // Server wants confirmation before running this command
+          setPendingCommand({
+            // @ts-ignore
+            command: chunk.pending_command,
+            // @ts-ignore
+            short: chunk.pending_short || chunk.pending_command.slice(0, 80),
+          });
+          continue;
+        }
         if (chunk.end) {
-          // Provider is returned on the 'done' event
-          if (chunk.provider) {
+          if (chunk.provider && chunk.provider !== 'PENDING') {
             setMessages(prev =>
               prev.map(m => (m.id === assistantId ? { ...m, provider: chunk.provider } : m))
             );
@@ -155,29 +194,109 @@ export function ChatInterface() {
 
   /* ── Shell command confirmation ── */
   const handleRunCommand = async (command: string) => {
+    setPendingCommand(null);
+    setIsStreaming(true);
+    const execId = Date.now().toString();
+
+    // Show a brief "executing..." indicator
+    setMessages(prev => [
+      ...prev,
+      {
+        id: execId,
+        role: 'assistant',
+        content: `*⚡ Running: \`${command.slice(0, 80)}\`...*`,
+        timestamp: new Date(),
+      },
+    ]);
+
     try {
       const result = await runShellCommand(command);
-      const output = result.stdout || result.stderr || '(no output)';
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: `\`\`\`\n${output.trim()}\n\`\`\``,
-          timestamp: new Date(),
-        },
-      ]);
+      const stdout = (result.stdout || '').trim();
+      const stderr = (result.stderr || '').trim();
+      const output = [stdout, stderr].filter(Boolean).join('\n') || '(Command completed — no output)';
+      const observationText = result.returncode === 0
+        ? output
+        : `Error (exit ${result.returncode}): ${output}`;
+
+      // Remove the "executing" placeholder
+      setMessages(prev => prev.filter(m => m.id !== execId));
+
+      // Now stream the LLM's reaction to the real output
+      const controller = new AbortController();
+      setAbortController(controller);
+      const obsId = (Date.now() + 1).toString();
+      let accumulated = '';
+
+      for await (const chunk of sendObservation(observationText, controller.signal)) {
+        if (chunk.start) {
+          setMessages(prev => [
+            ...prev,
+            { id: obsId, role: 'assistant', content: '', timestamp: new Date() },
+          ]);
+          continue;
+        }
+        if (chunk.end) continue;
+        if (!chunk.content) continue;
+        accumulated += chunk.content;
+        setMessages(prev =>
+          prev.map(m => (m.id === obsId ? { ...m, content: accumulated } : m))
+        );
+      }
     } catch (e) {
+      setMessages(prev => prev.filter(m => m.id !== execId));
       setMessages(prev => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: `*Command failed: ${e instanceof Error ? e.message : String(e)}*`,
           timestamp: new Date(),
         },
       ]);
+    } finally {
+      setIsStreaming(false);
+      setAbortController(null);
     }
+  };
+
+  /* ── Skip a pending command ── */
+  const handleSkipCommand = async () => {
+    setPendingCommand(null);
+    setIsStreaming(true);
+    const controller = new AbortController();
+    setAbortController(controller);
+    const skipId = Date.now().toString();
+    let accumulated = '';
+
+    try {
+      for await (const chunk of sendObservation('[User declined to run the command. Do not retry it.]', controller.signal)) {
+        if (chunk.start) {
+          setMessages(prev => [
+            ...prev,
+            { id: skipId, role: 'assistant', content: '', timestamp: new Date() },
+          ]);
+          continue;
+        }
+        if (chunk.end) continue;
+        if (!chunk.content) continue;
+        accumulated += chunk.content;
+        setMessages(prev =>
+          prev.map(m => (m.id === skipId ? { ...m, content: accumulated } : m))
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsStreaming(false);
+      setAbortController(null);
+    }
+  };
+
+  /* ── Save first-launch profile ── */
+  const handleSaveProfile = async () => {
+    await saveUserProfile(profileDraft);
+    localStorage.setItem('lilim_profile_seen', '1');
+    setShowProfileModal(false);
   };
 
   /* ── Render a single message bubble ── */
@@ -431,6 +550,36 @@ export function ChatInterface() {
                     </>
                   )}
                   {renderContent(message)}
+
+                  {/* Pending command confirmation card — inline at bottom of assistant message */}
+                  {pendingCommand && message.id === messages[messages.length - 1]?.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 bg-black/50 border border-orange-500/50 rounded-lg p-3"
+                    >
+                      <p className="text-orange-300 text-xs mb-2 flex items-center gap-1">
+                        <Flame size={12} /> Confirm command:
+                      </p>
+                      <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono mb-3 overflow-x-auto whitespace-pre-wrap">
+                        <code>{pendingCommand.command}</code>
+                      </pre>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRunCommand(pendingCommand.command)}
+                          className="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-xs transition-colors"
+                        >
+                          ✓ Run it
+                        </button>
+                        <button
+                          onClick={handleSkipCommand}
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs transition-colors"
+                        >
+                          ✗ Skip
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -489,6 +638,67 @@ export function ChatInterface() {
       {/* Settings Overlay */}
       <AnimatePresence>
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      </AnimatePresence>
+
+      {/* First-launch profile modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="w-80 bg-gray-950 border border-orange-500/40 rounded-2xl p-5 shadow-2xl"
+              style={{ boxShadow: '0 0 40px rgba(255,80,0,0.25)' }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <User size={16} className="text-orange-400" />
+                <h2 className="text-white text-sm font-semibold">Quick Setup</h2>
+              </div>
+              <p className="text-gray-400 text-xs mb-4 leading-relaxed">
+                I'll work better knowing who I'm talking to. You can change these any time in Settings.
+              </p>
+
+              <label className="block text-gray-400 text-xs mb-1">Your name / username</label>
+              <input
+                type="text"
+                value={profileDraft.display_name}
+                onChange={e => setProfileDraft(d => ({ ...d, display_name: e.target.value }))}
+                placeholder="e.g. alex"
+                className="w-full bg-gray-900 text-white text-sm px-3 py-2 rounded-lg border border-orange-500/25 focus:border-orange-500/60 focus:outline-none mb-3"
+              />
+
+              <label className="block text-gray-400 text-xs mb-1">GitHub username <span className="text-gray-600">(for push/pull)</span></label>
+              <input
+                type="text"
+                value={profileDraft.github_username}
+                onChange={e => setProfileDraft(d => ({ ...d, github_username: e.target.value }))}
+                placeholder="e.g. BlancoBAM"
+                className="w-full bg-gray-900 text-white text-sm px-3 py-2 rounded-lg border border-orange-500/25 focus:border-orange-500/60 focus:outline-none mb-4"
+              />
+
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => { localStorage.setItem('lilim_profile_seen', '1'); setShowProfileModal(false); }}
+                  className="px-3 py-1.5 text-gray-500 hover:text-gray-300 text-xs transition-colors"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs rounded-lg transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

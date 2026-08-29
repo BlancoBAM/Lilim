@@ -56,6 +56,30 @@ export interface ModelStatus {
 }
 
 /**
+ * Detect the real logged-in desktop user.
+ * In Tauri, the process runs as the actual user, so env vars are authoritative.
+ * We cache after the first read so subsequent calls are free.
+ */
+let _cachedUserCtx: { username: string; home_dir: string } | null = null;
+function getUserContext(): { username: string; home_dir: string } {
+  if (_cachedUserCtx) return _cachedUserCtx;
+  // In Tauri/Electron the renderer can read env via import.meta.env or process.env.
+  // Vite exposes VITE_* vars; for runtime system vars we use a small heuristic:
+  // Try window.__TAURI_INTERNALS__ metadata, then fall back to navigator clues.
+  const username =
+    (window as any).__LILIM_USER__ ||
+    document.cookie.match(/lilim_user=([^;]+)/)?.[1] ||
+    localStorage.getItem('lilim_detected_user') ||
+    '';
+  const home_dir =
+    (window as any).__LILIM_HOME__ ||
+    localStorage.getItem('lilim_detected_home') ||
+    '';
+  _cachedUserCtx = { username, home_dir };
+  return _cachedUserCtx;
+}
+
+/**
  * Stream a chat response from the Rust gateway (SSE).
  * Yields OIChunk objects compatible with the ChatInterface.
  */
@@ -67,7 +91,12 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
     response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, session_id: sessionId, stream: true }),
+      body: JSON.stringify({
+        message,
+        session_id: sessionId,
+        stream: true,
+        ...getUserContext(),  // sends username + home_dir so backend knows real desktop user
+      }),
       signal,
     });
   } catch (err) {
@@ -115,6 +144,19 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
           } else if (data.type === 'tool_call') {
             // Auto-executed command from the ReAct agent loop — show as inline status
             yield { role: 'assistant', type: 'message', content: `\n*⚡ Executing: \`${data.text}\`*\n` };
+          } else if (data.type === 'tool_pending') {
+            // Command needs user confirmation — bubble this up as a special chunk
+            yield {
+              role: 'assistant',
+              type: 'message',
+              content: '',
+              // @ts-ignore — extend chunk with pending command data
+              pending_command: data.command,
+              pending_short: data.short,
+              end: true,
+              provider: 'PENDING',
+            };
+            return;
           } else if (data.type === 'status') {
             // Legacy status messages
             yield { role: 'assistant', type: 'message', content: `\n*${data.text}*\n` };
@@ -254,3 +296,56 @@ export function getSessionId(): string {
 export function clearSession(): void {
   localStorage.removeItem('lilim_session_id');
 }
+
+export interface UserProfile {
+  system_username: string;
+  system_home: string;
+  display_name: string;
+  github_username: string;
+  preferred_home: string;
+}
+
+/**
+ * Get the current user profile (system-detected + any overrides).
+ */
+export async function getUserProfile(): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/settings/user-profile`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save user profile overrides (display_name, github_username, preferred_home).
+ */
+export async function saveUserProfile(
+  profile: Partial<Pick<UserProfile, 'display_name' | 'github_username' | 'preferred_home'>>
+): Promise<{ status: string; profile: UserProfile } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/settings/user-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    });
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Send a shell command observation back into the LLM conversation.
+ * Call this after a confirmed shell command completes so the AI sees the real output.
+ */
+export async function* sendObservation(
+  observationText: string,
+  signal?: AbortSignal
+): AsyncGenerator<OIChunk> {
+  const message = `Observation: ${observationText}`;
+  yield* streamChat(message, signal);
+}
+

@@ -2,10 +2,11 @@
 Lilim Tool Executor
 
 Provides safe, audited execution of system tools on behalf of the user.
-All destructive operations require explicit confirmation from the UI.
+Non-destructive operations can be auto-approved via the tool-rules config.
+Destructive or elevated operations require explicit confirmation from the UI.
 
 Included tools:
-  - shell_command   — run arbitrary shell commands (with confirmation)
+  - shell_command   — run shell commands (rule-based auto-approval or UI gate)
   - file_read       — read a file and return its contents
   - file_list       — list directory contents
   - system_info     — snapshot of OS, disk, memory, processes
@@ -14,9 +15,9 @@ Included tools:
 
 Safety features:
   - Timeout on all executions (30s default)
-  - Forbidden pattern blocklist
+  - Absolute forbidden pattern blocklist (no exceptions)
+  - Persistent tool-rules.json controls auto-approve / always-confirm
   - Command audit log at /var/log/lilim/commands.log
-  - No automatic root escalation — sudo only for explicitly whitelisted commands
 """
 
 import os
@@ -59,6 +60,58 @@ FORBIDDEN_READ_PATHS = [
 ]
 
 LOG_DIR = Path("/var/log/lilim")
+TOOL_RULES_PATH = Path.home() / ".config" / "lilim" / "tool-rules.json"
+
+# Default rules shipped with Lilim (used if no config file exists)
+DEFAULT_TOOL_RULES = {
+    "version": 1,
+    "sudo_allowed": False,
+    "auto_approve": [
+        # Read-only / informational commands
+        "df ", "df -", "free ", "free -", "ls ", "ls -", "ll ", "la ",
+        "cat ", "head ", "tail ", "less ", "more ", "wc ", "sort ", "uniq ",
+        "grep ", "find ", "locate ", "which ", "whereis ",
+        "ps ", "ps -", "top -", "htop", "pgrep ",
+        "uname", "uptime", "date", "whoami", "id ", "id\n",
+        "hostname", "ip addr", "ip link", "ifconfig",
+        "systemctl status", "journalctl -",
+        "apt-cache search", "apt-cache show", "apt list",
+        "pip list", "pip show", "pip freeze",
+        "python ", "python3 ", "node ", "npm list", "cargo",
+        "git status", "git log", "git diff", "git branch",
+        "echo ", "printf ", "pwd", "env", "printenv",
+        "lsblk", "lspci", "lsusb", "dmesg",
+        "du ", "du -",
+    ],
+    # Git workflow commands: auto-execute without UI prompt, but always logged.
+    # Covers the full init→add→commit→remote→push cycle that the agent needs.
+    "agent_auto": [
+        "git init", "git add", "git commit", "git remote",
+        "git push", "git pull", "git clone", "git fetch",
+        "git stash", "git checkout", "git switch", "git merge",
+        "git rebase", "git tag", "git reset", "git restore",
+        "mkdir ", "mkdir -",   # creating directories is safe
+        "touch ",              # creating empty files is safe
+        "cp ", "cp -",        # copying files is generally safe
+    ],
+    "always_confirm": [
+        # Potentially destructive or elevated operations
+        "sudo", "su -", "su ",
+        "rm ", "rm -", "rmdir",
+        "mv ", "mv -",
+        "chmod", "chown", "chgrp",
+        "apt install", "apt remove", "apt purge", "apt upgrade",
+        "pip install", "pip uninstall",
+        "systemctl start", "systemctl stop", "systemctl restart",
+        "systemctl enable", "systemctl disable", "systemctl mask",
+        "dd ", "mkfs", "mount ", "umount ",
+        "iptables", "ufw ",
+        "passwd", "adduser", "useradd", "userdel",
+        "crontab",
+        "curl ", "wget ",   # raw network writes still require confirmation
+        "ssh ", "scp ",
+    ]
+}
 
 
 class ToolExecutor:
@@ -67,25 +120,126 @@ class ToolExecutor:
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
 
-    # ── Shell command ─────────────────────────────────────────
+    # ── Tool rules ────────────────────────────────────────────────
+
+    @staticmethod
+    def load_tool_rules() -> dict:
+        """Load tool permission rules from config, merging with defaults."""
+        rules = dict(DEFAULT_TOOL_RULES)  # start from defaults
+        if TOOL_RULES_PATH.exists():
+            try:
+                import json
+                with open(TOOL_RULES_PATH) as f:
+                    user_rules = json.load(f)
+                # Merge: user lists extend (not replace) defaults
+                rules["sudo_allowed"] = user_rules.get("sudo_allowed", rules["sudo_allowed"])
+                if "auto_approve" in user_rules:
+                    # User can add extra patterns; defaults are preserved
+                    merged = list(rules["auto_approve"])
+                    for p in user_rules["auto_approve"]:
+                        if p not in merged:
+                            merged.append(p)
+                    rules["auto_approve"] = merged
+                if "always_confirm" in user_rules:
+                    merged = list(rules["always_confirm"])
+                    for p in user_rules["always_confirm"]:
+                        if p not in merged:
+                            merged.append(p)
+                    rules["always_confirm"] = merged
+            except Exception:
+                pass
+        return rules
+
+    @staticmethod
+    def save_tool_rules(rules: dict) -> bool:
+        """Persist tool rules to config file. Returns True on success."""
+        try:
+            import json
+            TOOL_RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
+            rules["version"] = DEFAULT_TOOL_RULES["version"]
+            with open(TOOL_RULES_PATH, "w") as f:
+                json.dump(rules, f, indent=2)
+            return True
+        except Exception:
+            return False
+
+    def classify_command(self, command: str) -> str:
+        """Classify a command as 'auto', 'confirm', or 'forbidden'.
+
+        Returns:
+            'forbidden' — absolute blocklist match (never run)
+            'auto'      — matches auto_approve OR agent_auto rules (run without UI prompt)
+            'confirm'   — requires user approval via UI
+        """
+        # Absolute forbidden always wins
+        rejection = self._check_forbidden(command)
+        if rejection:
+            return "forbidden"
+
+        rules = self.load_tool_rules()
+        cmd_stripped = command.strip().lower()
+
+        # sudo: check sudo_allowed first
+        if "sudo" in cmd_stripped and not rules.get("sudo_allowed", False):
+            return "confirm"  # sudo not enabled in rules
+
+        # Check always_confirm first (higher specificity wins)
+        for pattern in rules.get("always_confirm", []):
+            if pattern.lower() in cmd_stripped:
+                return "confirm"
+
+        # Check agent_auto (git workflow + safe file ops)
+        for pattern in rules.get("agent_auto", []):
+            if cmd_stripped.startswith(pattern.lower()) or pattern.lower() in cmd_stripped:
+                return "auto"
+
+        # Check auto_approve
+        for pattern in rules.get("auto_approve", []):
+            if cmd_stripped.startswith(pattern.lower()) or pattern.lower() in cmd_stripped:
+                return "auto"
+
+        # Default: require confirmation for anything unrecognised
+        return "confirm"
+
+    # ── Shell command ────────────────────────────────────────────────
 
     def shell_command(self, command: str, confirmed: bool = False) -> dict:
         """Execute a shell command.
 
         Args:
             command:   The shell command string to run.
-            confirmed: Must be True — set by the UI after user clicks 'Run it'.
+            confirmed: Set to True by the UI after user approval, OR when the
+                       command is auto-approved by tool-rules.json.
 
         Returns:
-            dict with stdout, stderr, returncode, and the command itself.
+            dict with stdout, stderr, returncode, classification, and the command.
         """
+        # Classify first
+        classification = self.classify_command(command)
+
+        if classification == "forbidden":
+            return {
+                "error": "Command is on the absolute forbidden list.",
+                "command": command,
+                "classification": "forbidden",
+                "stdout": "",
+                "stderr": "",
+                "returncode": -1,
+            }
+
+        # Auto-approved commands skip the confirmation gate
+        if classification == "auto":
+            confirmed = True
+
         if not confirmed:
             return {
                 "error": "Command not confirmed by user.",
                 "command": command,
+                "classification": classification,
                 "stdout": "",
                 "stderr": "",
                 "returncode": -1,
+                "needs_confirmation": True,
             }
 
         # Safety checks

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap } from 'lucide-react';
-import { getModelStatus, getProvidersStatus, registerApiKey, saveModelConfig, type ProviderStatus } from '../api/lilim';
+import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap, User } from 'lucide-react';
+import { getModelStatus, getProvidersStatus, registerApiKey, saveModelConfig, getUserProfile, saveUserProfile, type ProviderStatus, type UserProfile } from '../api/lilim';
 
 // ── Provider metadata for display ────────────────────────────────────────────
 
@@ -283,14 +283,30 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [cfSaving, setCfSaving] = useState(false);
   const [cfSaved, setCfSaved] = useState(false);
 
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileDraft, setProfileDraft] = useState({ display_name: '', github_username: '', preferred_home: '' });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const [providers, model, backendConfig] = await Promise.all([
+      const [providers, model, backendConfig, profile] = await Promise.all([
         getProvidersStatus(),
         getModelStatus(),
         import('../api/lilim').then(api => api.getModelConfig()),
+        getUserProfile(),
       ]);
+
+      if (profile) {
+        setUserProfile(profile);
+        setProfileDraft({
+          display_name: profile.display_name,
+          github_username: profile.github_username,
+          preferred_home: profile.preferred_home,
+        });
+      }
 
       // Sync backend config to local state and localStorage
       if (backendConfig && Object.keys(backendConfig).length > 0) {
@@ -356,6 +372,22 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const handleProfileSave = async () => {
+    setProfileSaving(true);
+    setProfileSaved(false);
+    try {
+      const result = await saveUserProfile(profileDraft);
+      if (result) {
+        setUserProfile(result.profile);
+        localStorage.setItem('lilim_profile_seen', '1');
+        setProfileSaved(true);
+        setTimeout(() => setProfileSaved(false), 3000);
+      }
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   const configuredCount = providerStatuses.filter(p => p.configured).length;
 
   return (
@@ -399,6 +431,70 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0 space-y-1"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,80,0,0.3) transparent' }}
       >
+
+        {/* User Profile Section */}
+        <Section title="User Profile" icon={<User size={13} />} defaultOpen={true}>
+          {loading ? (
+            <div className="flex items-center gap-2 text-gray-500 text-xs py-2">
+              <RefreshCw size={12} className="animate-spin" /> Loading profile…
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="rounded-lg bg-black/20 border border-white/5 p-2">
+                <p className="text-[10px] text-gray-600 mb-0.5">System user (auto-detected, read-only)</p>
+                <p className="text-xs text-gray-400 font-mono">
+                  {userProfile?.system_username || '—'} @ {userProfile?.system_home || '—'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-gray-500 text-[10px] mb-1">Display name</label>
+                <input
+                  type="text"
+                  value={profileDraft.display_name}
+                  onChange={e => setProfileDraft(d => ({ ...d, display_name: e.target.value }))}
+                  placeholder={userProfile?.system_username || 'your name'}
+                  className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-500 text-[10px] mb-1">GitHub username <span className="text-gray-700">(used in git remote URLs)</span></label>
+                <input
+                  type="text"
+                  value={profileDraft.github_username}
+                  onChange={e => setProfileDraft(d => ({ ...d, github_username: e.target.value }))}
+                  placeholder="e.g. BlancoBAM"
+                  className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-500 text-[10px] mb-1">Home dir override <span className="text-gray-700">(leave blank to use detected)</span></label>
+                <input
+                  type="text"
+                  value={profileDraft.preferred_home}
+                  onChange={e => setProfileDraft(d => ({ ...d, preferred_home: e.target.value }))}
+                  placeholder={userProfile?.system_home || '/home/you'}
+                  className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:border-orange-500/50 focus:outline-none"
+                />
+              </div>
+
+              <button
+                onClick={handleProfileSave}
+                disabled={profileSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-700/70 hover:bg-orange-600/80 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
+              >
+                {profileSaving
+                  ? <><RefreshCw size={10} className="animate-spin" /> Saving…</>
+                  : profileSaved
+                    ? <><CheckCircle size={10} className="text-green-400" /> Saved!</>
+                    : <><Save size={10} /> Save Profile</>
+                }
+              </button>
+            </div>
+          )}
+        </Section>
 
         {/* Local Model Status */}
         <Section title="Local Model (Phi-2, Built-in)" icon={<Cpu size={13} />}>

@@ -81,6 +81,30 @@ TASK_CATEGORIES = {
             "Use safe commands (mv -i, rm -i) for non-technical users."
         ),
     },
+    # Conversation recall — NEVER use bash. Serve from Lilim's memory.
+    "recall": {
+        "keywords": [
+            "previous conversation", "what did i say", "show history",
+            "our chat", "last time we talked", "what did we discuss",
+            "conversation history", "show me our", "entirety", "earlier",
+            "what did you say", "what was said", "remind me", "last session",
+            "what happened", "our last", "recap", "summary of",
+        ],
+        "enrich": "Recall from Lilim's memory. No bash. Summarise what you remember.",
+    },
+    # Git / DevOps tasks
+    "devops": {
+        "keywords": [
+            "git", "push", "pull", "clone", "commit", "branch", "merge",
+            "remote", "origin", "repo", "repository", "github", "gitlab",
+            "docker", "deploy", "ci", "cd", "pipeline",
+        ],
+        "enrich": (
+            "Execute the git/devops command immediately. "
+            "Use the user’s configured GitHub username for remote URLs. "
+            "Do NOT explain git theory — just run the commands."
+        ),
+    },
     "conversation": {
         "keywords": [],  # Default fallback
         "enrich": "Be concise and conversational. Match the user's energy.",
@@ -141,14 +165,29 @@ class PromptEnhancer:
         }
 
     def _classify_task(self, message: str) -> str:
-        """Classify the user's message into a task category."""
-        message_lower = message.lower()
-        scores = {}
+        """Classify the user's message into a task category.
 
+        Uses phrase matching for multi-word keywords so 'previous conversation'
+        beats any single-word hit. Recall is checked first and wins immediately
+        because it determines the execution path (no bash allowed).
+        """
+        message_lower = message.lower()
+
+        # --- Recall check first: any match wins immediately ---
+        # These indicate "show me Lilim's memory" — never bash.
+        recall_kws = TASK_CATEGORIES.get("recall", {}).get("keywords", [])
+        if any(kw in message_lower for kw in recall_kws):
+            return "recall"
+
+        # --- Score all other categories ---
+        scores = {}
         for category, config in TASK_CATEGORIES.items():
-            if not config["keywords"]:
+            if category in ("recall", "conversation"):
                 continue
-            score = sum(1 for kw in config["keywords"] if kw in message_lower)
+            kws = config.get("keywords", [])
+            if not kws:
+                continue
+            score = sum(1 for kw in kws if kw in message_lower)
             if score > 0:
                 scores[category] = score
 
@@ -156,6 +195,7 @@ class PromptEnhancer:
             return "conversation"
 
         return max(scores, key=scores.get)
+
 
     def _get_system_context(self) -> str:
         """Gather relevant system context for sysadmin/debug tasks."""

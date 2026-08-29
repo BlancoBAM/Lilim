@@ -47,6 +47,7 @@ class Provider:
     free_models: list             # Ordered list of free model IDs to try
     daily_limit: int              # Approximate free daily request limit
     tokens_per_min: int           # Approximate free tokens/minute
+    context_window: int = 8_192   # Max context window tokens (conservative default)
     base_url: Optional[str] = None  # Optional custom base URL
     extra_env: dict = field(default_factory=dict)  # Extra env vars to set
 
@@ -79,6 +80,7 @@ FREE_PROVIDERS = [
         env_key="OPENROUTER_API_KEY",
         daily_limit=50,  # 50/day free, 1000/day with $10 topup
         tokens_per_min=200_000,
+        context_window=128_000,   # llama-3.3-70b on OR supports 128k
         free_models=[
             # Best free models on OpenRouter — ordered by capability
             "meta-llama/llama-3.3-70b-instruct:free",
@@ -97,6 +99,7 @@ FREE_PROVIDERS = [
         env_key="GROQ_API_KEY",
         daily_limit=14_400,
         tokens_per_min=30_000,
+        context_window=8_192,     # llama3-70b-8192 (most restrictive free model)
         free_models=[
             "llama3-70b-8192",      # Best quality on Groq free tier
             "llama-3.3-70b-versatile",
@@ -111,6 +114,7 @@ FREE_PROVIDERS = [
         env_key="GEMINI_API_KEY",
         daily_limit=500,
         tokens_per_min=250_000,
+        context_window=1_048_576, # Gemini 2.0 Flash: 1M context
         free_models=[
             "gemini-2.0-flash",
             "gemini-1.5-flash-latest",
@@ -123,6 +127,7 @@ FREE_PROVIDERS = [
         env_key="CEREBRAS_API_KEY",
         daily_limit=14_400,
         tokens_per_min=60_000,
+        context_window=128_000,   # llama-3.3-70b on Cerebras: 128k
         free_models=[
             "llama-3.3-70b",
             "llama-3.1-8b",
@@ -135,6 +140,7 @@ FREE_PROVIDERS = [
         env_key="CLOUDFLARE_API_TOKEN",
         daily_limit=500,   # 10k neurons/day (rough estimate)
         tokens_per_min=10_000,
+        context_window=8_192,     # Conservative — varies by CF model
         free_models=[
             "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
             "@cf/google/gemma-3-12b-it",
@@ -149,6 +155,7 @@ FREE_PROVIDERS = [
         env_key="COHERE_API_KEY",
         daily_limit=33,   # 1000/month ≈ 33/day
         tokens_per_min=20_000,
+        context_window=256_000,   # Command-A: 256k context
         free_models=[
             "command-a-03-2025",
             "command-r-plus-08-2024",
@@ -162,6 +169,7 @@ FREE_PROVIDERS = [
         env_key="MISTRAL_API_KEY",
         daily_limit=1_000,
         tokens_per_min=500_000,
+        context_window=32_000,    # mistral-small: 32k
         free_models=[
             "mistral-small-latest",
             "mistral-medium-latest",
@@ -174,6 +182,7 @@ FREE_PROVIDERS = [
         env_key="HUGGINGFACE_API_KEY",
         daily_limit=100,
         tokens_per_min=30_000,
+        context_window=128_000,   # Llama-3.3-70B: 128k
         free_models=[
             "meta-llama/Llama-3.3-70B-Instruct",
             "Qwen/Qwen2.5-72B-Instruct",
@@ -187,6 +196,7 @@ FREE_PROVIDERS = [
         env_key="DEEPSEEK_API_KEY",
         daily_limit=500,
         tokens_per_min=60_000,
+        context_window=64_000,    # DeepSeek-V3: 64k context
         free_models=[
             "deepseek-chat",
             "deepseek-reasoner",
@@ -200,6 +210,7 @@ FREE_PROVIDERS = [
         env_key="OPENAI_API_KEY",
         daily_limit=999_999,
         tokens_per_min=90_000,
+        context_window=128_000,   # GPT-4o: 128k
         free_models=["gpt-4o-mini", "gpt-4o"],
     ),
     Provider(
@@ -208,6 +219,7 @@ FREE_PROVIDERS = [
         env_key="ANTHROPIC_API_KEY",
         daily_limit=999_999,
         tokens_per_min=40_000,
+        context_window=200_000,   # Claude 3.5: 200k
         free_models=["claude-haiku-3-5", "claude-sonnet-4-5"],
     ),
 ]
@@ -569,10 +581,37 @@ class FreeRouter:
                 "configured": p.is_configured(),
                 "daily_limit": p.daily_limit,
                 "tokens_per_min": p.tokens_per_min,
+                "context_window": p.context_window,
                 "failures": self._failure_counts.get(p.name, 0),
                 "free_models": p.free_models[:3],  # Show first 3
             })
         return {"providers": result, "configured_count": len(self.get_configured_providers())}
+
+    def get_context_limits(self) -> dict:
+        """Return context window info for configured providers and the safe global cap."""
+        configured = self.get_configured_providers()
+        provider_info = [
+            {"name": p.name, "context_window": p.context_window}
+            for p in configured
+        ]
+        # The safe global cap is the minimum context window among active providers,
+        # minus headroom for the system prompt and response (~2k tokens).
+        if configured:
+            min_ctx = min(p.context_window for p in configured)
+            safe_cap = max(2_048, min_ctx - 2_048)
+        else:
+            safe_cap = 6_144  # sensible offline default
+
+        # Config override
+        user_cap = self.config.get("max_context_tokens", 0)
+        effective_cap = int(user_cap) if user_cap and int(user_cap) > 0 else safe_cap
+
+        return {
+            "providers": provider_info,
+            "safe_cap": safe_cap,
+            "effective_cap": effective_cap,
+            "user_override": bool(user_cap),
+        }
 
     @staticmethod
     def _no_provider_message() -> str:

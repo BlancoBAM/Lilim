@@ -8,14 +8,18 @@ Routes:
   GET  /health            — liveness check
   POST /chat              — main chat endpoint (streaming SSE)
   POST /chat/sync         — non-streaming version for simple clients
+  POST /chat/reset        — clear session history and start fresh
   POST /route             — routing oracle (returns decision, no LLM call)
   POST /memory/search     — search memory store
   GET  /memory/context    — get memory context for a query
   GET  /memory/stats      — memory statistics
   POST /tools/shell       — execute a shell command (pre-confirmed by UI)
+  GET  /tools/rules       — read current tool permission rules
+  POST /tools/rules       — write tool permission rules
   GET  /system/info       — snapshot of OS, disk, memory stats
   POST /settings/model-config — hot-reload model/provider config
   GET  /providers/status  — list all providers and their status
+  GET  /providers/context-limits — context window sizes + effective rolling cap
 
 Usage:
   python -m lilim_core.server
@@ -25,6 +29,7 @@ Usage:
 import json
 import os
 import platform
+import pwd
 import subprocess
 import sys
 import random
@@ -101,6 +106,7 @@ def _get_responses_paths():
 RESPONSES_YAML_PATHS = _get_responses_paths()
 
 MODEL_CONFIG_PATH = Path.home() / ".config" / "lilim" / "model-config.json"
+USER_PROFILE_PATH = Path.home() / ".config" / "lilim" / "user-profile.json"
 PORT = int(os.environ.get("LILIM_BRAIN_PORT", "8081"))
 HOST = os.environ.get("LILIM_BRAIN_HOST", "127.0.0.1")
 
@@ -108,6 +114,56 @@ FORBIDDEN_COMMANDS = [
     "rm -rf /", "mkfs", ":(){:|:&};:", "dd if=/dev/zero",
     "chmod -R 777 /", "> /dev/sda",
 ]
+
+
+# ── Runtime user detection ────────────────────────────────────
+
+def _detect_user_info() -> dict:
+    """Detect the real system user running this process.
+
+    Priority:
+      1. ~/.config/lilim/user-profile.json (user override via Settings)
+      2. pwd database lookup (most reliable on Linux)
+      3. $USER / $LOGNAME environment variables
+      4. Path.home().name as last resort
+    """
+    # Check for user-supplied overrides first
+    profile_override = {}
+    if USER_PROFILE_PATH.exists():
+        try:
+            with open(USER_PROFILE_PATH) as f:
+                profile_override = json.load(f)
+        except Exception:
+            pass
+
+    # Detect system username
+    system_username = "user"
+    system_home = str(Path.home())
+    try:
+        pw = pwd.getpwuid(os.getuid())
+        system_username = pw.pw_name
+        system_home = pw.pw_dir
+    except Exception:
+        for env_var in ("USER", "LOGNAME", "USERNAME"):
+            val = os.environ.get(env_var, "").strip()
+            if val:
+                system_username = val
+                break
+        else:
+            system_username = Path.home().name
+
+    return {
+        "system_username": system_username,
+        "system_home": system_home,
+        # User-settable overrides
+        "display_name": profile_override.get("display_name", system_username),
+        "github_username": profile_override.get("github_username", ""),
+        "preferred_home": profile_override.get("preferred_home", system_home),
+    }
+
+
+# Populated at startup — use these everywhere instead of hard-coding usernames
+_RUNTIME_USER_INFO: dict = {}
 
 
 # ── Load personality files ─────────────────────────────────────
@@ -154,9 +210,13 @@ def _get_random_response(type_name: str) -> str:
     return random.choice(options)
 
 
-def build_system_prompt(identity: dict, responses: dict) -> str:
+def build_system_prompt(identity: dict, responses: dict,
+                         username: Optional[str] = None,
+                         home_dir: Optional[str] = None) -> str:
     """
-    Build Lilim's system prompt. Called fresh each turn so tone examples rotate.
+    Build Lilim's system prompt.
+    `username` and `home_dir` override daemon-detected values when the Tauri
+    frontend sends the real desktop user's identity per-request.
     """
     import random as _random
     name = identity.get("identity", {}).get("names", {}).get("first", "Lilim")
@@ -170,7 +230,6 @@ def build_system_prompt(identity: dict, responses: dict) -> str:
     done_ex  = _random.choice(ir.get("complete", ["Handled."]))
     err_ex   = _random.choice(ir.get("error",    ["Something broke."]))
 
-    # Rotate a random longResponse context for variety
     lr_keys = list(lr.keys())
     long_ctx = ""
     if lr_keys:
@@ -180,44 +239,51 @@ def build_system_prompt(identity: dict, responses: dict) -> str:
         content = chosen_lr.get("content", "")
         long_ctx = f"\nCapability Context ({chosen_key}): {prefix} {content[:200]}"
 
+    # Per-request overrides win; fall back to startup-detected runtime info
+    user_info = _RUNTIME_USER_INFO
+    runtime_user = username or user_info.get("display_name") or user_info.get("system_username", "user")
+    runtime_home = home_dir or user_info.get("preferred_home") or user_info.get("system_home", str(Path.home()))
+    github_user = user_info.get("github_username", "")
+    github_line = f"GitHub: {github_user}" if github_user else "GitHub: (not set — user can configure in Settings)"
+
     prompt = f"""You are {name}, the AI assistant built into Lilith Linux.
-User: aegon | Home: /home/aegon | OS: Ubuntu-based Lilith Linux.
+User: {runtime_user} | Home: {runtime_home} | OS: Ubuntu-based Lilith Linux | {github_line}
 Persona Rule: {core_rule}
 Primary User: {target_user}
 
-PERSONALITY — use this voice in EVERY response, not just greetings:
+PERSONALITY — every response, not just greetings:
 - Slightly sarcastic, dry, wisely experienced. Never hostile, always helpful.
 - Examples: "{greet_ex}" / "{done_ex}" / On error: "{err_ex}"
 - Infernal flavor in greetings, transitions, and errors ONLY — never in medical or clinical content.{long_ctx}
 
-RESPONSE RULES (CRITICAL):
-1. Answer ONLY the user's question. Do NOT generate fake follow-up exercises, examples, or training data.
-2. Stop when the answer is complete. Do NOT continue with "Exercise 3:", "Example 4:", "Solution:" etc.
+RESPONSE RULES (CRITICAL — VIOLATIONS WILL BE FLAGGED):
+1. Answer ONLY the user's question. Stop when the answer is complete.
+2. Do NOT generate fake follow-up exercises, examples, or training data.
 3. Do NOT prefix responses with "A:", "Answer:", "Assistant:", or similar.
 4. Be concise. ELI10 for medical/anatomy. Technical and direct for Linux/code.
+5. NEVER say "I'll now run", "I'm going to", "Here's what I'll do", "Let me", or narrate your plan.
+   → Think silently. Speak once. Act immediately. Zero preamble.
+6. Do NOT list numbered steps before acting. Execute first, explain (briefly) after if at all.
+7. ONE code block per response. Do NOT chain multiple blocks.
+8. NEVER show what you predict a command will output. The real output appears in [System →]
+   blocks automatically. If you write fake output, it will be executed as commands. Do not do this.
+9. `history` is a bash shell BUILTIN — it does NOT work in subprocess. NEVER use it.
+   For Lilim conversation history, answer from your memory of this session.
+10. If a command fails: say what happened in ONE sentence. Do NOT retry unless the error
+    clearly shows a path or syntax fix. Never retry the same failing command twice.
 
-AUTONOMOUS TOOL USE — MANDATORY — DO NOT EXPLAIN, JUST EXECUTE:
-- When asked to CREATE, DELETE, MOVE, CHECK, or RUN anything on this system, YOU MUST DO IT IMMEDIATELY.
-- When asked to SEARCH THE WEB, LOOK UP, or FETCH a URL, use a ```search block or ```fetch block.
-- DO NOT write instructions. DO NOT explain how. DO NOT give numbered steps. EXECUTE NOW.
-- For system tasks, use a ```bash block with the exact command. Example:
-  ```bash
-  df -h /
-  ```
-- For web search, use a ```search block. Example:
-  ```search
-  latest Python release notes
-  ```
-- For fetching a specific URL, use a ```fetch block. Example:
-  ```fetch
-  https://example.com
-  ```
-- FORMAT RULES:
-  * Use ```bash ... ``` — NEVER use plain ```, NEVER use #!/bin/bash, NEVER list steps
-  * ALWAYS use absolute paths: /home/aegon/Documents/ (not ~/Documents/)
-  * ONE action block per response unless chaining is required
-- After the Observation arrives, give a brief persona-flavored confirmation.
-- For non-system questions (medical facts, study help, general conversation), answer directly — no action blocks.
+AUTONOMOUS TOOL USE — MANDATORY:
+- System tasks (create, delete, move, run, git, install, check): output EXACTLY one ```bash block
+  as THE VERY FIRST CONTENT of your response. No prose before it, none.
+- Web lookup: one ```search block. URL fetch: one ```fetch block.
+- FORMAT: ```bash only. NEVER plain ```, NEVER #!/bin/bash.
+- ALWAYS absolute paths: {runtime_home}/ — NEVER ~/
+- After [System →] observation arrives: ONE brief persona-flavored sentence. Done.
+- For conversation, recall, medical, study questions: answer in plain text. No blocks.
+
+PATH RULES:
+- User home: {runtime_home}. Use this exactly. Always.
+- Unknown path? Run: find {runtime_home} -name <target> 2>/dev/null
 """
     return prompt.strip()
 
@@ -229,6 +295,10 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = "default"
     stream: Optional[bool] = True
+    # Desktop user context — sent by Tauri (which runs AS the logged-in user).
+    # Overrides the daemon-detected user so multi-user Lilith Linux works correctly.
+    username: Optional[str] = None
+    home_dir: Optional[str] = None
 
 
 class RouteRequest(BaseModel):
@@ -239,6 +309,10 @@ class RouteRequest(BaseModel):
 class ToolShellRequest(BaseModel):
     command: str
     confirmed: bool = False
+
+
+class SessionResetRequest(BaseModel):
+    session_id: str
 
 
 class MemorySearchRequest(BaseModel):
@@ -281,7 +355,15 @@ _memory: MemoryManager = None
 
 @app.on_event("startup")
 async def startup():
-    global _identity, _responses, _system_prompt, _enhancer, _router, _free_router, _memory
+    global _identity, _responses, _system_prompt, _enhancer, _router, _free_router, _memory, _RUNTIME_USER_INFO
+
+    # Detect real system user first — everything else depends on this
+    _RUNTIME_USER_INFO = _detect_user_info()
+    print(
+        f"[Lilim Brain v2] Running as user: {_RUNTIME_USER_INFO['display_name']} "
+        f"(home: {_RUNTIME_USER_INFO['preferred_home']})",
+        flush=True,
+    )
 
     _memory = MemoryManager()
     _identity = load_identity()
@@ -332,6 +414,14 @@ async def providers_status():
     return _free_router.get_status()
 
 
+@app.get("/providers/context-limits")
+async def providers_context_limits():
+    """Return context window sizes for each configured provider and the effective rolling cap."""
+    if not _free_router:
+        return {"providers": [], "safe_cap": 6144, "effective_cap": 6144, "user_override": False}
+    return _free_router.get_context_limits()
+
+
 @app.post("/providers/register-key")
 async def register_key(req: RegisterKeyRequest):
     """Register an API key with optional provider hint. Auto-detects provider from key format."""
@@ -351,6 +441,48 @@ async def register_key(req: RegisterKeyRequest):
                 content={"error": "Could not detect provider from key format. Specify provider name explicitly."}
             )
         return {"status": "registered", "provider": detected[0]}
+
+
+@app.get("/settings/user-profile")
+async def get_user_profile():
+    """Return detected system user info and any overrides from the profile config."""
+    return _RUNTIME_USER_INFO
+
+
+@app.post("/settings/user-profile")
+async def save_user_profile(request: Request):
+    """Persist user profile overrides (display name, GitHub username, preferred home).
+
+    Accepted fields: display_name, github_username, preferred_home.
+    Triggers a runtime refresh so the system prompt uses new values immediately.
+    """
+    global _RUNTIME_USER_INFO
+    try:
+        data = await request.json()
+        USER_PROFILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+        # Merge with existing profile
+        existing = {}
+        if USER_PROFILE_PATH.exists():
+            try:
+                with open(USER_PROFILE_PATH) as f:
+                    existing = json.load(f)
+            except Exception:
+                pass
+
+        allowed_keys = {"display_name", "github_username", "preferred_home"}
+        for k, v in data.items():
+            if k in allowed_keys:
+                existing[k] = v
+
+        with open(USER_PROFILE_PATH, "w") as f:
+            json.dump(existing, f, indent=2)
+
+        # Refresh runtime user info immediately
+        _RUNTIME_USER_INFO = _detect_user_info()
+        return {"status": "saved", "profile": _RUNTIME_USER_INFO}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/route")
@@ -436,20 +568,30 @@ async def chat(req: ChatRequest):
     """Main chat endpoint. Returns SSE stream or JSON."""
     if req.stream:
         return StreamingResponse(
-            _stream_chat(req.message, req.session_id),
+            _stream_chat(req.message, req.session_id,
+                         username=req.username, home_dir=req.home_dir),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     else:
-        result = await _sync_chat(req.message, req.session_id)
+        result = await _sync_chat(req.message, req.session_id,
+                                  username=req.username, home_dir=req.home_dir)
         return JSONResponse(result)
 
 
 @app.post("/chat/sync")
 async def chat_sync(req: ChatRequest):
     """Non-streaming chat."""
-    result = await _sync_chat(req.message, req.session_id)
+    result = await _sync_chat(req.message, req.session_id,
+                              username=req.username, home_dir=req.home_dir)
     return JSONResponse(result)
+
+
+@app.post("/chat/reset")
+async def chat_reset(req: SessionResetRequest):
+    """Clear session history so the next message starts a fresh context window."""
+    _memory.clear_session(req.session_id)
+    return {"status": "cleared", "session_id": req.session_id}
 
 
 @app.post("/memory/search")
@@ -486,19 +628,33 @@ async def tools_shell(req: ToolShellRequest):
     if not req.confirmed:
         raise HTTPException(status_code=400, detail="Command not confirmed.")
 
-    cmd_lower = req.command.lower().strip()
-    for forbidden in FORBIDDEN_COMMANDS:
-        if forbidden in cmd_lower:
-            raise HTTPException(status_code=403, detail=f"Forbidden command pattern: '{forbidden}'")
+    from lilim_core.tool_executor import ToolExecutor
+    executor = ToolExecutor()
+    result = executor.shell_command(req.command, confirmed=req.confirmed)
+    if result.get("error") and not result.get("needs_confirmation"):
+        raise HTTPException(status_code=403, detail=result["error"])
+    return result
 
+
+@app.get("/tools/rules")
+async def get_tool_rules():
+    """Return current tool permission rules."""
+    from lilim_core.tool_executor import ToolExecutor
+    return ToolExecutor.load_tool_rules()
+
+
+@app.post("/tools/rules")
+async def save_tool_rules_endpoint(request: Request):
+    """Persist updated tool permission rules."""
     try:
-        result = subprocess.run(req.command, shell=True, capture_output=True, text=True, timeout=30)
-        _log_command(req.command, result.returncode)
-        return {"command": req.command, "stdout": result.stdout, "stderr": result.stderr, "returncode": result.returncode}
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="Command timed out after 30 seconds")
+        rules = await request.json()
+        from lilim_core.tool_executor import ToolExecutor
+        success = ToolExecutor.save_tool_rules(rules)
+        if success:
+            return {"status": "saved"}
+        raise HTTPException(status_code=500, detail="Failed to write rules file")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/tools/web/search")
@@ -588,7 +744,9 @@ async def system_info():
 
 # ── Core chat logic ───────────────────────────────────────────
 
-async def _sync_chat(message: str, session_id: str = "default") -> dict:
+async def _sync_chat(message: str, session_id: str = "default",
+                     username: Optional[str] = None,
+                     home_dir: Optional[str] = None) -> dict:
     """Process a chat message synchronously and return the full response."""
     _memory.save_turn("user", message, session_id=session_id)
 
@@ -596,10 +754,25 @@ async def _sync_chat(message: str, session_id: str = "default") -> dict:
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    sys_prompt = build_system_prompt(_identity, load_responses_yaml())
+    # Recall requests: serve memory directly, no LLM bash path
+    if enhanced.get("category") == "recall":
+        recall_text = _serve_recall(session_id)
+        _memory.save_turn("assistant", recall_text, session_id=session_id)
+        return {
+            "reply": recall_text, "provider": "MEMORY",
+            "category": "recall", "session_id": session_id, "error": False,
+        }
+
+    sys_prompt = build_system_prompt(_identity, load_responses_yaml(),
+                                     username=username, home_dir=home_dir)
     messages = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
+    BASH_CATEGORIES = {
+        "system_admin", "linux_help", "troubleshooting", "devops",
+        "code_generation", "code_debugging", "file_management",
+    }
+    max_tok = 256 if enhanced.get("category") in BASH_CATEGORIES else 1024
     reply, provider, is_error = _free_router.call_sync(
-        messages, enhanced["category"], max_tokens=1024
+        messages, enhanced["category"], max_tokens=max_tok
     )
 
     if not is_error:
@@ -615,7 +788,9 @@ async def _sync_chat(message: str, session_id: str = "default") -> dict:
     }
 
 
-async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenerator[str, None]:
+async def _stream_chat(message: str, session_id: str = "default",
+                        username: Optional[str] = None,
+                        home_dir: Optional[str] = None) -> AsyncGenerator[str, None]:
     """Stream a chat response as SSE events, with autonomous agentic loop."""
     _memory.save_turn("user", message, session_id=session_id)
 
@@ -623,19 +798,33 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
-    sys_prompt = build_system_prompt(_identity, load_responses_yaml())
+    # ── Recall fast-path: serve memory directly, no bash allowed ──
+    if enhanced.get("category") == "recall":
+        recall_text = _serve_recall(session_id)
+        _memory.save_turn("assistant", recall_text, session_id=session_id)
+        yield f"data: {json.dumps({'type': 'meta', 'category': 'recall', 'turn': 1, 'providers_available': 0})}\n\n"
+        # Stream word-by-word so it feels natural
+        for word in recall_text.split(" "):
+            yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'provider': 'MEMORY'})}\n\n"
+        return
+
+    sys_prompt = build_system_prompt(_identity, load_responses_yaml(),
+                                     username=username, home_dir=home_dir)
     history = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
 
-    max_turns = 8
+    max_turns = 5   # reduced from 8 — fewer chances to spiral
     current_turn = 0
     full_assistant_reply = ""
     active_provider = "LOCAL"
+    consecutive_failures = 0   # stop the spiral after 2 consecutive bash errors
+    MAX_CONSECUTIVE_FAILURES = 2
 
     # Category is fixed for this request — compute once
     BASH_CATEGORIES = {
         "system_admin", "linux_help", "troubleshooting", "devops",
         "code_generation", "code_debugging", "file_management",
-        # NOTE: 'research' and 'conversation' are NOT here — they are tutoring/chat
+        # git/devops tasks are bash-eligible
     }
     use_bash_prefix = enhanced.get("category", "general") in BASH_CATEGORIES
 
@@ -713,10 +902,17 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
             except Exception:
                 pass
 
+        # Bash/system turns get a tight token cap to prevent rambling
+        BASH_CAPS = {
+            "system_admin", "linux_help", "troubleshooting", "devops",
+            "code_generation", "code_debugging", "file_management",
+        }
+        turn_max_tokens = 256 if enhanced.get("category") in BASH_CAPS else 1024
+
         stream_gen = (
             local_stream_generator()
             if use_local
-            else _free_router.call_stream(history, enhanced["category"], max_tokens=1024)
+            else _free_router.call_stream(history, enhanced["category"], max_tokens=turn_max_tokens)
         )
 
         # Stream tokens and filter hallucinations
@@ -738,8 +934,27 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
 
         full_assistant_reply += turn_reply
 
-        # Detect and execute any bash code blocks in the reply
-        bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", turn_reply))
+        # ── Bash block extraction ────────────────────────────────────────────
+        # SAFETY: only extract blocks that appear BEFORE position 400 in the response.
+        # Blocks that come after significant prose are the model "demonstrating",
+        # not requesting execution. This stops hallucinated numbered-list output
+        # from being picked up and run as commands.
+        #
+        # SAFETY: strip lines that look like hallucinated numbered output
+        # ("1. Im borrowing...", "2. Ah, the classic...") before scanning.
+        sanitised_reply = re.sub(r"(?m)^\d+\.\s+.+$", "", turn_reply)
+
+        # Only scan the first 400 characters of the sanitised reply
+        scan_window = sanitised_reply[:400]
+        bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", scan_window))
+
+        # Also check full reply in case block started before char 400 but closed after
+        if not bash_matches:
+            bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", sanitised_reply))
+            if bash_matches:
+                # Only keep blocks whose START position is within the first 400 chars
+                bash_matches = [m for m in bash_matches if m.start() < 400]
+
         if bash_matches:
             from lilim_core.tool_executor import ToolExecutor
             executor = ToolExecutor()
@@ -749,22 +964,50 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
                 # Strip shebang if present
                 lines = [l for l in raw_cmd.splitlines() if not l.startswith("#!")]
                 command = "\n".join(lines).strip()
-                # Expand ~ to absolute path
-                home_dir = str(Path.home())
-                command = command.replace("~/", f"{home_dir}/").replace(" ~", f" {home_dir}")
+                # Expand ~ to absolute path — use runtime home, not daemon home
+                _exec_home = home_dir or _RUNTIME_USER_INFO.get("preferred_home") or _RUNTIME_USER_INFO.get("system_home") or str(Path.home())
+                command = command.replace("~/", f"{_exec_home}/").replace(" ~", f" {_exec_home}")
                 if not command:
                     continue
 
                 short = command[:80].replace("\n", "; ")
+
+                # Classify the command via tool rules
+                classification = executor.classify_command(command)
+
+                if classification == "forbidden":
+                    obs_block = f"\n\n**[System → `{short}`]**\n```\nRejected: command is on the absolute forbidden list.\n```\n"
+                    yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
+                    full_assistant_reply += obs_block
+                    continue
+
+                if classification == "confirm":
+                    # Halt the stream and ask the UI to confirm
+                    yield f"data: {json.dumps({'type': 'tool_pending', 'command': command, 'short': short})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'provider': active_provider, 'pending_tool': True})}\n\n"
+                    # Save partial reply so context is preserved on resume
+                    if full_assistant_reply:
+                        _memory.save_turn("assistant", full_assistant_reply,
+                                          session_id=session_id, category=enhanced["category"])
+                    return  # The UI re-submits an Observation message when user decides
+
+                # classification == 'auto' — execute immediately
                 yield f"data: {json.dumps({'type': 'tool_call', 'text': short})}\n\n"
 
                 result = executor.shell_command(command, confirmed=True)
                 stdout = (result.get("stdout") or "").strip()
                 stderr = (result.get("stderr") or "").strip()
                 err    = result.get("error") or ""
+                rc     = result.get("returncode", 0)
                 output = "\n".join(x for x in [stdout, stderr] if x)
                 if err and "Command not confirmed" not in err:
                     output = f"Error: {err}\n{output}".strip()
+
+                # Track consecutive failures to stop the spiral
+                if rc != 0:
+                    consecutive_failures += 1
+                else:
+                    consecutive_failures = 0
 
                 # Truncate to prevent UI floods
                 ls = output.splitlines()
@@ -779,6 +1022,17 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
                 yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
                 all_observations.append(f"`{short}` → {output}")
                 full_assistant_reply += obs_block
+
+                # Failure budget: stop spiral after MAX_CONSECUTIVE_FAILURES
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    stop_msg = "\n\n*Two commands failed in a row — stopping to avoid a loop. Check the errors above.*"
+                    yield f"data: {json.dumps({'type': 'token', 'text': stop_msg})}\n\n"
+                    full_assistant_reply += stop_msg
+                    yield f"data: {json.dumps({'type': 'done', 'provider': active_provider})}\n\n"
+                    if full_assistant_reply:
+                        _memory.save_turn("assistant", full_assistant_reply,
+                                          session_id=session_id, category=enhanced["category"])
+                    return
 
                 # LOCAL models: one execution only — stop here
                 if active_provider == "LOCAL":
@@ -808,9 +1062,61 @@ async def _stream_chat(message: str, session_id: str = "default") -> AsyncGenera
         _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
 
 
+
+def _serve_recall(session_id: str) -> str:
+    """Return a formatted summary of the current session's conversation history.
+
+    This is called instead of the LLM when the user asks 'show me our previous
+    conversation' or similar. It reads directly from the in-memory session store
+    so there is zero risk of the model hallucinating output or running bash.
+    """
+    turns = _memory.get_recent_session(session_id, n=20)
+    if not turns:
+        return ("I don't have any earlier messages in this session yet. "
+                "If you're looking for a previous session, those are archived in "
+                "~/.local/share/lilim/memory/sessions/.")
+
+    lines = []
+    for t in turns:
+        role = "You" if t["role"] == "user" else "Lilim"
+        snippet = t["content"].strip().replace("\n", " ")[:200]
+        if len(t["content"].strip()) > 200:
+            snippet += "…"
+        lines.append(f"**{role}:** {snippet}")
+
+    header = f"Here's what we've covered so far ({len(turns)} messages):\n\n"
+    return header + "\n\n".join(lines)
+
+
+def _trim_to_token_budget(messages: list, budget_tokens: int) -> list:
+    """Trim oldest non-system turns so the message list fits within budget_tokens.
+
+    Uses a 4-chars-per-token heuristic (no hard tokeniser dependency).
+    System messages are always preserved; user/assistant turns are dropped
+    from the front until the total fits.
+    """
+    CHARS_PER_TOKEN = 4
+
+    def count_tokens(msgs):
+        return sum(len(m.get("content", "")) for m in msgs) // CHARS_PER_TOKEN
+
+    if count_tokens(messages) <= budget_tokens:
+        return messages
+
+    # Separate system messages from the conversation turns
+    system_msgs = [m for m in messages if m["role"] == "system"]
+    turn_msgs   = [m for m in messages if m["role"] != "system"]
+
+    # Drop oldest turns (from the front) until we fit
+    while turn_msgs and count_tokens(system_msgs + turn_msgs) > budget_tokens:
+        turn_msgs.pop(0)
+
+    return system_msgs + turn_msgs
+
+
 def _build_messages_with_custom_sys(enhanced: dict, session_id: str, sys_prompt: str) -> list:
-    """Build the message list with a specific system prompt."""
-    recent = _memory.get_recent_session(session_id, n=10)
+    """Build the message list with a specific system prompt, trimmed to context budget."""
+    recent = _memory.get_recent_session(session_id, n=20)
     messages = [{"role": "system", "content": sys_prompt}]
 
     mem_ctx = enhanced.get("memory_context", "")
@@ -819,6 +1125,14 @@ def _build_messages_with_custom_sys(enhanced: dict, session_id: str, sys_prompt:
 
     messages.extend(recent)
     messages.append({"role": "user", "content": enhanced["enhanced_message"]})
+
+    # Apply rolling context budget
+    budget = 8_192  # default
+    if _free_router:
+        limits = _free_router.get_context_limits()
+        budget = limits.get("effective_cap", 8_192)
+    messages = _trim_to_token_budget(messages, budget)
+
     return messages
 
 
