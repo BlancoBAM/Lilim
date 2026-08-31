@@ -289,6 +289,12 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
+  // Locked provider state
+  const [lockedProvider, setLockedProvider] = useState<string | null>(
+    (loadConfig() as any).locked_provider ?? null
+  );
+  const [pinConfirm, setPinConfirm] = useState<string | null>(null);  // which provider's pin was just clicked
+
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
@@ -314,6 +320,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         setConfig(merged);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
         if (merged.strategy) setStrategy(merged.strategy as any);
+        if (merged.locked_provider !== undefined) setLockedProvider(merged.locked_provider || null);
       }
 
       if (providers) setProviderStatuses(providers.providers);
@@ -355,6 +362,21 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
     } finally {
       setStrategySaving(false);
     }
+  };
+
+  const handlePinProvider = async (providerName: string) => {
+    const isCurrentlyLocked = lockedProvider === providerName;
+    const newLock = isCurrentlyLocked ? null : providerName;
+    try {
+      const { saveModelConfig } = await import('../api/lilim');
+      const updated = { ...config, locked_provider: newLock ?? '' };
+      setConfig(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      await saveModelConfig(updated);
+      setLockedProvider(newLock);
+      setPinConfirm(providerName);
+      setTimeout(() => setPinConfirm(null), 2500);
+    } catch { /* ignore */ }
   };
 
   const handleCfSave = async (accountId: string) => {
@@ -604,17 +626,46 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             Add keys for any providers. Lilim auto-detects the provider from the key format.
             Free providers are tried first in the order shown. No key = skipped.
           </p>
+          {/* Lock indicator banner */}
+          {lockedProvider && (
+            <div className="mb-2 px-2 py-1.5 rounded-lg bg-orange-900/40 border border-orange-500/30 flex items-center justify-between">
+              <span className="text-[10px] text-orange-300">
+                📌 Locked to <strong>{lockedProvider}</strong> — all requests use this provider
+              </span>
+              <button
+                onClick={() => handlePinProvider(lockedProvider)}
+                className="text-[10px] text-orange-400 hover:text-orange-200 underline ml-2"
+              >Unlock</button>
+            </div>
+          )}
           {FREE_PROVIDERS.map(pid => {
             const status = providerStatuses.find(p => p.name === pid);
             const savedKey = config[`${pid}Key`] ?? '';
+            const isLocked = lockedProvider === pid;
+            const justConfirmed = pinConfirm === pid;
             return (
-              <ProviderRow
-                key={pid}
-                providerId={pid}
-                status={status}
-                savedKey={savedKey}
-                onSave={handleKeySaved}
-              />
+              <div key={pid} className="relative">
+                <ProviderRow
+                  providerId={pid}
+                  status={status}
+                  savedKey={savedKey}
+                  onSave={handleKeySaved}
+                />
+                {/* Pin button — only show if provider has a key */}
+                {savedKey && (
+                  <button
+                    onClick={() => handlePinProvider(pid)}
+                    title={isLocked ? 'Click to unlock this provider' : 'Use this provider exclusively'}
+                    className={`absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
+                      isLocked
+                        ? 'bg-orange-600 text-white shadow shadow-orange-500/40'
+                        : 'bg-white/5 text-gray-500 hover:bg-orange-900/40 hover:text-orange-300'
+                    }`}
+                  >
+                    {justConfirmed ? '✓ Locked' : isLocked ? '📌 Pinned' : '📌'}
+                  </button>
+                )}
+              </div>
             );
           })}
         </Section>

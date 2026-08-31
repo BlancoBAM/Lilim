@@ -100,7 +100,7 @@ routing:
 # Managed by Python Brain (SQLite in-process)
 # ═══════════════════════════════════════════════════════════
 memory:
-  db_path: "/home/aegon/.local/share/lilim/memory.db"
+  db_path: "~/.local/share/lilim/memory.db"
   max_history_messages: 20
   session_timeout_s: 7200       # 2 hours of inactivity resets context
   context_strategy: "sliding"   # sliding | truncate

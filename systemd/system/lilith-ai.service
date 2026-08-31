@@ -5,9 +5,12 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=aegon
-Group=aegon
-WorkingDirectory=/home/aegon
+# NOTE: Recommended deployment uses the template unit lilith-ai@.service
+# e.g., systemctl enable --now lilith-ai@<username>.service
+# For single-user install, replace %i with your username.
+User=%i
+Group=%i
+WorkingDirectory=/home/%i
 ExecStart=/usr/bin/lilim-runtime
 Restart=on-failure
 RestartSec=10
@@ -18,7 +21,6 @@ Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
 Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
-Environment=HOME=/home/aegon
 
 # Safe security directives (no namespace requirements)
 NoNewPrivileges=yes

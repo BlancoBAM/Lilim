@@ -327,6 +327,31 @@ def load_and_apply_model_config() -> dict:
 
 # ── Free Router ────────────────────────────────────────────────────────────────
 
+# ── Category → provider preference ordering ──────────────────────────────────
+# Providers are tried in this order for each category.
+# Falls back to global priority order for unconfigured providers.
+# "local" is a sentinel meaning "try the Phi-2 local model first".
+CATEGORY_PROVIDER_PREFERENCE: dict[str, list[str]] = {
+    # Fast execution tasks: low-latency providers first
+    "system_admin":     ["groq", "cerebras", "openrouter", "gemini"],
+    "devops":           ["groq", "cerebras", "openrouter", "gemini"],
+    "file_management":  ["groq", "cerebras", "openrouter", "mistral"],
+    "linux_help":       ["groq", "cerebras", "openrouter"],
+    "troubleshooting":  ["groq", "openrouter", "gemini"],
+    # Code tasks: strongest coders first
+    "code_generation":  ["openrouter", "groq", "deepseek", "gemini"],
+    "code_debugging":   ["openrouter", "groq", "deepseek", "gemini"],
+    # Large context tasks: providers with biggest windows first
+    "medical":          ["openrouter", "gemini", "cohere"],
+    "research":         ["openrouter", "gemini", "groq", "cohere"],
+    "tutoring":         ["openrouter", "gemini", "groq", "mistral"],
+    # Conversation: best quality providers
+    "conversation":     ["openrouter", "groq", "gemini", "mistral", "cohere"],
+    # Recall never hits this — served from memory before LLM is called
+    "recall":           [],
+}
+
+
 class FreeRouter:
     """
     Provider-agnostic router that tries free-tier providers in priority order.
@@ -354,27 +379,47 @@ class FreeRouter:
     def get_best_provider(self, category: str = "general") -> Optional[Provider]:
         """
         Return the best available provider for this category.
+        Respects category-specific provider preference ordering.
         Skips providers with recent consecutive failures.
         """
         configured = self.get_configured_providers()
         if not configured:
             return None
 
-        for provider in configured:
+        configured_names = {p.name for p in configured}
+
+        # Build ordered list: preferred providers for this category first,
+        # then any remaining configured providers in global priority order.
+        preferred = CATEGORY_PROVIDER_PREFERENCE.get(category, [])
+        ordered: list[Provider] = []
+        seen: set[str] = set()
+
+        # Add preferred providers that are actually configured
+        for name in preferred:
+            if name in configured_names and name not in seen:
+                for p in configured:
+                    if p.name == name:
+                        ordered.append(p)
+                        seen.add(name)
+                        break
+
+        # Append remaining configured providers (global priority order)
+        for p in configured:
+            if p.name not in seen:
+                ordered.append(p)
+                seen.add(p.name)
+
+        # Return first non-backed-off provider
+        for provider in ordered:
             failures = self._failure_counts.get(provider.name, 0)
             if failures >= 3:
-                # Back off: skip if failed 3+ times in a row, unless it's been >5min
                 last_fail_time = self._last_success.get(f"fail_{provider.name}", 0)
                 if time.time() - last_fail_time < 300:
                     continue
-                else:
-                    # Reset failure count after backoff
-                    self._failure_counts[provider.name] = 0
-
+                self._failure_counts[provider.name] = 0
             return provider
 
-        # All failed — return first configured anyway as last resort
-        return configured[0] if configured else None
+        return ordered[0] if ordered else None
 
     def get_model_for_provider(self, provider: Provider, category: str = "general") -> str:
         """
@@ -449,7 +494,8 @@ class FreeRouter:
     async def call_stream(self, messages: list, category: str = "general",
                           max_tokens: int = 1024) -> AsyncGenerator:
         """
-        Call the best available free provider with SSE streaming.
+        Call the best available provider with SSE streaming.
+        Respects locked_provider if set in config.
         Falls back through providers on failure.
         Yields (token_text, is_error, provider_name) tuples.
         """
@@ -461,31 +507,72 @@ class FreeRouter:
             yield ("*litellm not installed — pip install litellm*", True, "none")
             return
 
-        balancing = self.config.get("balancing_strategy", "failover")
         configured = self.get_configured_providers()
         if not configured:
             yield (self._no_provider_message(), True, "none")
             return
 
-        # Determine start index for search
+        # ── Locked provider: bypass all routing logic ──────────────────────
+        locked = self.config.get("locked_provider", "") or ""
+        if locked:
+            locked_p = next((p for p in FREE_PROVIDERS if p.name == locked and p.is_configured()), None)
+            if locked_p:
+                model_str = self.get_model_for_provider(locked_p, category)
+                locked_p.setup_env()
+                kwargs = self.build_litellm_call_kwargs(
+                    locked_p, model_str, messages, stream=True, max_tokens=max_tokens
+                )
+                try:
+                    stream = await acompletion(**kwargs)
+                    async for chunk in stream:
+                        delta = chunk.choices[0].delta.content or ""
+                        if delta:
+                            yield (delta, False, locked_p.name)
+                    self.record_success(locked_p.name)
+                    return
+                except Exception as e:
+                    self.record_failure(locked_p.name)
+                    yield (f"*Locked provider {locked_p.name} failed: {e}*", True, locked_p.name)
+                    return
+
+        # ── Normal routing ─────────────────────────────────────────────────
+        balancing = self.config.get("balancing_strategy", "failover")
+
+        # Build category-ordered provider list
+        preferred = CATEGORY_PROVIDER_PREFERENCE.get(category, [])
+        configured_names = {p.name: p for p in configured}
+        ordered: list = []
+        seen: set = set()
+        for name in preferred:
+            if name in configured_names and name not in seen:
+                ordered.append(configured_names[name])
+                seen.add(name)
+        for p in configured:
+            if p.name not in seen:
+                ordered.append(p)
+                seen.add(p.name)
+
+        if not ordered:
+            yield (self._no_provider_message(), True, "none")
+            return
+
+        # Determine start index for round-robin
         start_idx = 0
-        if balancing == "round-robin":
-            start_idx = (self._last_provider_idx + 1) % len(configured)
-        
-        # Try providers starting from start_idx
+        if balancing == "round-robin" and ordered:
+            start_idx = self._last_provider_idx % len(ordered)
+
         tried_count = 0
         current_idx = start_idx
-        
-        while tried_count < len(configured):
-            provider = configured[current_idx]
+
+        while tried_count < len(ordered):
+            provider = ordered[current_idx % len(ordered)]
             tried_count += 1
-            
-            # Check for backoff
+
             failures = self._failure_counts.get(provider.name, 0)
             if failures >= 3:
                 last_fail = self._last_success.get(f"fail_{provider.name}", 0)
                 if time.time() - last_fail < 300:
-                    current_idx = (current_idx + 1) % len(configured)
+                    current_idx = (current_idx + 1) % len(ordered)
                     continue
                 self._failure_counts[provider.name] = 0
 
@@ -495,44 +582,40 @@ class FreeRouter:
                 provider, model_str, messages, stream=True, max_tokens=max_tokens
             )
 
-            logger.info(f"Trying provider: {provider.name} ({balancing}) / {model_str}")
+            logger.info(f"Trying provider: {provider.name} ({balancing}) / {model_str} [category={category}]")
             try:
                 stream = await acompletion(**kwargs)
                 async for chunk in stream:
                     delta = chunk.choices[0].delta.content or ""
                     if delta:
                         yield (delta, False, provider.name)
-                
+
                 self.record_success(provider.name)
                 self._last_provider_idx = current_idx
-                return  # Done — don't try next provider
+                return
 
             except Exception as e:
                 err_str = str(e).lower()
                 self.record_failure(provider.name)
-                
-                # If rate limited or auth error, try next provider in loop
+                logger.warning(f"Provider {provider.name} failed: {e}")
                 if any(sig in err_str for sig in [
                     "rate limit", "429", "quota", "exceeded",
                     "insufficient_quota", "too many requests",
                     "auth", "401", "403", "invalid api key", "unauthorized",
-                    "timeout", "timed out", "connection"
+                    "timeout", "timed out", "connection",
                 ]):
-                    logger.warning(f"Provider {provider.name} failed — trying next in cycle")
-                    current_idx = (current_idx + 1) % len(configured)
+                    current_idx = (current_idx + 1) % len(ordered)
                     continue
                 else:
-                    # For other errors, we might want to fail the request or try next
-                    current_idx = (current_idx + 1) % len(configured)
+                    current_idx = (current_idx + 1) % len(ordered)
                     continue
 
-        # All providers exhausted
         yield (self._all_failed_message(), True, "exhausted")
 
     def call_sync(self, messages: list, category: str = "general",
                   max_tokens: int = 1024) -> tuple:
         """
-        Synchronous version for non-streaming calls.
+        Synchronous fallback call. Respects locked_provider.
         Returns (response_text, provider_name, error_bool).
         """
         try:
@@ -546,7 +629,38 @@ class FreeRouter:
         if not configured:
             return self._no_provider_message(), "none", True
 
-        for provider in configured:
+        # Locked provider bypass
+        locked = self.config.get("locked_provider", "") or ""
+        if locked:
+            locked_p = next((p for p in FREE_PROVIDERS if p.name == locked and p.is_configured()), None)
+            if locked_p:
+                model_str = self.get_model_for_provider(locked_p, category)
+                locked_p.setup_env()
+                kwargs = self.build_litellm_call_kwargs(
+                    locked_p, model_str, messages, stream=False, max_tokens=max_tokens
+                )
+                try:
+                    response = completion(**kwargs)
+                    text = response.choices[0].message.content or ""
+                    self.record_success(locked_p.name)
+                    return text, locked_p.name, False
+                except Exception as e:
+                    return f"*Locked provider {locked_p.name} failed: {e}*", locked_p.name, True
+
+        # Normal routing with category preference
+        preferred = CATEGORY_PROVIDER_PREFERENCE.get(category, [])
+        configured_names = {p.name: p for p in configured}
+        ordered: list = []
+        seen: set = set()
+        for name in preferred:
+            if name in configured_names and name not in seen:
+                ordered.append(configured_names[name])
+                seen.add(name)
+        for p in configured:
+            if p.name not in seen:
+                ordered.append(p)
+
+        for provider in ordered:
             failures = self._failure_counts.get(provider.name, 0)
             if failures >= 3:
                 last_fail = self._last_success.get(f"fail_{provider.name}", 0)

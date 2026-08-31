@@ -106,6 +106,29 @@ def _get_responses_paths():
 RESPONSES_YAML_PATHS = _get_responses_paths()
 
 MODEL_CONFIG_PATH = Path.home() / ".config" / "lilim" / "model-config.json"
+
+
+def _set_locked_provider(provider_name: str | None) -> bool:
+    """Persist locked_provider to model-config.json. None = unlock."""
+    import json as _json
+    MODEL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    cfg = {}
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH) as f:
+                cfg = _json.load(f)
+        except Exception:
+            pass
+    if provider_name:
+        cfg["locked_provider"] = provider_name
+    else:
+        cfg.pop("locked_provider", None)
+    with open(MODEL_CONFIG_PATH, "w") as f:
+        _json.dump(cfg, f, indent=2)
+    # Hot-reload so in-process router picks it up immediately
+    if _free_router:
+        _free_router.reload_config()
+    return True
 USER_PROFILE_PATH = Path.home() / ".config" / "lilim" / "user-profile.json"
 PORT = int(os.environ.get("LILIM_BRAIN_PORT", "8081"))
 HOST = os.environ.get("LILIM_BRAIN_HOST", "127.0.0.1")
@@ -284,6 +307,16 @@ AUTONOMOUS TOOL USE — MANDATORY:
 PATH RULES:
 - User home: {runtime_home}. Use this exactly. Always.
 - Unknown path? Run: find {runtime_home} -name <target> 2>/dev/null
+
+SELF-KNOWLEDGE & TOOL RECOVERY:
+- You are Lilim. Your source: /usr/lib/lilim/. Config: ~/.config/lilim/.
+- If a command fails with "command not found", INSTALL the missing tool first, then retry.
+- uv: if missing → curl -LsSf https://astral.sh/uv/install.sh | sh  (then source env)
+- browser-use: uv pip install --upgrade browser-use
+- playwright: uv run playwright install chromium
+- apt packages: sudo apt install -y <package>  (requires confirmation)
+- You know: uv, pip, pipx, apt, snap, flatpak, cargo, npm, git, systemctl, journalctl.
+- Lilim is built for Lilith Linux (Ubuntu-based). Distro-specific: /etc/lilith/ config dir.
 """
     return prompt.strip()
 
@@ -798,6 +831,57 @@ async def _stream_chat(message: str, session_id: str = "default",
         "enhanced_message": message, "category": "conversation", "memory_context": ""
     }
 
+    # ── lock_provider fast-path: write config, no LLM needed ──
+    if enhanced.get("category") in ("lock_provider", "unlock_provider"):
+        msg_lower = message.lower()
+        known_providers = [
+            "openrouter", "groq", "gemini", "cerebras", "cloudflare",
+            "cohere", "mistral", "huggingface", "deepseek", "openai", "anthropic",
+        ]
+        if enhanced.get("category") == "unlock_provider":
+            target = None
+            reply_txt = "Auto-routing restored. I’ll pick the best provider for each task."
+        else:
+            # Detect which provider name appears in the message
+            target = next((p for p in known_providers if p in msg_lower), None)
+            if "local" in msg_lower:
+                # Write local-only strategy rather than a provider lock
+                _set_locked_provider(None)
+                _strategy_path = MODEL_CONFIG_PATH
+                try:
+                    import json as _j
+                    _cfg = {}
+                    if _strategy_path.exists():
+                        with open(_strategy_path) as _f:
+                            _cfg = _j.load(_f)
+                    _cfg["strategy"] = "local-only"
+                    _strategy_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(_strategy_path, "w") as _f:
+                        _j.dump(_cfg, _f, indent=2)
+                except Exception:
+                    pass
+                reply_txt = "Locked to local model. I’ll run entirely on-device until you say otherwise."
+                _memory.save_turn("assistant", reply_txt, session_id=session_id)
+                yield f"data: {json.dumps({'type': 'meta', 'category': 'lock_provider', 'turn': 1, 'providers_available': 0})}\n\n"
+                for word in reply_txt.split(" "):
+                    yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'provider': 'LOCAL'})}\n\n"
+                return
+            elif not target:
+                reply_txt = "Which provider? Say ‘use groq only’, ‘use gemini exclusively’, etc."
+                target = None
+        if enhanced.get("category") == "lock_provider" and target:
+            _set_locked_provider(target)
+            reply_txt = f"Locked to {target}. I’ll use it exclusively until you say ‘unlock’ or ‘auto route’."
+        elif enhanced.get("category") == "unlock_provider":
+            _set_locked_provider(None)
+        _memory.save_turn("assistant", reply_txt, session_id=session_id)
+        yield f"data: {json.dumps({'type': 'meta', 'category': enhanced['category'], 'turn': 1, 'providers_available': 0})}\n\n"
+        for word in reply_txt.split(" "):
+            yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'provider': 'CONFIG'})}\n\n"
+        return
+
     # ── Recall fast-path: serve memory directly, no bash allowed ──
     if enhanced.get("category") == "recall":
         recall_text = _serve_recall(session_id)
@@ -883,24 +967,28 @@ async def _stream_chat(message: str, session_id: str = "default",
 
         configured = _free_router.get_configured_providers() if _free_router else []
 
-        # Routing decision: local vs remote
-        use_local = len(configured) == 0
-        
-        # If remote is available, check strategy
-        if not use_local and MODEL_CONFIG_PATH.exists():
+        # ── Routing decision ─────────────────────────────────────────────────
+        # Strategy from config:
+        #   "local-first"  → always try local, fall back to remote silently on failure
+        #   "local-only"   → local only, no remote fallback
+        #   "free-first"   → best remote provider (current default if remote keys exist)
+        #   "quality-first"→ same as free-first but prefers largest models
+        # Recall is always local (served from memory before reaching this point).
+        _strategy = "free-first"
+        if MODEL_CONFIG_PATH.exists():
             try:
-                with open(MODEL_CONFIG_PATH) as f:
-                    ui_cfg = json.load(f)
-                    strategy = ui_cfg.get("strategy", "local-first")
-                    if strategy == "local-first":
-                        # Use router to check complexity
-                        comp = _router._estimate_complexity(message, enhanced["category"])
-                        if comp < _router.config.get("complexity_threshold", 0.6):
-                            use_local = True
-                    elif strategy == "local-only":
-                        use_local = True
+                with open(MODEL_CONFIG_PATH) as _f:
+                    _ui_cfg = json.load(_f)
+                    _strategy = _ui_cfg.get("strategy", "free-first")
             except Exception:
                 pass
+
+        use_local = (
+            len(configured) == 0              # no remote keys → local only
+            or _strategy == "local-only"       # user explicitly chose local-only
+        )
+        # "local-first" is handled AFTER local fails — see fallback logic below
+        _local_first = (_strategy == "local-first")
 
         # Bash/system turns get a tight token cap to prevent rambling
         BASH_CAPS = {
@@ -931,6 +1019,12 @@ async def _stream_chat(message: str, session_id: str = "default",
             err_msg = f"\n\n*Lilim stream error: {e}*"
             yield f"data: {json.dumps({'type': 'token', 'text': err_msg})}\n\n"
             break
+
+        # ── local-first fallback: if local returned nothing/error, retry remote ──
+        if use_local and _local_first and not turn_reply.strip():
+            use_local = False  # switch to remote for this turn
+            _local_first = False
+            continue  # re-run this turn with remote
 
         full_assistant_reply += turn_reply
 
@@ -1003,11 +1097,15 @@ async def _stream_chat(message: str, session_id: str = "default",
                 if err and "Command not confirmed" not in err:
                     output = f"Error: {err}\n{output}".strip()
 
-                # Track consecutive failures to stop the spiral
-                if rc != 0:
+                # Track consecutive failures to stop the spiral.
+                # "not found" errors don't count — they're missing tools, not logic failures.
+                # The LLM should recover by installing the tool first.
+                _is_not_found = result.get("not_found", False)
+                if rc != 0 and not _is_not_found:
                     consecutive_failures += 1
-                else:
+                elif rc == 0:
                     consecutive_failures = 0
+                # If not_found: don't increment, let the LLM try to install the tool
 
                 # Truncate to prevent UI floods
                 ls = output.splitlines()

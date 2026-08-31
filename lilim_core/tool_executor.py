@@ -83,8 +83,7 @@ DEFAULT_TOOL_RULES = {
         "lsblk", "lspci", "lsusb", "dmesg",
         "du ", "du -",
     ],
-    # Git workflow commands: auto-execute without UI prompt, but always logged.
-    # Covers the full init→add→commit→remote→push cycle that the agent needs.
+    # Git workflow + package install commands: auto-execute without UI prompt.
     "agent_auto": [
         "git init", "git add", "git commit", "git remote",
         "git push", "git pull", "git clone", "git fetch",
@@ -93,6 +92,15 @@ DEFAULT_TOOL_RULES = {
         "mkdir ", "mkdir -",   # creating directories is safe
         "touch ",              # creating empty files is safe
         "cp ", "cp -",        # copying files is generally safe
+        # Package managers — install is safe; uninstall/purge stays in confirm
+        "uv pip install", "uv add", "uv sync", "uv run",
+        "uv tool install", "uv tool run",
+        "pipx install", "pipx run",
+        "npm install", "npm ci", "npm run",
+        "cargo install", "cargo build",
+        "pip install",         # pip installs into user venv — safe
+        # Browser/tool registration commands
+        "browser-use", "playwright install", "playwright",
     ],
     "always_confirm": [
         # Potentially destructive or elevated operations
@@ -254,15 +262,40 @@ class ToolExecutor:
             }
 
         try:
+            # Build an expanded PATH so user-installed tools (uv, cargo, pipx, etc.)
+            # are always findable — systemd strips HOME/.local/bin from the daemon PATH.
+            _home = str(Path.home())
+            _extra_paths = [
+                f"{_home}/.local/bin",
+                f"{_home}/.cargo/bin",
+                f"{_home}/.npm/bin",
+                f"{_home}/.yarn/bin",
+                "/usr/local/bin",
+                "/usr/bin",
+                "/bin",
+                "/usr/local/sbin",
+                "/usr/sbin",
+                "/sbin",
+            ]
+            exec_env = os.environ.copy()
+            existing_path = exec_env.get("PATH", "")
+            full_path = ":".join(_extra_paths)
+            if existing_path:
+                full_path = full_path + ":" + existing_path
+            exec_env["PATH"] = full_path
+            exec_env["HOME"] = _home
+
             # We use Popen with limited reading to prevent memory exhaustion (OOM)
-            # if a command produces millions of lines of output (e.g. recursive 'find' errors).
+            # if a command produces millions of lines of output.
             process = subprocess.Popen(
                 command,
                 shell=True,
+                executable="/bin/bash",  # Use bash (not sh) for better compatibility
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                bufsize=1  # line buffered
+                bufsize=1,  # line buffered
+                env=exec_env,
             )
 
             stdout_lines = []
@@ -297,6 +330,14 @@ class ToolExecutor:
             stdout = "".join(stdout_lines)
             stderr = "".join(stderr_lines)
 
+            # Tag "command not found" errors so the agent loop can recover
+            # by installing the missing tool, rather than counting it as a
+            # logic failure (which would trigger the consecutive-failure stop).
+            not_found = (
+                "command not found" in stderr.lower() or
+                "no such file or directory" in stderr.lower() and "exec" in stderr.lower()
+            )
+
             self._audit_log(command, rc)
             return {
                 "command": command,
@@ -304,6 +345,7 @@ class ToolExecutor:
                 "stderr": stderr,
                 "returncode": rc,
                 "error": None if rc == 0 else f"Process exited with code {rc}",
+                "not_found": not_found,  # True when a tool is missing, not a logic error
             }
         except Exception as e:
             return {

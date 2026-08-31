@@ -190,9 +190,9 @@ Lilim: *Dives into the data abyss* Don't touch anything.
        Done. That went better than expected.
 
 You:   Find and delete hello_test.txt
-Lilim: ⚡ Executing: find /home/aegon -name 'hello_test.txt' -print -delete
+Lilim: ⚡ Executing: find /home/user -name 'hello_test.txt' -print -delete
        [System → find ...]
-       /home/aegon/hello_test.txt
+       /home/user/hello_test.txt
        Completed. Miracles do happen.
 
 You:   Help me study bones. 1 question is suitable.

@@ -105,6 +105,25 @@ TASK_CATEGORIES = {
             "Do NOT explain git theory — just run the commands."
         ),
     },
+    # Provider lock/unlock — handled directly by server, no LLM call
+    "lock_provider": {
+        "keywords": [
+            "use only", "use exclusively", "switch to", "only use",
+            "lock to", "pin to", "set provider to", "change provider to",
+            "use groq", "use gemini", "use openrouter", "use cohere",
+            "use mistral", "use deepseek", "use cerebras", "use huggingface",
+            "use local only", "local only", "local model only",
+        ],
+        "enrich": "Provider lock command. No bash. Handle directly.",
+    },
+    "unlock_provider": {
+        "keywords": [
+            "unlock provider", "unpin provider", "auto route", "auto routing",
+            "use best provider", "use any provider", "stop using only",
+            "normal routing", "balanced routing", "auto select",
+        ],
+        "enrich": "Provider unlock command. No bash. Handle directly.",
+    },
     "conversation": {
         "keywords": [],  # Default fallback
         "enrich": "Be concise and conversational. Match the user's energy.",
