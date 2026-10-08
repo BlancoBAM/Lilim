@@ -3,7 +3,6 @@ name: Build & Package Lilim
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -166,13 +165,13 @@ jobs:
           chmod +x bin/ui/lilim-ui-executable
           bash packaging/build_deb.sh \
             --runtime bin/runtime/lilim-runtime \
-            --ui-binary bin/ui/lilim-ui-executable \
+            --ui-binary bin/ui/lilim-ui-executable
 
-      - name: Verify version tag matches application version
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Read product version
+        id: product-version
         run: |
           VERSION="$(python3 -c 'import json; print(json.load(open("lilim_desktop/src-tauri/tauri.conf.json"))["version"])')"
-          test "$GITHUB_REF_NAME" = "v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build source tarball
         run: |
@@ -190,15 +189,33 @@ jobs:
           name: lilim-linux-amd64-packages
           path: dist/*
 
-      - name: Create versioned release (on version tag)
-        if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+      - name: Create versioned release from marked main commit
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release: publish ')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "${{ github.ref_name }}"
-          name: "Lilim ${{ github.ref_name }}"
+          tag_name: "v${{ steps.product-version.outputs.version }}"
+          name: "Lilim v${{ steps.product-version.outputs.version }}"
+          target_commitish: "${{ github.sha }}"
+          body: |
+            ## Major model and feature upgrades
+
+            - Phi-3.5-mini GGUF inference through Rust and Candle replaces Phi-2.
+            - Autonomous tool use, MCP servers, BrowserOS, persistent memory, and prompt enhancement.
+            - Linux desktop launcher, Tauri UI, command-line client, and one-command Debian installer.
+
+            ## Why Phi-4 was deferred
+
+            Phi-4 was considered, but Candle support was not stable enough for the production inference path. Lilim prioritizes quality, speed, memory safety, and a dependable Rust implementation for Lilith Linux.
+
+            ## Planned features
+
+            - [ ] OAuth authorization
+            - [ ] Request proxies
+            - [ ] Deeper Lilith Linux integration
+            - [ ] Memory improvements
+            - [ ] Prompt enhancement improvements
           files: |
             dist/*.deb
             dist/lilim-source.tar.gz
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
