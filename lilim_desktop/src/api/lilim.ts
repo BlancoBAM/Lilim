@@ -33,6 +33,27 @@ export interface OIChunk {
   pending_command?: string;
   pending_short?: string;
   pending_sudo?: boolean;
+  pending_mcp?: MCPToolCall;
+}
+
+export interface MCPToolCall {
+  server: string;
+  tool: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface MCPServerStatus {
+  name: string;
+  transport: 'http' | 'stdio';
+  url?: string;
+  enabled: boolean;
+  auth_configured?: boolean;
+}
+
+export interface MCPIntegrationStatus {
+  servers: MCPServerStatus[];
+  tools: Array<{ server: string; name: string; read_only: boolean }>;
+  errors: Array<{ server: string; error: string }>;
 }
 
 export interface ProviderStatus {
@@ -157,6 +178,7 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
               pending_command: data.command,
               pending_short: data.short,
               pending_sudo: data.sudo === true,
+              pending_mcp: data.mcp_call,
               end: true,
               provider: 'PENDING',
             };
@@ -180,6 +202,55 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
   }
 
   yield { role: 'assistant', type: 'message', content: '', end: true };
+}
+
+export async function getMcpIntegrations(): Promise<MCPIntegrationStatus | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/integrations/mcp`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch { return null; }
+}
+
+export async function addMcpServer(server: {
+  name: string; url?: string; command?: string; args?: string[]; headers?: Record<string, string>;
+}): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/integrations/mcp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ server: { ...server, enabled: true } }),
+  });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.detail || detail.error || `Could not add MCP server (${response.status})`);
+  }
+}
+
+export async function removeMcpServer(name: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/integrations/mcp/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error(`Could not remove MCP server (${response.status})`);
+}
+
+export async function callMcpTool(call: MCPToolCall): Promise<{ output: string; is_error: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/integrations/mcp/call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...call, confirmed: true }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || result.error || `MCP call failed (${response.status})`);
+  return result;
+}
+
+export async function launchBrowser(url = ''): Promise<{ launched: boolean; browser?: string; error?: string }> {
+  const response = await fetch(`${API_BASE_URL}/tools/browser/launch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: url || undefined }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || result.error || `Browser launch failed (${response.status})`);
+  return result;
 }
 
 /**

@@ -15,6 +15,7 @@ __pycache__/
 
 # ── Node / Tauri ────────────────────────────────────────────
 node_modules/
+lilim_desktop/node_modules.incomplete/
 lilim_desktop/src-tauri/target/
 
 # ── IDE & tool config (local only) ─────────────────────────

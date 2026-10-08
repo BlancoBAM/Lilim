@@ -34,6 +34,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit
 
 # ── Safety configuration ──────────────────────────────────────
 
@@ -664,17 +665,26 @@ class ToolExecutor:
 
     def browser_launch(self, url: Optional[str] = None) -> dict:
         """
-        Launch BrowserOS (neo) with an optional URL.
-        Detects BrowserOS binary in common install paths.
-        Falls back to xdg-open if BrowserOS is not found.
+        Launch BrowserOS with an optional HTTP(S) URL.
+        Falls back to the desktop's default browser for a supplied URL.
         """
+        if url:
+            url = url.strip()
+            parsed = urlsplit(url)
+            if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+                return {"launched": False, "error": "Only credential-free HTTP or HTTPS URLs can be opened."}
+
         # BrowserOS / neo detection
         neo_candidates = [
             shutil.which("neo"),
             shutil.which("browseros"),
             shutil.which("browser-os"),
+            shutil.which("browseros-neo"),
             "/usr/bin/neo",
+            "/usr/bin/browseros-neo",
             "/opt/browseros/neo",
+            "/opt/BrowserOS/BrowserOS",
+            "/opt/browseros/browseros",
             "/usr/local/bin/neo",
         ]
         neo_bin = next((p for p in neo_candidates if p and Path(p).exists()), None)
@@ -684,14 +694,18 @@ class ToolExecutor:
                 cmd = [neo_bin]
                 if url:
                     cmd.append(url)
-                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                return {"launched": True, "browser": "neo", "url": url}
+                subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
+                return {"launched": True, "browser": "BrowserOS", "url": url}
             elif url:
-                # Fallback to xdg-open
-                subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                opener = shutil.which("xdg-open")
+                if not opener:
+                    return {"launched": False, "error": "BrowserOS is not installed and xdg-open is unavailable."}
+                subprocess.Popen([opener, url], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
                 return {"launched": True, "browser": "xdg-open", "url": url}
             else:
-                return {"launched": False, "error": "BrowserOS (neo) not found and no URL to open."}
+                return {"launched": False, "error": "BrowserOS was not found. Install it or provide a URL to open in the default browser."}
         except Exception as e:
             return {"launched": False, "error": str(e)}
 

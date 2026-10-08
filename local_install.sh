@@ -113,7 +113,7 @@ if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
     echo "      Setting up Python virtual environment..."
     sudo python3 -m venv /usr/lib/lilim/venv
 fi
-sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
+sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12" "mcp>=1.19,<2"
 
 # Service file (always sync from repo to pick up latest)
 sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /lib/systemd/system/lilith-ai.service

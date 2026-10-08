@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap, User } from 'lucide-react';
+import { X, Save, Cpu, Cloud, Key, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Zap, User, Globe, Trash2, Plus } from 'lucide-react';
 import { getModelStatus, getProvidersStatus, registerApiKey, saveModelConfig, getUserProfile, saveUserProfile, type ProviderStatus, type UserProfile } from '../api/lilim';
+import { addMcpServer, getMcpIntegrations, launchBrowser, removeMcpServer, type MCPIntegrationStatus } from '../api/lilim';
 
 // ── Provider metadata for display ────────────────────────────────────────────
 
@@ -265,6 +266,125 @@ function ProviderRow({
 
 // ── Main Settings Panel ───────────────────────────────────────────────────────
 
+function MCPSettings() {
+  const [status, setStatus] = useState<MCPIntegrationStatus | null>(null);
+  const [name, setName] = useState('browseros');
+  const [transport, setTransport] = useState<'http' | 'stdio'>('http');
+  const [url, setUrl] = useState('');
+  const [command, setCommand] = useState('');
+  const [args, setArgs] = useState('[]');
+  const [token, setToken] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const refresh = useCallback(async () => setStatus(await getMcpIntegrations()), []);
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const addServer = async () => {
+    setBusy(true);
+    setMessage('');
+    try {
+      if (transport === 'http') {
+        await addMcpServer({
+          name: name.trim(), url: url.trim(),
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        });
+      } else {
+        const parsedArgs: unknown = JSON.parse(args);
+        if (!Array.isArray(parsedArgs) || parsedArgs.some(argument => typeof argument !== 'string')) {
+          throw new Error('Arguments must be a JSON array of strings.');
+        }
+        await addMcpServer({ name: name.trim(), command: command.trim(), args: parsedArgs });
+      }
+      setUrl('');
+      setCommand('');
+      setArgs('[]');
+      setToken('');
+      setMessage('Server added. Connecting…');
+      await refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally { setBusy(false); }
+  };
+
+  const removeServer = async (serverName: string) => {
+    setBusy(true);
+    setMessage('');
+    try {
+      await removeMcpServer(serverName);
+      await refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally { setBusy(false); }
+  };
+
+  const openBrowser = async () => {
+    setBusy(true);
+    try {
+      const result = await launchBrowser();
+      setMessage(result.launched ? `Opened ${result.browser || 'BrowserOS'}.` : (result.error || 'BrowserOS was not found.'));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Section title="MCP & BrowserOS" icon={<Globe size={13} />} defaultOpen={false}>
+      <p className="text-[10px] leading-relaxed text-gray-500">
+        Connect local stdio or Streamable HTTP MCP tools, including BrowserOS. For BrowserOS, copy its endpoint from the MCP settings page; the port varies by install. Only connect to servers you trust. Calls that can change data ask for approval in chat.
+      </p>
+      <div className="space-y-2">
+        {status?.servers.map(server => {
+          const serverTools = status.tools.filter(tool => tool.server === server.name);
+          const issue = status.errors.find(error => error.server === server.name);
+          return (
+            <div key={server.name} className="flex items-start gap-2 rounded-lg bg-black/30 border border-white/5 p-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-white">{server.name} <span className="text-gray-600">({server.transport})</span></p>
+                {server.url && <p className="text-[10px] text-gray-600 break-all">{server.url}{server.auth_configured ? ' · auth set' : ''}</p>}
+                <p className={`text-[10px] ${issue ? 'text-amber-400' : 'text-green-500'}`}>
+                  {issue ? issue.error : `${serverTools.length} tools available`}
+                </p>
+              </div>
+              <button onClick={() => void removeServer(server.name)} disabled={busy} aria-label={`Remove ${server.name}`} className="p-1 text-gray-500 hover:text-red-400 disabled:opacity-50">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          );
+        })}
+        <div className="flex gap-2">
+          <input value={name} onChange={event => setName(event.target.value)} placeholder="Server name (e.g. browseros)" className="flex-1 bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none" />
+          <select value={transport} onChange={event => setTransport(event.target.value as 'http' | 'stdio')} className="bg-gray-900 text-white text-xs px-2 rounded-lg border border-orange-500/20">
+            <option value="http">HTTP</option>
+            <option value="stdio">Local process</option>
+          </select>
+        </div>
+        {transport === 'http' ? (
+          <>
+            <input value={url} onChange={event => setUrl(event.target.value)} placeholder="https://…/mcp or http://127.0.0.1:PORT/mcp" className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none" />
+            <input type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)} placeholder="Bearer token (optional; saved privately)" className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none" />
+          </>
+        ) : (
+          <>
+            <input value={command} onChange={event => setCommand(event.target.value)} placeholder="Executable, e.g. uvx" className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none" />
+            <input value={args} onChange={event => setArgs(event.target.value)} placeholder='Arguments as JSON, e.g. ["mcp-server-filesystem", "/home/user"]' className="w-full bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-lg border border-orange-500/20 focus:outline-none" />
+            <p className="text-[10px] text-gray-600">Set environment secrets in ~/.config/lilim/mcp-servers.json; it is saved with owner-only permissions.</p>
+          </>
+        )}
+        <div className="flex gap-2">
+          <button onClick={() => void addServer()} disabled={busy || !name.trim() || (transport === 'http' ? !url.trim() : !command.trim())} className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-800/50 hover:bg-orange-700/60 text-orange-200 text-xs rounded-lg disabled:opacity-40">
+            <Plus size={12} /> Add MCP server
+          </button>
+          <button onClick={() => void openBrowser()} disabled={busy} className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg disabled:opacity-40">
+            Open BrowserOS
+          </button>
+        </div>
+        {message && <p role="status" className="text-[10px] text-amber-300 break-words">{message}</p>}
+      </div>
+    </Section>
+  );
+}
+
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [config, setConfig] = useState<Record<string, string>>(loadConfig);
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
@@ -517,6 +637,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             </div>
           )}
         </Section>
+
+        <MCPSettings />
 
         {/* Local Model Status */}
         <Section title="Local Model (Phi-2, Built-in)" icon={<Cpu size={13} />}>

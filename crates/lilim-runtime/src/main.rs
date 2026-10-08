@@ -25,7 +25,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path as AxumPath, Query, State},
     http::{Method, StatusCode},
     response::{Json, Response},
     routing::{delete, get, post},
@@ -136,6 +136,12 @@ async fn main() -> anyhow::Result<()> {
         .route("/memory/search", post(handle_memory_search))
         .route("/memory/stats", get(handle_memory_stats))
         .route("/memory/context", get(handle_memory_context))
+
+        // ── MCP and browser integrations (proxied to the Python brain) ──
+        .route("/integrations/mcp", get(handle_mcp_list).post(handle_mcp_add))
+        .route("/integrations/mcp/:name", delete(handle_mcp_remove))
+        .route("/integrations/mcp/call", post(handle_mcp_call))
+        .route("/tools/browser/launch", post(handle_browser_launch))
 
         // ── System tools (Rust-native) ────────────────────────
         .route("/tools/shell", post(tools::handle_shell))
@@ -294,6 +300,62 @@ async fn handle_memory_context(
     match proxy::proxy_json_get(&url, &state.http_client, &params).await {
         Ok(v) => (StatusCode::OK, Json(v)),
         Err((code, msg)) => (code, Json(json!({"error": msg}))),
+    }
+}
+
+async fn handle_mcp_list(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/integrations/mcp", state.brain_base_url);
+    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
+        Ok(value) => (StatusCode::OK, Json(value)),
+        Err((code, message)) => (code, Json(json!({"error": message}))),
+    }
+}
+
+async fn handle_mcp_add(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/integrations/mcp", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(value) => (StatusCode::OK, Json(value)),
+        Err((code, message)) => (code, Json(json!({"error": message}))),
+    }
+}
+
+async fn handle_mcp_remove(
+    State(state): State<Arc<AppState>>,
+    AxumPath(name): AxumPath<String>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/integrations/mcp/{}", state.brain_base_url, name);
+    match state.http_client.delete(url).send().await {
+        Ok(response) => {
+            let status = StatusCode::from_u16(response.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            let value = response.json::<Value>().await.unwrap_or_else(|_| json!({"error": "Invalid brain response"}));
+            (status, Json(value))
+        }
+        Err(error) => (StatusCode::BAD_GATEWAY, Json(json!({"error": error.to_string()}))),
+    }
+}
+
+async fn handle_mcp_call(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/integrations/mcp/call", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(value) => (StatusCode::OK, Json(value)),
+        Err((code, message)) => (code, Json(json!({"error": message}))),
+    }
+}
+
+async fn handle_browser_launch(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let url = format!("{}/tools/browser/launch", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(value) => (StatusCode::OK, Json(value)),
+        Err((code, message)) => (code, Json(json!({"error": message}))),
     }
 }
 

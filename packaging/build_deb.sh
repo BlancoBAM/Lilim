@@ -227,7 +227,7 @@ sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /
 
 echo "[lilim] Creating Python virtual environment..."
 python3 -m venv /usr/lib/lilim/venv
-/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12"
+/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12" "mcp>=1.19,<2"
 
 mkdir -p /var/log/lilim
 chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim

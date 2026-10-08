@@ -20,6 +20,10 @@ Routes:
   POST /settings/model-config — hot-reload model/provider config
   GET  /providers/status  — list all providers and their status
   GET  /providers/context-limits — context window sizes + effective rolling cap
+  GET  /integrations/mcp — configured MCP servers and available tools
+  POST /integrations/mcp — add an MCP server
+  DELETE /integrations/mcp/{name} — remove an MCP server
+  POST /integrations/mcp/call — execute a confirmed MCP tool call
 
 Usage:
   python -m lilim_core.server
@@ -372,6 +376,21 @@ class RegisterKeyRequest(BaseModel):
     model: Optional[str] = None       # optional model override for this provider
 
 
+class MCPServerRequest(BaseModel):
+    server: dict
+
+
+class MCPCallRequest(BaseModel):
+    server: str
+    tool: str
+    arguments: dict = {}
+    confirmed: bool = False
+
+
+class BrowserLaunchRequest(BaseModel):
+    url: Optional[str] = None
+
+
 # ── App setup ─────────────────────────────────────────────────
 
 app = FastAPI(title="Lilim Brain", version="2.0.0")
@@ -391,11 +410,12 @@ _enhancer: PromptEnhancer = None
 _router: ModelRouter = None
 _free_router: FreeRouter = None
 _memory: MemoryManager = None
+_mcp_manager = None
 
 
 @app.on_event("startup")
 async def startup():
-    global _identity, _responses, _system_prompt, _enhancer, _router, _free_router, _memory, _RUNTIME_USER_INFO
+    global _identity, _responses, _system_prompt, _enhancer, _router, _free_router, _memory, _mcp_manager, _RUNTIME_USER_INFO
 
     # Detect real system user first — everything else depends on this
     _RUNTIME_USER_INFO = _detect_user_info()
@@ -406,6 +426,8 @@ async def startup():
     )
 
     _memory = MemoryManager()
+    from lilim_core.mcp_manager import manager as get_mcp_manager
+    _mcp_manager = get_mcp_manager()
     _identity = load_identity()
     _responses = load_responses_yaml()
     _system_prompt = build_system_prompt(_identity, _responses)
@@ -430,6 +452,12 @@ async def startup():
     print(f"[Lilim Brain v2] Memory DB: {_memory.db_path}", flush=True)
     if not configured:
         print("[Lilim Brain v2] ⚠ No API keys configured. Lilim will answer with persona errors until keys are added.", flush=True)
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    if _mcp_manager:
+        await _mcp_manager.close()
 
 
 # ── Endpoints ─────────────────────────────────────────────────
@@ -646,6 +674,74 @@ async def memory_search(req: MemorySearchRequest):
 async def memory_context(query: str = ""):
     context = _memory.load_context(query)
     return {"context": context}
+
+
+def _public_mcp_server(server: dict) -> dict:
+    """Return non-secret server metadata for the Settings UI."""
+    public = {key: server[key] for key in ("name", "transport", "url", "enabled") if key in server}
+    if server.get("headers"):
+        public["auth_configured"] = True
+    return public
+
+
+@app.get("/integrations/mcp")
+async def get_mcp_integrations():
+    from lilim_core.mcp_manager import load_config
+    try:
+        servers = load_config()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    tools, errors = await _mcp_manager.list_tools()
+    return {
+        "servers": [_public_mcp_server(server) for server in servers],
+        "tools": tools,
+        "errors": errors,
+    }
+
+
+@app.post("/integrations/mcp")
+async def add_mcp_integration(req: MCPServerRequest):
+    from lilim_core.mcp_manager import MCPConfigError, load_config, save_config
+    try:
+        servers = load_config()
+        servers.append(req.server)
+        save_config(servers)
+        return {"status": "saved", "server": _public_mcp_server(servers[-1])}
+    except (MCPConfigError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.delete("/integrations/mcp/{name}")
+async def remove_mcp_integration(name: str):
+    from lilim_core.mcp_manager import MCPConfigError, load_config, save_config
+    try:
+        servers = load_config()
+        filtered = [server for server in servers if server["name"] != name]
+        if len(filtered) == len(servers):
+            raise HTTPException(status_code=404, detail="MCP server not found")
+        save_config(filtered)
+        await _mcp_manager.close()
+        return {"status": "removed", "name": name}
+    except MCPConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/integrations/mcp/call")
+async def call_mcp_integration(req: MCPCallRequest):
+    if not req.confirmed:
+        raise HTTPException(status_code=403, detail="MCP tool execution requires explicit confirmation")
+    try:
+        return await _mcp_manager.call_tool(req.server, req.tool, req.arguments)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"MCP call failed: {exc}")
+
+
+@app.post("/tools/browser/launch")
+async def launch_browser(req: BrowserLaunchRequest):
+    from lilim_core.tool_executor import ToolExecutor
+    return ToolExecutor().browser_launch(req.url)
 
 
 @app.get("/memory/stats")
@@ -924,6 +1020,10 @@ async def _stream_chat(message: str, session_id: str = "default",
 
     sys_prompt = build_system_prompt(_identity, load_responses_yaml(),
                                      username=username, home_dir=home_dir)
+    mcp_tools, _mcp_errors = await _mcp_manager.list_tools() if _mcp_manager else ([], [])
+    mcp_prompt = _format_mcp_prompt(mcp_tools)
+    if mcp_prompt:
+        sys_prompt += "\n\n" + mcp_prompt
     history = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
 
     max_turns = 10
@@ -955,6 +1055,8 @@ async def _stream_chat(message: str, session_id: str = "default",
                 "System: You are Lilim, a sarcastic brilliant tutor for Medical Assistant students. "
                 "Use ELI10 language. Focus on anatomy, clinical procedures, medical terminology.\n\n"
             )
+        if mcp_prompt:
+            sys_line += mcp_prompt + "\n\n"
         prompt = sys_line
         for m in history:
             if m["role"] == "system":
@@ -1065,10 +1167,53 @@ async def _stream_chat(message: str, session_id: str = "default",
         # ("1. Im borrowing...", "2. Ah, the classic...") before scanning.
         sanitised_reply = re.sub(r"(?m)^\d+\.\s+.+$", "", turn_reply)
         bash_matches = list(re.finditer(r"```(?:bash|sh|shell)\s*\n([\s\S]*?)```", sanitised_reply, re.IGNORECASE))
+        mcp_matches = list(re.finditer(r"```mcp\s*\n([\s\S]*?)```", sanitised_reply, re.IGNORECASE))
 
-        if bash_matches:
+        if bash_matches or mcp_matches:
             from lilim_core.tool_executor import ToolExecutor
             executor = ToolExecutor()
+
+            tool_specs = {(item["server"], item["name"]): item for item in mcp_tools}
+            for mcp_match in mcp_matches:
+                try:
+                    call = json.loads(mcp_match.group(1).strip())
+                    server_name = call.get("server")
+                    tool_name = call.get("tool")
+                    arguments = call.get("arguments", {})
+                    if not isinstance(arguments, dict):
+                        raise ValueError("arguments must be a JSON object")
+                    spec = tool_specs.get((server_name, tool_name))
+                    if not spec:
+                        raise ValueError("that server/tool is not currently configured")
+                except (json.JSONDecodeError, AttributeError, ValueError) as exc:
+                    observation = f"MCP call rejected: {exc}"
+                    all_observations.append(observation)
+                    yield f"data: {json.dumps({'type': 'token', 'text': f'\n\n**[MCP]**\n{observation}\n'})}\n\n"
+                    continue
+
+                short = f"{server_name}.{tool_name}"
+                if not spec["read_only"]:
+                    mcp_call = {"server": server_name, "tool": tool_name, "arguments": arguments}
+                    yield f"data: {json.dumps({'type': 'tool_pending', 'mcp_call': mcp_call, 'short': short})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'provider': active_provider, 'pending_tool': True})}\n\n"
+                    if full_assistant_reply:
+                        _memory.save_turn("assistant", full_assistant_reply,
+                                          session_id=session_id, category=enhanced["category"])
+                    return
+
+                yield f"data: {json.dumps({'type': 'tool_call', 'text': short})}\n\n"
+                try:
+                    result = await _mcp_manager.call_tool(server_name, tool_name, arguments)
+                    observation = result["output"] or "(MCP tool completed — no output)"
+                    if result["is_error"]:
+                        observation = "MCP tool reported an error: " + observation
+                except Exception as exc:
+                    observation = f"MCP tool failed: {str(exc)[:500]}"
+                observation = observation[:2000]
+                obs_block = f"\n\n**[MCP → `{short}`]**\n```\n{observation}\n```\n"
+                yield f"data: {json.dumps({'type': 'token', 'text': obs_block})}\n\n"
+                all_observations.append(f"{short} → {observation[:1200]}")
+                full_assistant_reply += obs_block
 
             for bash_match in bash_matches:
                 raw_cmd = bash_match.group(1).strip()
@@ -1178,6 +1323,31 @@ async def _stream_chat(message: str, session_id: str = "default",
     if full_assistant_reply:
         _memory.save_turn("assistant", full_assistant_reply, session_id=session_id, category=enhanced["category"])
         _memory.extract_and_save([{"role": "user", "content": message}], session_id=session_id)
+
+
+def _format_mcp_prompt(tools: list[dict]) -> str:
+    if not tools:
+        return ""
+    entries = []
+    for tool in tools[:40]:
+        entry = {
+            "server": tool["server"],
+            "tool": tool["name"],
+            "description": tool["description"][:500],
+            "read_only": tool["read_only"],
+            "arguments": tool["input_schema"],
+        }
+        if len(json.dumps(entry, ensure_ascii=False)) > 1800:
+            entry["arguments"] = {"type": "object", "description": "See tool input schema from MCP server"}
+        entries.append(entry)
+    example = json.dumps({"server": tools[0]["server"], "tool": tools[0]["name"], "arguments": {}})
+    return (
+        "MCP TOOL USE: When an available MCP tool is useful, output one fenced mcp block containing "
+        "JSON with server, tool, and arguments fields. Example:\n```mcp\n" + example + "\n```\n"
+        "Use the exact server and tool names below. Read-only tools may run immediately; all other calls "
+        "pause for explicit user approval. Never invent a tool or claim it ran without an observation.\n"
+        + json.dumps(entries, ensure_ascii=False)
+    )
 
 
 

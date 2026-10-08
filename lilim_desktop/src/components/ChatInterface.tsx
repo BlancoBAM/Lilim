@@ -8,7 +8,8 @@ import bannerImage from '../assets/lilim-banner.svg';
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
 import {
   streamChat, runShellCommand, sendObservation, getSessionId,
-  getUserProfile, saveUserProfile,
+  getUserProfile, saveUserProfile, callMcpTool,
+  type MCPToolCall,
   type LilimMessage
 } from '../api/lilim';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -37,7 +38,11 @@ export function ChatInterface() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [showNoBrainBanner, setShowNoBrainBanner] = useState(false);
   // Pending confirmation state — set when server sends tool_pending
-  const [pendingCommand, setPendingCommand] = useState<{ command: string; short: string; sudo: boolean } | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<
+    | { kind: 'shell'; command: string; short: string; sudo: boolean }
+    | { kind: 'mcp'; call: MCPToolCall; short: string }
+    | null
+  >(null);
   const [sudoPassword, setSudoPassword] = useState('');
   // First-launch profile modal
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -132,11 +137,16 @@ export function ChatInterface() {
           continue;
         }
         // @ts-ignore — check for pending command payload
-        if (chunk.pending_command) {
+        if (chunk.pending_command || chunk.pending_mcp) {
           // Server wants confirmation before running this command
-          setPendingCommand({
+          setPendingCommand(chunk.pending_mcp ? {
+            kind: 'mcp',
+            call: chunk.pending_mcp,
+            short: chunk.pending_short || `${chunk.pending_mcp.server}.${chunk.pending_mcp.tool}`,
+          } : {
+            kind: 'shell',
             // @ts-ignore
-            command: chunk.pending_command,
+            command: chunk.pending_command ?? '',
             // @ts-ignore
             short: chunk.pending_short || chunk.pending_command.slice(0, 80),
             // @ts-ignore
@@ -262,6 +272,46 @@ export function ChatInterface() {
           timestamp: new Date(),
         },
       ]);
+    } finally {
+      setIsStreaming(false);
+      setAbortController(null);
+    }
+  };
+
+  const handleRunMcpTool = async (call: MCPToolCall) => {
+    setPendingCommand(null);
+    setIsStreaming(true);
+    const callId = Date.now().toString();
+    setMessages(prev => [...prev, {
+      id: callId,
+      role: 'assistant',
+      content: `*⚡ Running ${call.server}.${call.tool}…*`,
+      timestamp: new Date(),
+    }]);
+    try {
+      const result = await callMcpTool(call);
+      setMessages(prev => prev.filter(m => m.id !== callId));
+      const controller = new AbortController();
+      setAbortController(controller);
+      const observation = result.is_error ? `MCP tool error: ${result.output}` : result.output;
+      const obsId = (Date.now() + 1).toString();
+      let accumulated = '';
+      for await (const chunk of sendObservation(observation || '(MCP tool completed with no output)', controller.signal)) {
+        if (chunk.start) {
+          setMessages(prev => [...prev, { id: obsId, role: 'assistant', content: '', timestamp: new Date() }]);
+          continue;
+        }
+        if (chunk.end || !chunk.content) continue;
+        accumulated += chunk.content;
+        setMessages(prev => prev.map(m => m.id === obsId ? { ...m, content: accumulated } : m));
+      }
+    } catch (error) {
+      setMessages(prev => prev.filter(m => m.id !== callId));
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(), role: 'assistant',
+        content: `*MCP call failed: ${error instanceof Error ? error.message : String(error)}*`,
+        timestamp: new Date(),
+      }]);
     } finally {
       setIsStreaming(false);
       setAbortController(null);
@@ -569,12 +619,16 @@ export function ChatInterface() {
                       className="mt-3 bg-black/50 border border-orange-500/50 rounded-lg p-3"
                     >
                       <p className="text-orange-300 text-xs mb-2 flex items-center gap-1">
-                        <Flame size={12} /> {pendingCommand.sudo ? 'Confirm elevated command:' : 'Confirm command:'}
+                        <Flame size={12} /> {pendingCommand.kind === 'mcp'
+                          ? 'Approve MCP action:'
+                          : pendingCommand.sudo ? 'Confirm elevated command:' : 'Confirm command:'}
                       </p>
                       <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono mb-3 overflow-x-auto whitespace-pre-wrap">
-                        <code>{pendingCommand.command}</code>
+                        <code>{pendingCommand.kind === 'mcp'
+                          ? `${pendingCommand.short}\n${JSON.stringify(pendingCommand.call.arguments, null, 2)}`
+                          : pendingCommand.command}</code>
                       </pre>
-                      {pendingCommand.sudo && (
+                      {pendingCommand.kind === 'shell' && pendingCommand.sudo && (
                         <input
                           type="password"
                           value={sudoPassword}
@@ -587,11 +641,15 @@ export function ChatInterface() {
                       )}
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleRunCommand(pendingCommand.command, pendingCommand.sudo)}
-                          disabled={pendingCommand.sudo && !sudoPassword}
+                          onClick={() => pendingCommand.kind === 'mcp'
+                            ? handleRunMcpTool(pendingCommand.call)
+                            : handleRunCommand(pendingCommand.command, pendingCommand.sudo)}
+                          disabled={pendingCommand.kind === 'shell' && pendingCommand.sudo && !sudoPassword}
                           className="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-xs transition-colors"
                         >
-                          ✓ {pendingCommand.sudo ? 'Authenticate & run' : 'Run it'}
+                          ✓ {pendingCommand.kind === 'mcp'
+                            ? 'Approve & run'
+                            : pendingCommand.sudo ? 'Authenticate & run' : 'Run it'}
                         </button>
                         <button
                           onClick={handleSkipCommand}

@@ -38,6 +38,7 @@
 | 🧠 **Local Phi-2 Inference** | Microsoft Phi-2 (2.7B, GGUF Q4_K_M) runs on-device via HuggingFace Candle. No Ollama. No Python inference. No API key required. |
 | 🌐 **Free Provider Routing** | Auto-routes to 9 free-tier providers (Groq, OpenRouter, Gemini, Cerebras…) when configured. Falls back to local seamlessly. |
 | 🤖 **Autonomous Tool Use** | Executes shell commands, reads files, and checks system state — with safety confirmation for destructive operations. |
+| 🔌 **MCP Integrations** | Connect local stdio or Streamable HTTP MCP servers; state-changing tools require approval. BrowserOS can be connected through its MCP endpoint. |
 | 🔍 **Web Search & Browsing** | Searches DuckDuckGo and fetches/reads any URL on request. No API key required. |
 | 🧬 **Persistent Memory** | SQLite-backed long-term memory. Remembers context across sessions with semantic retrieval. |
 | ✨ **Prompt Enhancement** | Transparently enriches vague prompts with context, task type, and system state before sending to the model. |
@@ -108,8 +109,12 @@ One command builds the Rust runtime, Tauri UI, and Python brain, packages everyt
 # Rust toolchain
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && source ~/.cargo/env
 
+# Node.js 22 (the desktop build requires Node >=22.12)
+nvm install 22
+nvm use 22
+
 # System build dependencies
-sudo apt install -y nodejs npm python3-venv \
+sudo apt install -y python3-venv \
     libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
     libappindicator3-dev patchelf
 ```
@@ -287,6 +292,14 @@ sudo systemctl restart lilith-ai
 # Live logs
 journalctl -u lilith-ai -f
 ```
+
+### MCP & BrowserOS
+
+Open **Settings → MCP & BrowserOS** to add a server using either a Streamable HTTP URL or a local executable and argument array. For BrowserOS, copy the MCP endpoint shown in BrowserOS’s own MCP settings; the port can vary between installs. Do not guess a port or connect to an untrusted server.
+
+Server configuration is saved at `~/.config/lilim/mcp-servers.json` with owner-only file permissions. HTTP endpoints on other hosts must use HTTPS. Optional bearer tokens are stored in that file and are not shown back in Settings. Local stdio servers can also define environment values there.
+
+Lilim discovers MCP tools and includes them in the agent prompt. Tools marked read-only may run during the task; other tools pause for explicit approval in chat. BrowserOS exposes browser actions through MCP, so no separate browser automation dependency is required. **Open BrowserOS** in Settings can launch the installed browser, or open a URL in the system browser when BrowserOS is absent.
 
 ---
 
