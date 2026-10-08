@@ -89,7 +89,17 @@
 
 > **Primary platform:** Lilith Linux (Ubuntu 22.04/24.04 base). Also works on any Ubuntu/Debian-based system for development and testing.
 
-### Method 1 — Build & Install from Source (Recommended)
+### Quick Install (Recommended)
+
+On Debian/Ubuntu x86_64, install the latest published package with one command. It downloads the release package and installs it with APT; you do not need to clone the repository:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BlancoBAM/Lilim/main/install.sh | bash
+```
+
+The installer asks `sudo` to install the package and its dependencies. To inspect it before running, open [install.sh](install.sh).
+
+### Build and Install from Source
 
 One command builds the Rust runtime, Tauri UI, and Python brain, packages everything, and installs it.
 
@@ -127,7 +137,7 @@ lilim
 
 ---
 
-### Method 2 — Install from GitHub Release (.deb)
+### Manual Installation from GitHub Release (.deb)
 
 Pre-built packages from [Releases](https://github.com/BlancoBAM/Lilim/releases).
 
@@ -157,6 +167,7 @@ npm run tauri dev
 
 - **Global hotkey:** `Ctrl+Shift+L` (anywhere on desktop)
 - **Manual:** Click the Lilim icon in your app launcher
+- **Terminal:** `lilim-cli "check disk usage and clean /tmp"` (asks before running commands; sudo prompts are entered without echo and held in memory only)
 
 ### Demo
 
