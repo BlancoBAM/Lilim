@@ -20,7 +20,6 @@ mod proxy;
 mod scheduler;
 mod tools;
 
-
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,7 +42,7 @@ use tracing::{error, info};
 pub struct AppState {
     pub brain_base_url: String,
     pub http_client: reqwest::Client,
-    /// Local Candle Phi-2 inference engine (None if model not available)
+    /// Local Candle Phi-3.5-mini inference engine (None if model not available)
     pub inference_engine: Option<lilim_inference::InferenceEngine>,
 }
 
@@ -90,13 +89,13 @@ async fn main() -> anyhow::Result<()> {
         error!("Install FastAPI: pip install fastapi uvicorn litellm");
     }
 
-    // Initialize local inference engine (Phi-2 via Candle)
-    info!("Initializing local Phi-2 inference engine…");
+    // Initialize local inference engine (Phi-3.5-mini via Candle)
+    info!("Initializing local Phi-3.5-mini inference engine…");
     let inference_config = lilim_inference::InferenceConfig::default();
     let inference_engine = lilim_inference::InferenceEngine::new(inference_config).await;
     let engine_available = inference_engine.is_available();
     if engine_available {
-        info!("Local Phi-2 engine ready ✓");
+        info!("Local Phi-3.5-mini engine ready ✓");
     } else {
         info!("Local engine unavailable — all requests will route to online providers");
     }
@@ -109,7 +108,11 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState {
         brain_base_url: brain_base_url.clone(),
         http_client,
-        inference_engine: if engine_available { Some(inference_engine) } else { None },
+        inference_engine: if engine_available {
+            Some(inference_engine)
+        } else {
+            None
+        },
     });
 
     // CORS — allow Tauri WebView and local dev origins
@@ -122,42 +125,43 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         // ── Health ──────────────────────────────────────────────────
         .route("/health", get(handle_health))
-
         // ── Chat (smart local/remote routing) ─────────────────────
         .route("/chat", post(handle_chat))
         .route("/chat/sync", post(handle_chat_sync))
-        .route("/internal/generate", post(inference::handle_internal_generate))
-
+        .route(
+            "/internal/generate",
+            post(inference::handle_internal_generate),
+        )
         // ── Model status (for Settings panel) ───────────────────
         .route("/model/status", get(handle_model_status))
         .route("/providers/status", get(handle_providers_status))
-
         // ── Memory (proxied to Python brain) ──────────────────
         .route("/memory/search", post(handle_memory_search))
         .route("/memory/stats", get(handle_memory_stats))
         .route("/memory/context", get(handle_memory_context))
-
         // ── MCP and browser integrations (proxied to the Python brain) ──
-        .route("/integrations/mcp", get(handle_mcp_list).post(handle_mcp_add))
+        .route(
+            "/integrations/mcp",
+            get(handle_mcp_list).post(handle_mcp_add),
+        )
         .route("/integrations/mcp/:name", delete(handle_mcp_remove))
         .route("/integrations/mcp/call", post(handle_mcp_call))
         .route("/tools/browser/launch", post(handle_browser_launch))
-
         // ── System tools (Rust-native) ────────────────────────
         .route("/tools/shell", post(tools::handle_shell))
         .route("/tools/shell/sudo", post(handle_sudo_shell))
         .route("/tools/file", get(tools::handle_file_read))
         .route("/system/info", get(tools::handle_system_info))
-
         // ── Scheduling (proxied to Python brain) ──────────────
         .route("/schedule/once", post(scheduler::handle_schedule_once))
-        .route("/schedule/recurring", post(scheduler::handle_schedule_recurring))
+        .route(
+            "/schedule/recurring",
+            post(scheduler::handle_schedule_recurring),
+        )
         .route("/schedule/list", get(scheduler::handle_schedule_list))
         .route("/schedule/:id", delete(scheduler::handle_schedule_cancel))
-
         // ── Settings (write config, proxied to brain) ─────────
         .route("/settings/model-config", post(handle_settings_model_config))
-
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(state);
@@ -180,7 +184,9 @@ async fn main() -> anyhow::Result<()> {
 
 async fn shutdown_signal() {
     let ctrl_c = async {
-        signal::ctrl_c().await.expect("Failed to install Ctrl+C handler");
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
     };
 
     #[cfg(unix)]
@@ -222,11 +228,8 @@ async fn handle_health(State(state): State<Arc<AppState>>) -> Json<Value> {
 
 // ── Chat endpoints ───────────────────────────────────────
 
-async fn handle_chat(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> Response {
-    // Smart routing: local Phi-2 or remote via Python brain + FreeRouter
+async fn handle_chat(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    // Smart routing: local Phi-3.5-mini or remote via Python brain + FreeRouter
     inference::handle_chat_routed(State(state), body).await
 }
 
@@ -249,7 +252,7 @@ async fn handle_model_status(State(state): State<Arc<AppState>>) -> Json<Value> 
     Json(json!({
         "local_engine": {
             "available": state.inference_engine.is_some(),
-            "model": "phi-2",
+            "model": "phi-3.5-mini",
             "device": state.inference_engine
                 .as_ref()
                 .map(|e| e.device_label())
@@ -259,9 +262,7 @@ async fn handle_model_status(State(state): State<Arc<AppState>>) -> Json<Value> 
     }))
 }
 
-async fn handle_providers_status(
-    State(state): State<Arc<AppState>>,
-) -> (StatusCode, Json<Value>) {
+async fn handle_providers_status(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
     let url = format!("{}/providers/status", state.brain_base_url);
     match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
         Ok(v) => (StatusCode::OK, Json(v)),
@@ -282,9 +283,7 @@ async fn handle_memory_search(
     }
 }
 
-async fn handle_memory_stats(
-    State(state): State<Arc<AppState>>,
-) -> (StatusCode, Json<Value>) {
+async fn handle_memory_stats(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
     let url = format!("{}/memory/stats", state.brain_base_url);
     match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
         Ok(v) => (StatusCode::OK, Json(v)),
@@ -329,11 +328,18 @@ async fn handle_mcp_remove(
     let url = format!("{}/integrations/mcp/{}", state.brain_base_url, name);
     match state.http_client.delete(url).send().await {
         Ok(response) => {
-            let status = StatusCode::from_u16(response.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-            let value = response.json::<Value>().await.unwrap_or_else(|_| json!({"error": "Invalid brain response"}));
+            let status =
+                StatusCode::from_u16(response.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+            let value = response
+                .json::<Value>()
+                .await
+                .unwrap_or_else(|_| json!({"error": "Invalid brain response"}));
             (status, Json(value))
         }
-        Err(error) => (StatusCode::BAD_GATEWAY, Json(json!({"error": error.to_string()}))),
+        Err(error) => (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({"error": error.to_string()})),
+        ),
     }
 }
 
@@ -379,18 +385,29 @@ async fn handle_settings_model_config(
         Ok(json_str) => {
             if let Err(e) = std::fs::write(&config_path, &json_str) {
                 error!("Failed to write model config: {e}");
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()})));
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": e.to_string()})),
+                );
             }
             info!("Model config updated at {}", config_path.display());
         }
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": e.to_string()})),
+            )
+        }
     }
 
     // Also forward to brain so it reloads
     let url = format!("{}/settings/model-config", state.brain_base_url);
     match proxy::proxy_json_post(&url, &state.http_client, body).await {
         Ok(v) => (StatusCode::OK, Json(v)),
-        Err(_) => (StatusCode::OK, Json(json!({"status": "saved", "brain_reload": "pending"}))),
+        Err(_) => (
+            StatusCode::OK,
+            Json(json!({"status": "saved", "brain_reload": "pending"})),
+        ),
     }
 }
 
@@ -401,7 +418,10 @@ async fn handle_sudo_shell(
     // The brain validates classification and confirmation and owns the
     // short-lived in-memory credential token. Do not log this request body.
     if body.get("confirmed").and_then(Value::as_bool) != Some(true) {
-        return (StatusCode::BAD_REQUEST, Json(json!({"error": "Command not confirmed."})));
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Command not confirmed."})),
+        );
     }
     let url = format!("{}/tools/shell/sudo", state.brain_base_url);
     match proxy::proxy_json_post(&url, &state.http_client, body).await {

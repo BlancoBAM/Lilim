@@ -641,7 +641,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <MCPSettings />
 
         {/* Local Model Status */}
-        <Section title="Local Model (Phi-2, Built-in)" icon={<Cpu size={13} />}>
+        <Section title="Local Model (Phi-3.5-mini)" icon={<Cpu size={13} />}>
           {loading ? (
             <div className="flex items-center gap-2 text-gray-500 text-xs py-2">
               <RefreshCw size={12} className="animate-spin" /> Checking status…
@@ -658,7 +658,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   : <AlertCircle size={13} className="text-orange-400" />
                 }
                 <span className={`font-medium text-xs ${modelStatus.available ? 'text-green-300' : 'text-orange-300'}`}>
-                  {modelStatus.available ? 'Phi-2 Ready ✓' : 'Phi-2 Not Available'}
+                  {modelStatus.available ? 'Phi-3.5-mini Ready ✓' : 'Phi-3.5-mini Not Available'}
                 </span>
               </div>
               {modelStatus.available && (
@@ -683,8 +683,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           )}
 
           <p className="text-[10px] text-gray-600 mt-1">
-            Microsoft Phi-2 (2.7B) runs locally on CPU. No API key needed.
-            Bundled in the Lilith Linux package.
+            Phi-3.5-mini runs locally through Candle. No API key is needed.
+            The model is bundled with the Debian package when available.
           </p>
         </Section>
 
@@ -704,7 +704,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           <p className="text-[10px] text-gray-600">
-            {strategy === 'local-first' && 'Uses Phi-2 for most queries, online for complex ones.'}
+            {strategy === 'local-first' && 'Uses Phi-3.5-mini for local requests and online providers for complex ones.'}
             {strategy === 'free-first' && 'Always tries free providers before paid ones. Good if local is slow.'}
             {strategy === 'quality-first' && 'Uses the best available model for every query.'}
           </p>

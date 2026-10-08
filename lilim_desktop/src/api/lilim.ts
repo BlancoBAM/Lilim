@@ -3,7 +3,7 @@
  *
  * Connects to lilim-runtime (Rust proxy) on port 8080 via SSE streaming.
  * The gateway proxies to the Python FastAPI brain on port 8081.
- * Local inference (Phi-2) is handled directly in the Rust gateway.
+ * Local inference (Phi-3.5-mini) is handled by the Rust inference engine.
  */
 
 const API_BASE_URL = 'http://127.0.0.1:8080';

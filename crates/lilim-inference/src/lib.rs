@@ -20,16 +20,11 @@
 //
 // Model selection:
 //   Phi-3.5-mini-instruct (Q4_K_M, ~2.4 GB) is used via Candle's built-in
-//   `quantized_phi3` module — no new Rust dependencies vs the previous Phi-2 code.
-//   Phi-4 is NOT yet in Candle's candle-transformers crate (no quantized_phi4.rs)
-//   so we use Phi-3.5-mini, which is production-stable and a meaningful upgrade.
+//   `quantized_phi3` module, keeping the inference path in Rust.
 
 pub mod config;
 pub mod downloader;
 pub mod phi3;
-
-// Keep phi2 module available for reference/fallback during transition
-pub mod phi2;
 
 pub use config::InferenceConfig;
 pub use phi3::Phi3Engine;
@@ -62,15 +57,24 @@ impl InferenceEngine {
             }
             Err(e) => {
                 warn!("Model not available: {e}");
-                return Self { inner: None, config };
+                return Self {
+                    inner: None,
+                    config,
+                };
             }
         }
 
         // Load model into memory
         match Phi3Engine::load(&config).await {
             Ok(engine) => {
-                info!("Phi-3.5-mini engine loaded ✓ ({} device)", config.device_label());
-                let this = Self { inner: Some(engine), config };
+                info!(
+                    "Phi-3.5-mini engine loaded ✓ ({} device)",
+                    config.device_label()
+                );
+                let this = Self {
+                    inner: Some(engine),
+                    config,
+                };
 
                 // ── Model warmup ───────────────────────────────────────────────
                 // Run a tiny dummy forward pass to pre-warm CPU caches so the
@@ -87,7 +91,10 @@ impl InferenceEngine {
             }
             Err(e) => {
                 warn!("Failed to load Phi-3.5-mini engine: {:?}", e);
-                Self { inner: None, config }
+                Self {
+                    inner: None,
+                    config,
+                }
             }
         }
     }
@@ -103,11 +110,7 @@ impl InferenceEngine {
     /// The stream ends when EOS is reached or max_tokens is hit.
     ///
     /// Returns Err immediately if the engine is not available.
-    pub async fn generate_stream(
-        &self,
-        prompt: &str,
-        max_tokens: usize,
-    ) -> Result<TokenStream> {
+    pub async fn generate_stream(&self, prompt: &str, max_tokens: usize) -> Result<TokenStream> {
         match &self.inner {
             Some(engine) => engine.generate_stream(prompt, max_tokens).await,
             None => anyhow::bail!(

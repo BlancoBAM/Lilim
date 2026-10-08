@@ -63,7 +63,7 @@ echo "[3/5] Building Debian package..."
 export ROOT_DIR
 bash "$ROOT_DIR/packaging/build_deb.sh"
 
-DEB_FILE="$ROOT_DIR/dist/lilim_0.1.0_amd64.deb"
+DEB_FILE="$ROOT_DIR/dist/lilim_amd64.deb"
 if [ ! -f "$DEB_FILE" ]; then
     echo "❌ Error: Debian package was not created at $DEB_FILE" >&2
     exit 1

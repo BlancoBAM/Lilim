@@ -17,7 +17,8 @@ pub struct LilimConfig {
     #[serde(default)]
     pub brain: BrainConfig,
     #[serde(default)]
-    #[allow(dead_code)] // Reserved: used for security enforcement in future tool-execution hardening
+    #[allow(dead_code)]
+    // Reserved: used for security enforcement in future tool-execution hardening
     pub security: SecurityConfig,
 }
 
@@ -110,11 +111,10 @@ pub fn load() -> Result<LilimConfig> {
 
 fn load_from(path: &Path) -> Result<LilimConfig> {
     let text = std::fs::read_to_string(path)?;
-    let cfg: LilimConfig = serde_yaml::from_str(&text)
-        .unwrap_or_else(|e| {
-            tracing::warn!("Could not parse {}: {}; using defaults", path.display(), e);
-            LilimConfig::default()
-        });
+    let cfg: LilimConfig = serde_yaml::from_str(&text).unwrap_or_else(|e| {
+        tracing::warn!("Could not parse {}: {}; using defaults", path.display(), e);
+        LilimConfig::default()
+    });
     info!("Loaded config from {}", path.display());
     Ok(cfg)
 }

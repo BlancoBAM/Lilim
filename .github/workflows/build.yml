@@ -3,6 +3,7 @@ name: Build & Package Lilim
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -139,72 +140,11 @@ jobs:
           name: lilim-ui
           path: ./lilim-ui-executable
 
-  # ── Download & Bundle Phi-2 Model ───────────────────────────────────────────
-  bundle-model:
-    name: Download & Bundle Phi-2 Model
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Phi-2 model
-        id: cache-model
-        uses: actions/cache@v4
-        with:
-          path: /tmp/phi2-model/
-          key: phi2-gguf-thebloke-v2
-
-      - name: Download Phi-2 GGUF from HuggingFace
-        if: steps.cache-model.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /tmp/phi2-model
-          pip install huggingface_hub
-          python3 -c "
-          from huggingface_hub import hf_hub_download
-          import os
-
-          dest = '/tmp/phi2-model'
-
-          # Download GGUF
-          try:
-              hf_hub_download(
-                  repo_id='TheBloke/phi-2-GGUF',
-                  filename='phi-2.Q4_K_M.gguf',
-                  local_dir=dest
-              )
-              print('Downloaded: phi-2.Q4_K_M.gguf')
-          except Exception as e:
-              print(f'Warning: could not download gguf: {e}')
-
-          # Download tokenizer files
-          for f in ['tokenizer.json', 'tokenizer_config.json']:
-              try:
-                  hf_hub_download(
-                      repo_id='microsoft/phi-2',
-                      filename=f,
-                      local_dir=dest
-                  )
-                  print(f'Downloaded: {f}')
-              except Exception as e:
-                  print(f'Warning: could not download {f}: {e}')
-          "
-
-      - name: Verify model files
-        run: |
-          ls -lh /tmp/phi2-model/
-          du -sh /tmp/phi2-model/
-
-      - name: Upload model artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: phi2-model-gguf
-          path: /tmp/phi2-model/
-          retention-days: 30
-
   # ── Build Packages ──────────────────────────────────────────────────────────
   build-release:
     name: Build .deb & Source Tarball
     runs-on: ubuntu-22.04
-    needs: [ build-rust, build-tauri, bundle-model ]
+    needs: [ build-rust, build-tauri ]
     steps:
       - uses: actions/checkout@v4
 
@@ -220,12 +160,6 @@ jobs:
           name: lilim-ui
           path: bin/ui
 
-      - name: Download Model
-        uses: actions/download-artifact@v4
-        with:
-          name: phi2-model-gguf
-          path: model
-
       - name: Build Debian package
         run: |
           chmod +x packaging/build_deb.sh
@@ -233,9 +167,12 @@ jobs:
           bash packaging/build_deb.sh \
             --runtime bin/runtime/lilim-runtime \
             --ui-binary bin/ui/lilim-ui-executable \
-            --model-dir model/
-        env:
-          PHI2_MODEL_DIR: model/
+
+      - name: Verify version tag matches application version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="$(python3 -c 'import json; print(json.load(open("lilim_desktop/src-tauri/tauri.conf.json"))["version"])')"
+          test "$GITHUB_REF_NAME" = "v$VERSION"
 
       - name: Build source tarball
         run: |
@@ -253,12 +190,12 @@ jobs:
           name: lilim-linux-amd64-packages
           path: dist/*
 
-      - name: Create Release (on main push)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Create versioned release (on version tag)
+        if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "build-${{ github.run_number }}"
-          name: "Lilim Build ${{ github.run_number }}"
+          tag_name: "${{ github.ref_name }}"
+          name: "Lilim ${{ github.ref_name }}"
           files: |
             dist/*.deb
             dist/lilim-source.tar.gz

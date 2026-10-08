@@ -330,7 +330,7 @@ def load_and_apply_model_config() -> dict:
 # ── Category → provider preference ordering ──────────────────────────────────
 # Providers are tried in this order for each category.
 # Falls back to global priority order for unconfigured providers.
-# "local" is a sentinel meaning "try the Phi-2 local model first".
+# "local" is a sentinel meaning "try the Phi-3.5-mini local model first".
 CATEGORY_PROVIDER_PREFERENCE: dict[str, list[str]] = {
     # Fast execution tasks: low-latency providers first
     "system_admin":     ["groq", "cerebras", "openrouter", "gemini"],

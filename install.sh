@@ -2,7 +2,7 @@
 # Install Lilim from the latest published Debian release without cloning the repo.
 set -euo pipefail
 
-RELEASE_DEB_URL="https://github.com/BlancoBAM/Lilim/releases/latest/download/lilim_0.1.0_amd64.deb"
+RELEASE_DEB_URL="https://github.com/BlancoBAM/Lilim/releases/latest/download/lilim_amd64.deb"
 
 fail() { printf 'Lilim installer: %s\n' "$*" >&2; exit 1; }
 

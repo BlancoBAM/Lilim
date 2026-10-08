@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT_DIR="${ROOT_DIR:-$(pwd)}"
 DEB_ROOT="$ROOT_DIR/packaging/deb_root"
 DEB_OUTPUT="$ROOT_DIR/dist"
-DEB_NAME="lilim_0.1.0_amd64.deb"
+PACKAGE_VERSION="${LILIM_VERSION:-$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$ROOT_DIR/lilim_desktop/src-tauri/tauri.conf.json")}"
+DEB_NAME="lilim_${PACKAGE_VERSION}_amd64.deb"
 
 echo "Building Debian package into $DEB_OUTPUT/$DEB_NAME"
 mkdir -p "$DEB_ROOT" "$DEB_OUTPUT"
@@ -24,7 +25,7 @@ mkdir -p \
   "$DEB_ROOT/lib/systemd/system" || true
 
 RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
-TAURI_BIN="${ROOT_DIR:-$(pwd)}/lilim_desktop/src-tauri/target/release/bundle/appimage/lilim_0.1.0_amd64.AppImage" # fallback
+TAURI_BIN=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -130,47 +131,29 @@ chmod +x "$DEB_ROOT/usr/lib/lilim/run-lilim.sh"
 
 # Model (if provided via --model-dir)
 if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
-  echo "Bundling Phi-2 model from $MODEL_DIR..."
-  mkdir -p "$DEB_ROOT/usr/lib/lilim/models/phi-2-q4"
-  cp -r "$MODEL_DIR/"* "$DEB_ROOT/usr/lib/lilim/models/phi-2-q4/"
+  echo "Bundling Phi-3.5-mini model from $MODEL_DIR..."
+  MODEL_DEST="$DEB_ROOT/usr/lib/lilim/models/phi-3.5-mini-q4"
+  mkdir -p "$MODEL_DEST"
+  install -m 0644 "$MODEL_DIR/Phi-3.5-mini-instruct-Q4_K_M.gguf" "$MODEL_DEST/"
+  install -m 0644 "$MODEL_DIR/tokenizer.json" "$MODEL_DEST/"
+  if [ -f "$MODEL_DIR/tokenizer_config.json" ]; then
+    install -m 0644 "$MODEL_DIR/tokenizer_config.json" "$MODEL_DEST/"
+  fi
 fi
 
 ## Desktop file & Icon
-# Priority: SVG (crisp at any scale) > committed PNG > user Pictures PNG
-ICON_SRC_SVG=""
-for svg_path in \
-    "$ROOT_DIR/assets/lilim-col.svg" \
-    "$ROOT_DIR/assets/lilim-icon.svg" \
-    "$HOME/Pictures/lilim-col.svg" \
-    "$HOME/Pictures/lilim.svg"; do
-    if [ -f "$svg_path" ]; then
-        ICON_SRC_SVG="$svg_path"
-        break
-    fi
-done
-
-ICON_SRC_PNG=""
-for png_path in \
-    "$ROOT_DIR/assets/lilim-icon.png" \
-    "$HOME/Pictures/lilim.png" \
-    "$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png"; do
-    if [ -f "$png_path" ]; then
-        ICON_SRC_PNG="$png_path"
-        break
-    fi
-done
-
-if [ -n "$ICON_SRC_SVG" ]; then
-    # Install scalable SVG — desktop environments prefer this for crisp display
-    cp "$ICON_SRC_SVG" "$DEB_ROOT/usr/share/icons/hicolor/scalable/apps/lilim.svg"
-    echo "Icon (SVG): $ICON_SRC_SVG"
+ICON_SRC="$ROOT_DIR/lilim_desktop/src-tauri/icons/128x128.png"
+if [ ! -s "$ICON_SRC" ]; then
+  echo "ERROR: Required Lilim launcher icon is missing: $ICON_SRC" >&2
+  exit 1
 fi
-if [ -n "$ICON_SRC_PNG" ]; then
-    cp "$ICON_SRC_PNG" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
-    echo "Icon (PNG fallback): $ICON_SRC_PNG"
-elif [ -z "$ICON_SRC_SVG" ]; then
-    echo "WARNING: No icon found" >&2
+install -m 0644 "$ICON_SRC" "$DEB_ROOT/usr/share/pixmaps/lilim.png"
+install -m 0644 "$ICON_SRC" "$DEB_ROOT/usr/share/icons/hicolor/128x128/apps/lilim.png"
+if [ -s "$ROOT_DIR/assets/lilim-col.svg" ]; then
+  install -m 0644 "$ROOT_DIR/assets/lilim-col.svg" \
+    "$DEB_ROOT/usr/share/icons/hicolor/scalable/apps/lilim.svg"
 fi
+echo "Installed Lilim launcher icon from $ICON_SRC"
 
 cat > "$DEB_ROOT/usr/share/applications/lilim.desktop" <<'DES'
 [Desktop Entry]
@@ -188,17 +171,16 @@ DES
 
 # Debian control file — libwebkit2gtk-4.0-37 does not exist on Ubuntu 26.04;
 # use 4.1-0 or libwebkitgtk-6.0-4 instead.
-cat > "$DEB_ROOT/DEBIAN/control" << 'CTRL'
+cat > "$DEB_ROOT/DEBIAN/control" <<CTRL
 Package: lilim
-Version: 0.1.0
+Version: $PACKAGE_VERSION
 Section: base
 Priority: optional
 Architecture: amd64
 Maintainer: BlancoBAM <blancobam@protonmail.com>
 Depends: python3, python3-venv, systemd, libwebkit2gtk-4.1-0 | libwebkitgtk-6.0-4
 Description: Lilim AI Assistant for Lilith Linux
- Production-ready runtime: Rust backend proxy, Python AI brain,
- and Tauri desktop UI. Includes embedded Phi-2 local inference model.
+ Rust runtime, Python agent service, Tauri desktop UI, and Phi-3.5-mini local inference.
 CTRL
 
 # postinst — dynamically detects the primary desktop user; no hardcoded name
@@ -235,6 +217,10 @@ chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
 mkdir -p "/home/${TARGET_USER}/.local/share/lilim"
 chown -R "${TARGET_USER}:${TARGET_USER}" "/home/${TARGET_USER}/.local/share/lilim"
 
+# Ensure the desktop launcher and icon are discoverable immediately after install.
+test -s /usr/share/applications/lilim.desktop
+test -s /usr/share/icons/hicolor/128x128/apps/lilim.png
+
 # Allow user to write to the venv (for pip updates)
 chown -R "${TARGET_USER}:${TARGET_USER}" /usr/lib/lilim/venv 2>/dev/null || true
 
@@ -251,4 +237,5 @@ POSTINST
 chmod +x "$DEB_ROOT/DEBIAN/postinst"
 
 dpkg-deb --root-owner-group --build "$DEB_ROOT" "$DEB_OUTPUT/$DEB_NAME"
+cp "$DEB_OUTPUT/$DEB_NAME" "$DEB_OUTPUT/lilim_amd64.deb"
 echo "DEB built at $DEB_OUTPUT/$DEB_NAME"

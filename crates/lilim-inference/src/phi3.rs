@@ -89,7 +89,12 @@ impl Phi3Engine {
                 .unwrap_or(PHI3_EOS_FALLBACK);
 
             info!("Phi-3.5-mini loaded ✓ (EOS token id: {})", eos_token_id);
-            Ok(Phi3Inner { model, tokenizer, device, eos_token_id })
+            Ok(Phi3Inner {
+                model,
+                tokenizer,
+                device,
+                eos_token_id,
+            })
         })
         .await
         .context("Blocking task panicked")?
@@ -174,7 +179,6 @@ fn generate_blocking(
     let start = Instant::now();
     let mut token_count = 0usize;
 
-
     // ── Tokenize ────────────────────────────────────────────────────────────
     let prompt_tokens = match inner.tokenizer.encode(prompt, true) {
         Ok(enc) => enc.get_ids().to_vec(),
@@ -196,7 +200,8 @@ fn generate_blocking(
     info!("Prompt tokenized: {} tokens", prompt_len);
 
     // ── Sampling config ──────────────────────────────────────────────────────
-    let mut logits_processor = LogitsProcessor::new(42, Some(config.temperature), Some(config.top_p));
+    let mut logits_processor =
+        LogitsProcessor::new(42, Some(config.temperature), Some(config.top_p));
 
     // ── Phase 1: Prefill prompt into KV cache ───────────────────────────────
     let mut pos = 0usize;
@@ -225,7 +230,6 @@ fn generate_blocking(
 
     let prompt_elapsed = start.elapsed().as_secs_f64();
     info!("Prompt prefilled in {prompt_elapsed:.1}s");
-
 
     // Sample first generated token
     let last_logits = match extract_last_logits(last_raw_logits.as_ref().unwrap()) {
@@ -259,7 +263,10 @@ fn generate_blocking(
         token_count += 1;
 
         // Decode token
-        let token_text = inner.tokenizer.decode(&[next_token], false).unwrap_or_default();
+        let token_text = inner
+            .tokenizer
+            .decode(&[next_token], false)
+            .unwrap_or_default();
 
         // Stop on Phi-3 end-of-turn markers that may appear as text
         if token_text.contains("<|end|>") || token_text.contains("<|endoftext|>") {
@@ -274,13 +281,14 @@ fn generate_blocking(
         }
 
         // Forward pass for next token
-        let token_tensor = match Tensor::new(&[next_token], &inner.device).and_then(|t| t.unsqueeze(0)) {
-            Ok(t) => t,
-            Err(e) => {
-                let _ = tx.blocking_send(Err(anyhow::anyhow!("Tensor error: {e}")));
-                break;
-            }
-        };
+        let token_tensor =
+            match Tensor::new(&[next_token], &inner.device).and_then(|t| t.unsqueeze(0)) {
+                Ok(t) => t,
+                Err(e) => {
+                    let _ = tx.blocking_send(Err(anyhow::anyhow!("Tensor error: {e}")));
+                    break;
+                }
+            };
 
         let raw_logits = match inner.model.forward(&token_tensor, pos) {
             Ok(l) => l,

@@ -48,7 +48,8 @@ pub async fn ensure_model_ready(config: &InferenceConfig) -> Result<()> {
     info!("Target: {}", model_dir.display());
     info!("This is a one-time ~2.4 GB download.");
 
-    download_model(&model_dir).await
+    download_model(&model_dir)
+        .await
         .context("Failed to download Phi-3.5-mini model from HuggingFace")?;
 
     info!("Model downloaded successfully ✓");
@@ -57,8 +58,7 @@ pub async fn ensure_model_ready(config: &InferenceConfig) -> Result<()> {
 
 /// Check if the model directory has all required files.
 pub fn has_required_files(dir: &Path) -> bool {
-    dir.join(HF_GGUF_FILENAME).exists()
-        && dir.join("tokenizer.json").exists()
+    dir.join(HF_GGUF_FILENAME).exists() && dir.join("tokenizer.json").exists()
 }
 
 /// Get the actual model directory to use (bundled takes priority).
@@ -74,7 +74,8 @@ pub fn get_model_dir(config: &InferenceConfig) -> std::path::PathBuf {
 async fn download_model(target_dir: &Path) -> Result<()> {
     use hf_hub::api::tokio::ApiBuilder;
 
-    tokio::fs::create_dir_all(target_dir).await
+    tokio::fs::create_dir_all(target_dir)
+        .await
         .context("Failed to create model directory")?;
 
     let api = ApiBuilder::new()
@@ -86,17 +87,20 @@ async fn download_model(target_dir: &Path) -> Result<()> {
 
     // Download GGUF weights
     info!("Downloading {} from {}…", HF_GGUF_FILENAME, HF_GGUF_REPO_ID);
-    let gguf_path = gguf_repo.get(HF_GGUF_FILENAME).await
+    let gguf_path = gguf_repo
+        .get(HF_GGUF_FILENAME)
+        .await
         .context(format!("Failed to download {HF_GGUF_FILENAME}"))?;
 
     // Copy to target directory
     let target_gguf = target_dir.join(HF_GGUF_FILENAME);
     if gguf_path != target_gguf {
-        tokio::fs::copy(&gguf_path, &target_gguf).await
+        tokio::fs::copy(&gguf_path, &target_gguf)
+            .await
             .context("Failed to copy GGUF weights to model dir")?;
     }
 
-    // Download tokenizer files using reqwest (hf-hub fails on microsoft/phi-2 relative redirects)
+    // Download tokenizer files using reqwest to follow Hugging Face redirects reliably.
     let client = reqwest::Client::new();
     for filename in HF_TOKENIZER_FILES {
         info!("Downloading {} from {}…", filename, HF_TOKENIZER_REPO_ID);
@@ -142,8 +146,16 @@ pub fn model_status(config: &InferenceConfig) -> ModelStatus {
     ModelStatus {
         available,
         location: dir.display().to_string(),
-        source: if available { "downloaded".to_string() } else { "missing".to_string() },
-        size_mb: if available { estimate_dir_size_mb(&dir) } else { 0 },
+        source: if available {
+            "downloaded".to_string()
+        } else {
+            "missing".to_string()
+        },
+        size_mb: if available {
+            estimate_dir_size_mb(&dir)
+        } else {
+            0
+        },
     }
 }
 

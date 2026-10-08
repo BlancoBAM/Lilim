@@ -10,11 +10,7 @@
 //   GET  /system/info     — OS, disk, memory snapshot
 //   GET  /system/service  — systemctl status for a service
 
-use axum::{
-    extract::Query,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::Query, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use tokio::process::Command as TokioCommand;
@@ -76,18 +72,11 @@ const FORBIDDEN: &[&str] = &[
     "wipefs",
 ];
 
-const FORBIDDEN_READ: &[&str] = &[
-    "/etc/shadow",
-    "/etc/gshadow",
-    "/root/",
-    "/proc/kcore",
-];
+const FORBIDDEN_READ: &[&str] = &["/etc/shadow", "/etc/gshadow", "/root/", "/proc/kcore"];
 
 // ── Handlers ─────────────────────────────────────────────────
 
-pub async fn handle_shell(
-    Json(req): Json<ShellRequest>,
-) -> (StatusCode, Json<ShellResponse>) {
+pub async fn handle_shell(Json(req): Json<ShellRequest>) -> (StatusCode, Json<ShellResponse>) {
     if !req.confirmed {
         return (
             StatusCode::BAD_REQUEST,
@@ -169,9 +158,7 @@ pub async fn handle_shell(
     }
 }
 
-pub async fn handle_file_read(
-    Query(params): Query<FileQuery>,
-) -> (StatusCode, Json<FileResponse>) {
+pub async fn handle_file_read(Query(params): Query<FileQuery>) -> (StatusCode, Json<FileResponse>) {
     let path = &params.path;
     let max_chars = params.max_chars.unwrap_or(10_000);
 
@@ -193,10 +180,7 @@ pub async fn handle_file_read(
 
     match tokio::fs::read_to_string(path).await {
         Ok(content) => {
-            let size = tokio::fs::metadata(path)
-                .await
-                .ok()
-                .map(|m| m.len());
+            let size = tokio::fs::metadata(path).await.ok().map(|m| m.len());
             let truncated = content.len() > max_chars;
             (
                 StatusCode::OK,
@@ -214,7 +198,8 @@ pub async fn handle_file_read(
                 std::io::ErrorKind::NotFound => 404,
                 std::io::ErrorKind::PermissionDenied => 403,
                 _ => 500,
-            }).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            })
+            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
             Json(FileResponse {
                 path: path.clone(),
                 content: String::new(),
@@ -261,10 +246,7 @@ fn run_cmd(program: &str, args: &[&str]) -> String {
 
 fn run_cmd_line2(program: &str, args: &[&str]) -> String {
     let out = run_cmd(program, args);
-    out.lines()
-        .nth(1)
-        .unwrap_or("N/A")
-        .to_string()
+    out.lines().nth(1).unwrap_or("N/A").to_string()
 }
 
 fn audit_log(command: &str, returncode: i32) {

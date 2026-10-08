@@ -42,13 +42,17 @@ impl BrainProcess {
             );
         }
 
-        info!("Starting Python brain: {} {}", python.display(), module.display());
+        info!(
+            "Starting Python brain: {} {}",
+            python.display(),
+            module.display()
+        );
 
         let child = Command::new(&python)
             .arg(&module)
             .env("LILIM_BRAIN_PORT", self.port.to_string())
             .env("PYTHONUNBUFFERED", "1")
-            .stdout(Stdio::null())  // Captured by systemd journal
+            .stdout(Stdio::null()) // Captured by systemd journal
             .stderr(Stdio::inherit())
             .spawn()?;
 
@@ -64,7 +68,7 @@ impl BrainProcess {
         match &mut self.child {
             None => false,
             Some(child) => match child.try_wait() {
-                Ok(None) => true,           // Still running
+                Ok(None) => true, // Still running
                 Ok(Some(status)) => {
                     warn!("Brain process exited with status: {}", status);
                     false

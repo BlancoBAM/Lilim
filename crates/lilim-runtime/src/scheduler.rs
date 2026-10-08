@@ -18,19 +18,19 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
-use crate::AppState;
 use crate::proxy::proxy_json_post;
+use crate::AppState;
 
 #[derive(Debug, Deserialize)]
 pub struct ScheduleOnceRequest {
     pub message: String,
-    pub when: String,   // e.g. "in 30 minutes"
+    pub when: String, // e.g. "in 30 minutes"
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ScheduleRecurringRequest {
     pub message: String,
-    pub when: String,   // e.g. "every day at 9am"
+    pub when: String, // e.g. "every day at 9am"
 }
 
 pub async fn handle_schedule_once(
@@ -73,9 +73,7 @@ pub async fn handle_schedule_recurring(
     }
 }
 
-pub async fn handle_schedule_list(
-    State(state): State<Arc<AppState>>,
-) -> (StatusCode, Json<Value>) {
+pub async fn handle_schedule_list(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
     let url = format!("{}/schedule/list", state.brain_base_url);
     match crate::proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
         Ok(v) => (StatusCode::OK, Json(v)),
@@ -94,7 +92,10 @@ pub async fn handle_schedule_cancel(
             if resp.status().is_success() {
                 (StatusCode::OK, Json(json!({"id": id, "cancelled": true})))
             } else {
-                (StatusCode::BAD_GATEWAY, Json(json!({"error": "cancel failed"})))
+                (
+                    StatusCode::BAD_GATEWAY,
+                    Json(json!({"error": "cancel failed"})),
+                )
             }
         }
         Err(e) => (

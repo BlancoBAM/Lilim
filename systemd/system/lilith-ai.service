@@ -25,7 +25,7 @@ Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
 # Safe security directives
 NoNewPrivileges=yes
 
-# Resource limits — tuned for Phi-4-mini (needs more RAM than Phi-2)
+# Resource limits — tuned for Phi-3.5-mini local inference
 MemoryMax=6G
 MemoryHigh=5G
 TasksMax=1024

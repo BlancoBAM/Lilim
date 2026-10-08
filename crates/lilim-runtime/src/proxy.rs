@@ -11,11 +11,7 @@
 //   GET  /memory/stats  → brain GET  /memory/stats
 //   GET  /memory/context → brain GET /memory/context
 
-use axum::{
-    body::Body,
-    http::StatusCode,
-    response::Response,
-};
+use axum::{body::Body, http::StatusCode, response::Response};
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde_json::Value;
@@ -43,7 +39,10 @@ pub async fn proxy_json_post(
                         ))
                     }
                 }
-                Err(e) => Err((StatusCode::BAD_GATEWAY, format!("Brain response parse error: {e}"))),
+                Err(e) => Err((
+                    StatusCode::BAD_GATEWAY,
+                    format!("Brain response parse error: {e}"),
+                )),
             }
         }
         Err(e) => Err((StatusCode::BAD_GATEWAY, format!("Brain unreachable: {e}"))),
@@ -77,16 +76,8 @@ pub async fn proxy_json_get(
 
 /// Stream a POST response from the brain as SSE.
 /// Used for /chat — the brain returns `text/event-stream`.
-pub async fn proxy_sse_stream(
-    brain_url: &str,
-    client: &Client,
-    body: Value,
-) -> Response {
-    let result = client
-        .post(brain_url)
-        .json(&body)
-        .send()
-        .await;
+pub async fn proxy_sse_stream(brain_url: &str, client: &Client, body: Value) -> Response {
+    let result = client.post(brain_url).json(&body).send().await;
 
     match result {
         Err(e) => {
@@ -121,14 +112,12 @@ pub async fn proxy_sse_stream(
             }
 
             // Pipe the brain's SSE stream directly to the client
-            let byte_stream = brain_resp
-                .bytes_stream()
-                .map(|chunk| {
-                    chunk.map_err(|e| {
-                        error!("Brain stream error: {e}");
-                        std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)
-                    })
-                });
+            let byte_stream = brain_resp.bytes_stream().map(|chunk| {
+                chunk.map_err(|e| {
+                    error!("Brain stream error: {e}");
+                    std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)
+                })
+            });
 
             Response::builder()
                 .status(200)

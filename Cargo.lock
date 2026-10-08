@@ -1797,7 +1797,7 @@ dependencies = [
 
 [[package]]
 name = "lilim-inference"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "candle-core",
@@ -1818,7 +1818,7 @@ dependencies = [
 
 [[package]]
 name = "lilim-runtime"
-version = "0.3.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "axum",

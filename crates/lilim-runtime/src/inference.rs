@@ -1,15 +1,15 @@
 // lilim-runtime: Inference routing handler
 //
-// This module bridges the Rust inference engine (Candle Phi-2) with the
+// This module bridges the Rust inference engine (Candle Phi-3.5-mini) with the
 // Python brain's routing decisions.
 //
 // Flow for POST /chat:
 //   1. Ask Python brain's /route endpoint: "local or remote?"
-//   2a. If local + engine available → stream via Candle Phi-2 directly
+//   2a. If local + engine available → stream via Candle Phi-3.5-mini directly
 //   2b. If remote OR local engine unavailable → proxy to Python brain /chat (litellm)
 //
 // SSE format (same in both cases):
-//   data: {"type":"meta","model":"phi-2","source":"local"}
+//   data: {"type":"meta","model":"phi-3.5-mini","source":"local"}
 //   data: {"type":"token","text":"Hello"}
 //   ...
 //   data: {"type":"done"}
@@ -23,10 +23,7 @@ use tracing::{info, warn};
 use crate::AppState;
 
 /// Handle POST /chat by always proxying to the Python brain so the Agent Loop runs.
-pub async fn handle_chat_routed(
-    State(state): State<Arc<AppState>>,
-    body: Value,
-) -> Response {
+pub async fn handle_chat_routed(State(state): State<Arc<AppState>>, body: Value) -> Response {
     // ALWAYS route to Python brain so the ReAct loop runs for all requests.
     let url = format!("{}/chat", state.brain_base_url);
     crate::proxy::proxy_sse_stream(&url, &state.http_client, body).await
@@ -37,16 +34,23 @@ pub async fn handle_internal_generate(
     State(state): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Response {
-    let prompt = body.get("prompt").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let max_tokens = body.get("max_tokens").and_then(|v| v.as_u64()).unwrap_or(256) as usize;
+    let prompt = body
+        .get("prompt")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let max_tokens = body
+        .get("max_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(256) as usize;
 
     if let Some(ref engine) = state.inference_engine {
         if engine.is_available() {
-            info!("Local Phi-2 engine generating {} tokens", max_tokens);
+            info!("Local Phi-3.5-mini engine generating {} tokens", max_tokens);
             return stream_local_inference(engine, &prompt, max_tokens).await;
         }
     }
-    
+
     // Return error SSE if engine not available
     let events = format!(
         "data: {}\n\ndata: {}\n\n",
@@ -63,16 +67,15 @@ async fn get_route_decision(state: &AppState, message: &str, session_id: &str) -
     let url = format!("{}/route", state.brain_base_url);
     let body = json!({"message": message, "session_id": session_id});
 
-    match state.http_client
+    match state
+        .http_client
         .post(&url)
         .json(&body)
         .timeout(std::time::Duration::from_secs(3))
         .send()
         .await
     {
-        Ok(resp) if resp.status().is_success() => {
-            resp.json::<Value>().await.ok()
-        }
+        Ok(resp) if resp.status().is_success() => resp.json::<Value>().await.ok(),
         Ok(resp) => {
             warn!("Route endpoint returned {}", resp.status());
             None
@@ -84,28 +87,28 @@ async fn get_route_decision(state: &AppState, message: &str, session_id: &str) -
     }
 }
 
-/// Build a compact prompt for local Phi-2 inference.
+/// Build a compact prompt for local Phi-3.5-mini inference.
 ///
 /// Memory context and enhanced messages from the Python brain are designed
 /// for large online models (GPT-4, Claude) that handle long contexts quickly.
-/// For local Phi-2 Q4_K_M on CPU, each extra token costs ~0.23s of TTFT:
+/// For local Phi-3.5-mini Q4_K_M on CPU, prompt length affects TTFT:
 ///   282-token prompt → 64s before first token
 ///   20-token prompt  → ~5s before first token
 ///
-/// We therefore pass only the raw user message. The Phi-2 instruct format
-/// (applied in phi2.rs) already provides enough framing for good answers.
+/// Use the enhanced message where available to preserve task and memory context.
 #[allow(dead_code)]
 fn build_local_prompt(route: &Option<Value>, original_message: &str) -> String {
     // If the brain provided an enhanced message (with memory context), use it.
     // Otherwise fall back to the original message.
-    route.as_ref()
+    route
+        .as_ref()
         .and_then(|r| r.get("enhanced_message"))
         .and_then(|v| v.as_str())
         .unwrap_or(original_message)
         .to_string()
 }
 
-/// Stream inference from the local Candle Phi-2 engine as SSE.
+/// Stream inference from the local Candle Phi-3.5-mini engine as SSE.
 async fn stream_local_inference(
     engine: &lilim_inference::InferenceEngine,
     prompt: &str,
@@ -114,7 +117,7 @@ async fn stream_local_inference(
     // Meta event
     let meta_event = format!(
         "data: {}\n\n",
-        serde_json::json!({"type": "meta", "model": "phi-2", "source": "local"})
+        serde_json::json!({"type": "meta", "model": "phi-3.5-mini", "source": "local"})
     );
 
     let prompt = prompt.to_string();

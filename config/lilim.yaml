@@ -8,7 +8,7 @@
 #   │                         │                            │
 #   │              ┌──────────┴─────────┐                  │
 #   │              ▼                    ▼                   │
-#   │     Candle Phi-2 (local)    Python Brain (8081)       │
+#   │     Candle Phi-3.5 (local)  Python Brain (8081)       │
 #   │     GGUF Q4_K_M             litellm → online APIs    │
 #   └──────────────────────────────────────────────────────┘
 
@@ -16,14 +16,14 @@
 # Local Inference Engine (Rust/Candle — Primary)
 # ═══════════════════════════════════════════════════════════
 local_inference:
-  # Phi-2 2.7B Q4_K_M — the only local model currently bundled.
-  # Model files live at ~/.local/share/lilim/models/phi-2-q4/
-  # or /usr/lib/lilim/models/phi-2-q4/ (bundled in .deb).
-  model: "phi-2-q4"
+  # Phi-3.5-mini Q4_K_M, bundled in the Debian package or downloaded on first run.
+  # Model files live at ~/.local/share/lilim/models/phi-3.5-mini-q4/ or
+  # /usr/lib/lilim/models/phi-3.5-mini-q4/ (bundled in .deb).
+  model: "phi-3.5-mini-q4"
   model_type: "gguf"
-  context_size: 2048
-  max_gen_tokens: 256
-  temperature: 0.5
+  context_size: 4096
+  max_gen_tokens: 512
+  temperature: 0.4
   top_p: 0.9
 
   # Device selection — CPU-only (no CUDA/Metal on this hardware)
@@ -104,7 +104,7 @@ memory:
   max_history_messages: 20
   session_timeout_s: 7200       # 2 hours of inactivity resets context
   context_strategy: "sliding"   # sliding | truncate
-  max_context_tokens: 1024      # Keep short — local model has 2048 ctx total
+  max_context_tokens: 4096      # Matches the configured local context cap
 
 # ═══════════════════════════════════════════════════════════
 # Agent / Tool Execution
@@ -165,7 +165,7 @@ server:
 # ═══════════════════════════════════════════════════════════
 # Personality Configuration
 # Applied by Python Brain to all responses regardless of
-# which model (local Phi-2 or online provider) is used.
+# which model (local Phi-3.5-mini or online provider) is used.
 # ═══════════════════════════════════════════════════════════
 personality:
   responses_yaml_path: "/etc/lilith/lilim-responses.yaml"
@@ -193,7 +193,7 @@ logging:
 # Performance Tuning
 # ═══════════════════════════════════════════════════════════
 performance:
-  # Request timeout — Phi-2 on i5-6200U needs up to 5 mins
+  # Request timeout accommodates local CPU inference and remote providers.
   # for a complex prompt. The UI shows thinking indicators during this.
   query_timeout_s: 300        # 5 minutes max
 
@@ -202,4 +202,3 @@ performance:
 
   # Response caching (exact-match cache for repeated queries)
   enable_cache: false         # Disabled — responses vary by context
-
