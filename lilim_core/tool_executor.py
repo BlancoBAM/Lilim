@@ -6,23 +6,31 @@ Non-destructive operations can be auto-approved via the tool-rules config.
 Destructive or elevated operations require explicit confirmation from the UI.
 
 Included tools:
-  - shell_command   — run shell commands (rule-based auto-approval or UI gate)
-  - file_read       — read a file and return its contents
-  - file_list       — list directory contents
-  - system_info     — snapshot of OS, disk, memory, processes
-  - service_status  — systemctl status for a named service
-  - package_search  — apt-cache search wrapper
+  - shell_command        — run shell commands (rule-based auto-approval or UI gate)
+  - shell_command_sudo   — run with elevated privileges after user confirms in UI
+  - file_read            — read a file and return its contents
+  - file_write           — write/create a file
+  - file_list            — list directory contents
+  - system_info          — snapshot of OS, disk, memory, processes
+  - service_status       — systemctl status for a named service
+  - package_search       — apt-cache search wrapper
+  - browser_launch       — launch BrowserOS/neo with optional URL
 
 Safety features:
   - Timeout on all executions (30s default)
   - Absolute forbidden pattern blocklist (no exceptions)
   - Persistent tool-rules.json controls auto-approve / always-confirm
   - Command audit log at /var/log/lilim/commands.log
+  - Sudo elevation: uses pkexec (polkit GUI) when available, then sudo -S
+    with a session credential token (never stored on disk)
 """
 
+import json
 import os
 import re
+import shutil
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -118,8 +126,23 @@ DEFAULT_TOOL_RULES = {
         "crontab",
         "curl ", "wget ",   # raw network writes still require confirmation
         "ssh ", "scp ",
+    ],
+    # Sudo commands require elevation flow — always go through confirm+elevate UI
+    "sudo_patterns": [
+        "sudo ",
+        "sudo -",
+        "pkexec ",
+        "gksu ",
+        "kdesu ",
     ]
 }
+
+
+# ── Session sudo token store (in-memory only, never on disk) ──────────────────
+# Maps session_id → (password, expiry_timestamp)
+# Expires after 5 minutes of inactivity
+_SUDO_TOKENS: dict = {}
+_SUDO_TOKEN_TTL = 300  # 5 minutes
 
 
 class ToolExecutor:
@@ -172,12 +195,13 @@ class ToolExecutor:
             return False
 
     def classify_command(self, command: str) -> str:
-        """Classify a command as 'auto', 'confirm', or 'forbidden'.
+        """Classify a command as 'auto', 'confirm', 'sudo_confirm', or 'forbidden'.
 
         Returns:
-            'forbidden' — absolute blocklist match (never run)
-            'auto'      — matches auto_approve OR agent_auto rules (run without UI prompt)
-            'confirm'   — requires user approval via UI
+            'forbidden'    — absolute blocklist match (never run)
+            'sudo_confirm' — requires sudo elevation (user must confirm + provide password)
+            'auto'         — matches auto_approve OR agent_auto (run without UI prompt)
+            'confirm'      — requires user approval via UI
         """
         # Absolute forbidden always wins
         rejection = self._check_forbidden(command)
@@ -187,9 +211,10 @@ class ToolExecutor:
         rules = self.load_tool_rules()
         cmd_stripped = command.strip().lower()
 
-        # sudo: check sudo_allowed first
-        if "sudo" in cmd_stripped and not rules.get("sudo_allowed", False):
-            return "confirm"  # sudo not enabled in rules
+        # Sudo/elevated commands: always require the elevation flow
+        for pattern in rules.get("sudo_patterns", DEFAULT_TOOL_RULES.get("sudo_patterns", ["sudo "])):
+            if pattern.lower() in cmd_stripped:
+                return "sudo_confirm"
 
         # Check always_confirm first (higher specificity wins)
         for pattern in rules.get("always_confirm", []):
@@ -209,15 +234,114 @@ class ToolExecutor:
         # Default: require confirmation for anything unrecognised
         return "confirm"
 
+    def is_sudo_command(self, command: str) -> bool:
+        """Return True if the command requires elevated privileges."""
+        return self.classify_command(command) == "sudo_confirm"
+
     # ── Shell command ────────────────────────────────────────────────
 
-    def shell_command(self, command: str, confirmed: bool = False) -> dict:
+    @staticmethod
+    def set_sudo_token(session_id: str, password: str):
+        """Store a sudo session token (password, expires in 5 min). Never written to disk."""
+        _SUDO_TOKENS[session_id] = (password, time.time() + _SUDO_TOKEN_TTL)
+
+    @staticmethod
+    def clear_sudo_token(session_id: str):
+        """Clear a sudo session token (e.g., on session reset)."""
+        _SUDO_TOKENS.pop(session_id, None)
+
+    @staticmethod
+    def has_valid_sudo_token(session_id: str) -> bool:
+        """Return True if there's an unexpired sudo token for this session."""
+        entry = _SUDO_TOKENS.get(session_id)
+        if not entry:
+            return False
+        _, expiry = entry
+        if time.time() > expiry:
+            del _SUDO_TOKENS[session_id]
+            return False
+        return True
+
+    def shell_command_sudo(
+        self,
+        command: str,
+        session_id: str = "default",
+        password: Optional[str] = None,
+    ) -> dict:
+        """
+        Execute a command with elevated privileges.
+
+        Strategy:
+          1. Try pkexec (polkit — shows GUI dialog for desktop users).
+          2. If pkexec not available, use `sudo -S` with the session token password.
+
+        Args:
+            command:    Shell command string (may or may not include 'sudo' prefix).
+            session_id: Used to look up a cached session password token.
+            password:   If provided, stores as session token for 5 minutes.
+        """
+        # Strip leading 'sudo' if present (we'll re-add in a controlled way)
+        base_cmd = command.strip()
+        if base_cmd.startswith("sudo "):
+            base_cmd = base_cmd[5:].strip()
+
+        # Safety check on the underlying command
+        rejection = self._check_forbidden(base_cmd)
+        if rejection:
+            return {
+                "error": f"Rejected: {rejection}",
+                "command": command, "stdout": "", "stderr": "", "returncode": -1,
+            }
+
+        # Store password in session token if provided
+        if password:
+            self.set_sudo_token(session_id, password)
+
+        # Use a password explicitly provided by the user before falling back to
+        # Polkit. This keeps desktop and CLI confirmations tied to the approved
+        # session and avoids requiring a GUI in the systemd service environment.
+        token = _SUDO_TOKENS.get(session_id)
+        if token:
+            pwd, expiry = token
+            if time.time() < expiry:
+                _SUDO_TOKENS[session_id] = (pwd, time.time() + _SUDO_TOKEN_TTL)
+                sudo_cmd = f"sudo -S -p '' {base_cmd}"
+                result = self._run_command(sudo_cmd, env_home=True, stdin_data=pwd + "\n")
+                if result.get("returncode", -1) != 0:
+                    stderr = (result.get("stderr") or "").lower()
+                    if "incorrect password" in stderr or "try again" in stderr or "a password is required" in stderr:
+                        self.clear_sudo_token(session_id)
+                self._audit_log(f"[SUDO/-S] {base_cmd}", result["returncode"])
+                return result
+            self.clear_sudo_token(session_id)
+
+        # Polkit fallback for desktop environments without a supplied token.
+        if shutil.which("pkexec"):
+            # pkexec requires the command to be an absolute path
+            parts = base_cmd.split()
+            exe_path = shutil.which(parts[0]) if parts else None
+            if exe_path:
+                pkexec_cmd = f"pkexec {exe_path} {' '.join(parts[1:])}"
+                result = self._run_command(pkexec_cmd, env_home=True)
+                self._audit_log(f"[SUDO/pkexec] {base_cmd}", result["returncode"])
+                return result
+
+        # No elevation method available
+        return {
+            "error": "Sudo elevation requires a password. The UI should have prompted for one.",
+            "command": command, "stdout": "", "stderr": "", "returncode": -1,
+            "needs_password": True,
+        }
+
+    def shell_command(self, command: str, confirmed: bool = False,
+                      session_id: str = "default") -> dict:
         """Execute a shell command.
 
         Args:
-            command:   The shell command string to run.
-            confirmed: Set to True by the UI after user approval, OR when the
-                       command is auto-approved by tool-rules.json.
+            command:    The shell command string to run.
+            confirmed:  Set to True by the UI after user approval, OR when the
+                        command is auto-approved by tool-rules.json.
+            session_id: Used for sudo token lookup if command requires elevation.
 
         Returns:
             dict with stdout, stderr, returncode, classification, and the command.
@@ -234,6 +358,22 @@ class ToolExecutor:
                 "stderr": "",
                 "returncode": -1,
             }
+
+        # Sudo commands: route to elevation handler
+        if classification == "sudo_confirm":
+            if not confirmed:
+                return {
+                    "error": "This command needs elevated privileges (sudo).",
+                    "command": command,
+                    "classification": "sudo_confirm",
+                    "stdout": "",
+                    "stderr": "",
+                    "returncode": -1,
+                    "needs_sudo": True,
+                    "needs_confirmation": True,
+                }
+            # If confirmed: try elevation via pkexec or session token
+            return self.shell_command_sudo(command, session_id=session_id)
 
         # Auto-approved commands skip the confirmation gate
         if classification == "auto":
@@ -261,6 +401,19 @@ class ToolExecutor:
                 "returncode": -1,
             }
 
+        result = self._run_command(command)
+        if result.get("returncode") == 0 or result.get("not_found"):
+            pass
+        self._audit_log(command, result.get("returncode", -1))
+        return result
+
+    def _run_command(
+        self,
+        command: str,
+        env_home: bool = True,
+        stdin_data: Optional[str] = None,
+    ) -> dict:
+        """Internal: actually run a shell command with safety limits."""
         try:
             # Build an expanded PATH so user-installed tools (uv, cargo, pipx, etc.)
             # are always findable — systemd strips HOME/.local/bin from the daemon PATH.
@@ -283,26 +436,36 @@ class ToolExecutor:
             if existing_path:
                 full_path = full_path + ":" + existing_path
             exec_env["PATH"] = full_path
-            exec_env["HOME"] = _home
+            if env_home:
+                exec_env["HOME"] = _home
 
             # We use Popen with limited reading to prevent memory exhaustion (OOM)
             # if a command produces millions of lines of output.
+            stdin_pipe = subprocess.PIPE if stdin_data else None
             process = subprocess.Popen(
                 command,
                 shell=True,
                 executable="/bin/bash",  # Use bash (not sh) for better compatibility
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                stdin=stdin_pipe,
                 text=True,
                 bufsize=1,  # line buffered
                 env=exec_env,
             )
 
+            # Write password to stdin if provided (for sudo -S)
+            if stdin_data:
+                try:
+                    process.stdin.write(stdin_data)
+                    process.stdin.close()
+                except Exception:
+                    pass
+
             stdout_lines = []
             stderr_lines = []
-            max_total_chars = 100_000 # ~100KB safety limit for raw capture
+            max_total_chars = 100_000  # ~100KB safety limit for raw capture
 
-            # Helper to read from stream with limit
             def read_stream(stream, target_list):
                 count = 0
                 while count < max_total_chars:
@@ -315,8 +478,6 @@ class ToolExecutor:
                     target_list.append("\n... (raw output truncated for safety) ...")
                     process.terminate()
 
-            # For simplicity in this local context, we read sequentially. 
-            # In a heavy production system we'd use threads or select().
             read_stream(process.stdout, stdout_lines)
             read_stream(process.stderr, stderr_lines)
 
@@ -331,38 +492,18 @@ class ToolExecutor:
             stderr = "".join(stderr_lines)
 
             # Tag "command not found" errors so the agent loop can recover
-            # by installing the missing tool, rather than counting it as a
-            # logic failure (which would trigger the consecutive-failure stop).
             not_found = (
                 "command not found" in stderr.lower() or
-                "no such file or directory" in stderr.lower() and "exec" in stderr.lower()
+                ("no such file or directory" in stderr.lower() and "exec" in stderr.lower())
             )
 
-            self._audit_log(command, rc)
             return {
                 "command": command,
                 "stdout": stdout,
                 "stderr": stderr,
                 "returncode": rc,
                 "error": None if rc == 0 else f"Process exited with code {rc}",
-                "not_found": not_found,  # True when a tool is missing, not a logic error
-            }
-        except Exception as e:
-            return {
-                "command": command,
-                "stdout": "",
-                "stderr": "",
-                "returncode": -1,
-                "error": str(e),
-            }
-        except subprocess.TimeoutExpired:
-            self._audit_log(command, "TIMEOUT")
-            return {
-                "command": command,
-                "stdout": "",
-                "stderr": "",
-                "returncode": -1,
-                "error": f"Timed out after {self.timeout}s",
+                "not_found": not_found,
             }
         except Exception as e:
             return {
@@ -520,6 +661,39 @@ class ToolExecutor:
             }
         except Exception as e:
             return {"query": query, "results": "", "error": str(e)}
+
+    def browser_launch(self, url: Optional[str] = None) -> dict:
+        """
+        Launch BrowserOS (neo) with an optional URL.
+        Detects BrowserOS binary in common install paths.
+        Falls back to xdg-open if BrowserOS is not found.
+        """
+        # BrowserOS / neo detection
+        neo_candidates = [
+            shutil.which("neo"),
+            shutil.which("browseros"),
+            shutil.which("browser-os"),
+            "/usr/bin/neo",
+            "/opt/browseros/neo",
+            "/usr/local/bin/neo",
+        ]
+        neo_bin = next((p for p in neo_candidates if p and Path(p).exists()), None)
+
+        try:
+            if neo_bin:
+                cmd = [neo_bin]
+                if url:
+                    cmd.append(url)
+                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return {"launched": True, "browser": "neo", "url": url}
+            elif url:
+                # Fallback to xdg-open
+                subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return {"launched": True, "browser": "xdg-open", "url": url}
+            else:
+                return {"launched": False, "error": "BrowserOS (neo) not found and no URL to open."}
+        except Exception as e:
+            return {"launched": False, "error": str(e)}
 
     # ── Internal helpers ──────────────────────────────────────
 

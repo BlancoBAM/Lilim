@@ -344,6 +344,13 @@ class ToolShellRequest(BaseModel):
     confirmed: bool = False
 
 
+class ToolSudoRequest(BaseModel):
+    command: str
+    confirmed: bool = False
+    session_id: str
+    password: str
+
+
 class SessionResetRequest(BaseModel):
     session_id: str
 
@@ -624,6 +631,8 @@ async def chat_sync(req: ChatRequest):
 async def chat_reset(req: SessionResetRequest):
     """Clear session history so the next message starts a fresh context window."""
     _memory.clear_session(req.session_id)
+    from lilim_core.tool_executor import ToolExecutor
+    ToolExecutor.clear_sudo_token(req.session_id)
     return {"status": "cleared", "session_id": req.session_id}
 
 
@@ -666,6 +675,26 @@ async def tools_shell(req: ToolShellRequest):
     result = executor.shell_command(req.command, confirmed=req.confirmed)
     if result.get("error") and not result.get("needs_confirmation"):
         raise HTTPException(status_code=403, detail=result["error"])
+    return result
+
+
+@app.post("/tools/shell/sudo")
+async def tools_shell_sudo(req: ToolSudoRequest):
+    """Run a user-confirmed elevated command; credentials stay in process memory."""
+    if not req.confirmed:
+        raise HTTPException(status_code=400, detail="Elevated command not confirmed.")
+    if not req.session_id or not req.password:
+        raise HTTPException(status_code=400, detail="A session and sudo password are required.")
+
+    from lilim_core.tool_executor import ToolExecutor
+    executor = ToolExecutor()
+    if executor.classify_command(req.command) != "sudo_confirm":
+        raise HTTPException(status_code=400, detail="Command is not classified for elevation.")
+    result = executor.shell_command_sudo(
+        req.command, session_id=req.session_id, password=req.password
+    )
+    if result.get("error") or result.get("returncode", -1) != 0:
+        raise HTTPException(status_code=403, detail=result.get("error") or result.get("stderr") or "Elevated command failed.")
     return result
 
 
@@ -897,7 +926,7 @@ async def _stream_chat(message: str, session_id: str = "default",
                                      username=username, home_dir=home_dir)
     history = _build_messages_with_custom_sys(enhanced, session_id, sys_prompt)
 
-    max_turns = 5   # reduced from 8 — fewer chances to spiral
+    max_turns = 10
     current_turn = 0
     full_assistant_reply = ""
     active_provider = "LOCAL"
@@ -1010,8 +1039,11 @@ async def _stream_chat(message: str, session_id: str = "default",
                 turn_reply += token
 
                 # Real-time hallucination filter
-                if "User:" in turn_reply or "Assistant:" in turn_reply:
-                    turn_reply = re.split(r"(?:User:|Assistant:)", turn_reply)[0].strip()
+                if any(tag in turn_reply for tag in ("<|user|>", "<|assistant|>", "<|end|>", "<|endoftext|>")):
+                    turn_reply = re.split(
+                        r"(?:<\|user\|>|<\|assistant\|>|<\|end\|>|<\|endoftext\|>|User:|Assistant:)",
+                        turn_reply,
+                    )[0].strip()
                     break
 
                 yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
@@ -1029,25 +1061,10 @@ async def _stream_chat(message: str, session_id: str = "default",
         full_assistant_reply += turn_reply
 
         # ── Bash block extraction ────────────────────────────────────────────
-        # SAFETY: only extract blocks that appear BEFORE position 400 in the response.
-        # Blocks that come after significant prose are the model "demonstrating",
-        # not requesting execution. This stops hallucinated numbered-list output
-        # from being picked up and run as commands.
-        #
         # SAFETY: strip lines that look like hallucinated numbered output
         # ("1. Im borrowing...", "2. Ah, the classic...") before scanning.
         sanitised_reply = re.sub(r"(?m)^\d+\.\s+.+$", "", turn_reply)
-
-        # Only scan the first 400 characters of the sanitised reply
-        scan_window = sanitised_reply[:400]
-        bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", scan_window))
-
-        # Also check full reply in case block started before char 400 but closed after
-        if not bash_matches:
-            bash_matches = list(re.finditer(r"```(?:bash|sh|shell)?\s*\n([\s\S]*?)```", sanitised_reply))
-            if bash_matches:
-                # Only keep blocks whose START position is within the first 400 chars
-                bash_matches = [m for m in bash_matches if m.start() < 400]
+        bash_matches = list(re.finditer(r"```(?:bash|sh|shell)\s*\n([\s\S]*?)```", sanitised_reply, re.IGNORECASE))
 
         if bash_matches:
             from lilim_core.tool_executor import ToolExecutor
@@ -1075,6 +1092,16 @@ async def _stream_chat(message: str, session_id: str = "default",
                     full_assistant_reply += obs_block
                     continue
 
+                if classification == "sudo_confirm" and not executor.has_valid_sudo_token(session_id):
+                    # Use the same explicit UI approval boundary as other gated commands.
+                    # Password entry is handled separately; never infer or cache credentials here.
+                    yield f"data: {json.dumps({'type': 'tool_pending', 'command': command, 'short': short, 'sudo': True})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'provider': active_provider, 'pending_tool': True})}\n\n"
+                    if full_assistant_reply:
+                        _memory.save_turn("assistant", full_assistant_reply,
+                                          session_id=session_id, category=enhanced["category"])
+                    return
+
                 if classification == "confirm":
                     # Halt the stream and ask the UI to confirm
                     yield f"data: {json.dumps({'type': 'tool_pending', 'command': command, 'short': short})}\n\n"
@@ -1088,7 +1115,10 @@ async def _stream_chat(message: str, session_id: str = "default",
                 # classification == 'auto' — execute immediately
                 yield f"data: {json.dumps({'type': 'tool_call', 'text': short})}\n\n"
 
-                result = executor.shell_command(command, confirmed=True)
+                if classification == "sudo_confirm":
+                    result = executor.shell_command_sudo(command, session_id=session_id)
+                else:
+                    result = executor.shell_command(command, confirmed=True, session_id=session_id)
                 stdout = (result.get("stdout") or "").strip()
                 stderr = (result.get("stderr") or "").strip()
                 err    = result.get("error") or ""
@@ -1132,21 +1162,11 @@ async def _stream_chat(message: str, session_id: str = "default",
                                           session_id=session_id, category=enhanced["category"])
                     return
 
-                # LOCAL models: one execution only — stop here
-                if active_provider == "LOCAL":
-                    done_msg = _get_random_response("complete")
-                    if done_msg:
-                        done_block = f"\n\n{done_msg}"
-                        yield f"data: {json.dumps({'type': 'token', 'text': done_block})}\n\n"
-                        full_assistant_reply += done_block
-                    break
-
             if all_observations:
-                if active_provider == "LOCAL":
-                    break  # No ReAct loop for local models
                 history.append({"role": "assistant", "content": turn_reply})
                 history.append({"role": "user", "content": "Observation: " + "\n".join(all_observations)})
-                continue  # Remote model: continue ReAct loop
+                history = _trim_agent_history(history, 4096, enhanced["enhanced_message"])
+                continue
             else:
                 break
         else:
@@ -1193,11 +1213,6 @@ def _trim_to_token_budget(messages: list, budget_tokens: int) -> list:
     System messages are always preserved; user/assistant turns are dropped
     from the front until the total fits.
     """
-    CHARS_PER_TOKEN = 4
-
-    def count_tokens(msgs):
-        return sum(len(m.get("content", "")) for m in msgs) // CHARS_PER_TOKEN
-
     if count_tokens(messages) <= budget_tokens:
         return messages
 
@@ -1210,6 +1225,28 @@ def _trim_to_token_budget(messages: list, budget_tokens: int) -> list:
         turn_msgs.pop(0)
 
     return system_msgs + turn_msgs
+
+
+def count_tokens(messages: list) -> int:
+    """Estimate prompt size without adding a tokenizer dependency."""
+    return sum(len(m.get("content", "")) for m in messages) // 4
+
+
+def _trim_agent_history(messages: list, budget_tokens: int, goal: str) -> list:
+    """Keep the original goal and newest observations while pruning middle context."""
+    if count_tokens(messages) <= budget_tokens:
+        return messages
+    system_msgs = [m for m in messages if m["role"] == "system"]
+    turns = [m for m in messages if m["role"] != "system"]
+    # Keep the task statement visible even when many observations accumulate.
+    goal_turn = next(
+        (m for m in turns if m["role"] == "user" and m["content"] == goal),
+        {"role": "user", "content": goal},
+    )
+    turns = [goal_turn] + [m for m in turns if m is not goal_turn][-8:]
+    while turns and count_tokens(system_msgs + turns) > budget_tokens:
+        turns.pop(1 if len(turns) > 1 else 0)
+    return system_msgs + turns
 
 
 def _build_messages_with_custom_sys(enhanced: dict, session_id: str, sys_prompt: str) -> list:

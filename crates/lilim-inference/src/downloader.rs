@@ -2,7 +2,7 @@
 //
 // Verifies model files are present and downloads them from HuggingFace
 // if not. For packaging into the Lilith Linux .deb, the model is bundled
-// at /usr/lib/lilim/models/phi-2-q4/ and this code uses that path first.
+// at /usr/lib/lilim/models/phi-3.5-mini-q4/ and this code uses that path first.
 
 use anyhow::{Context, Result};
 use std::path::Path;
@@ -12,23 +12,24 @@ use crate::InferenceConfig;
 
 /// Bundled model path (installed by the .deb package).
 /// When this path exists, we never download anything.
-const BUNDLED_MODEL_DIR: &str = "/usr/lib/lilim/models/phi-2-q4";
+const BUNDLED_MODEL_DIR: &str = "/usr/lib/lilim/models/phi-3.5-mini-q4";
 
-/// HuggingFace model repository for Phi-2 GGUF weights.
-/// We use TheBloke's Q4_K_M quantization — best quality/size tradeoff.
-const HF_GGUF_REPO_ID: &str = "TheBloke/phi-2-GGUF";
-const HF_GGUF_FILENAME: &str = "phi-2.Q4_K_M.gguf";
+/// HuggingFace repo for Phi-3.5-mini-instruct GGUF (community Q4_K_M build).
+/// bartowski maintains well-tested GGUF quantizations for most Phi models.
+const HF_GGUF_REPO_ID: &str = "bartowski/Phi-3.5-mini-instruct-GGUF";
+const HF_GGUF_FILENAME: &str = "Phi-3.5-mini-instruct-Q4_K_M.gguf";
 
-const HF_TOKENIZER_REPO_ID: &str = "microsoft/phi-2";
+/// Official microsoft repo for tokenizer files.
+const HF_TOKENIZER_REPO_ID: &str = "microsoft/Phi-3.5-mini-instruct";
 const HF_TOKENIZER_FILES: &[&str] = &["tokenizer.json", "tokenizer_config.json"];
 
 /// Ensure all required model files are present.
 /// Priority:
-///   1. /usr/lib/lilim/models/phi-2-q4/ (bundled in .deb — preferred)
+///   1. /usr/lib/lilim/models/phi-3.5-mini-q4/ (bundled in .deb — preferred)
 ///   2. LILIM_MODEL_DIR env var
-///   3. ~/.local/share/lilim/models/phi-2-q4/ (downloaded on first run)
+///   3. ~/.local/share/lilim/models/phi-3.5-mini-q4/ (downloaded on first run)
 pub async fn ensure_model_ready(config: &InferenceConfig) -> Result<()> {
-    // Check bundled path first (fastest, offline, no download needed)
+    // Check bundled path first (fastest, offline)
     let bundled = Path::new(BUNDLED_MODEL_DIR);
     if bundled.exists() && has_required_files(bundled) {
         info!("Using bundled model at {}", BUNDLED_MODEL_DIR);
@@ -43,12 +44,12 @@ pub async fn ensure_model_ready(config: &InferenceConfig) -> Result<()> {
     }
 
     // Need to download
-    info!("Model not found locally. Downloading Phi-2 from HuggingFace…");
+    info!("Model not found locally. Downloading Phi-3.5-mini-instruct from HuggingFace…");
     info!("Target: {}", model_dir.display());
-    info!("This is a one-time ~1.7GB download.");
+    info!("This is a one-time ~2.4 GB download.");
 
     download_model(&model_dir).await
-        .context("Failed to download Phi-2 model from HuggingFace")?;
+        .context("Failed to download Phi-3.5-mini model from HuggingFace")?;
 
     info!("Model downloaded successfully ✓");
     Ok(())

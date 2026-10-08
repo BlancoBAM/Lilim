@@ -1,15 +1,14 @@
-// lilim-inference: Phi-2 Engine
+// lilim-inference: Phi-2 Engine (SUPERSEDED — kept for reference only)
 //
-// Loads and runs Microsoft Phi-2 for token-by-token streaming inference.
-// Uses HuggingFace Candle for pure-Rust ML — no Python, no Ollama.
+// This module is no longer the active inference engine.
+// The active engine is phi3.rs (Phi-3.5-mini-instruct via quantized_phi3).
+//
+// Phi-2 is kept here so the module compiles and can serve as a CPU fallback
+// if the Phi-3.5 model is not downloaded yet and the caller explicitly requests it.
 //
 // Model: microsoft/phi-2 (GGUF Q4_K_M quantization)
-// Context: 2048 tokens
-// Params: 2.7B
-// Speed: ~3-15 tokens/sec on CPU (depends on hardware)
-//
-// The chat template wraps user messages in Phi-2's instruct format:
-//   "Instruct: {user_message}\nOutput:"
+// Context: 2048 tokens | Params: 2.7B
+// Chat template:  "Instruct: {user_message}\nOutput:"
 
 use anyhow::{Context, Result};
 use candle_core::{Device, Tensor};

@@ -1,28 +1,38 @@
 // lilim-inference: Public API
 //
-// Provides the InferenceEngine — a self-contained Phi-2 inference engine
+// Provides the InferenceEngine — a self-contained Phi-3.5-mini inference engine
 // built on HuggingFace Candle. No Ollama, no Python, no external tools.
 //
 // Key features:
-//   • Loads Phi-2 (GGUF Q4_K_M) from the bundled model path
+//   • Loads Phi-3.5-mini-instruct (GGUF Q4_K_M) from the bundled model path
 //   • Streams tokens via async Stream
-//   • Reports inference speed; caller can decide to fall back to online model
+//   • Reports inference speed; caller can fall back to online model if slow
 //   • Works on CPU (default) and CUDA/Metal (optional features)
+//   • Carries the Lilim agent system prompt — model understands tool use
 //
 // Usage:
-//   let engine = InferenceEngine::new(InferenceConfig::default()).await?;
-//   let stream = engine.generate_stream("Explain ATP synthesis", 512).await;
+//   let engine = InferenceEngine::new(InferenceConfig::default()).await;
+//   let stream = engine.generate_stream("List all running services", 512).await?;
 //   pin_mut!(stream);
 //   while let Some(token) = stream.next().await {
 //       print!("{}", token?);
 //   }
+//
+// Model selection:
+//   Phi-3.5-mini-instruct (Q4_K_M, ~2.4 GB) is used via Candle's built-in
+//   `quantized_phi3` module — no new Rust dependencies vs the previous Phi-2 code.
+//   Phi-4 is NOT yet in Candle's candle-transformers crate (no quantized_phi4.rs)
+//   so we use Phi-3.5-mini, which is production-stable and a meaningful upgrade.
 
-pub mod downloader;
-pub mod phi2;
 pub mod config;
+pub mod downloader;
+pub mod phi3;
+
+// Keep phi2 module available for reference/fallback during transition
+pub mod phi2;
 
 pub use config::InferenceConfig;
-pub use phi2::Phi2Engine;
+pub use phi3::Phi3Engine;
 
 use anyhow::Result;
 use futures_util::Stream;
@@ -35,7 +45,7 @@ pub type TokenStream = Pin<Box<dyn Stream<Item = Result<String>> + Send>>;
 /// The main inference engine handle.
 /// Create one at startup and reuse across requests (model stays loaded in RAM).
 pub struct InferenceEngine {
-    inner: Option<Phi2Engine>,
+    inner: Option<Phi3Engine>,
     config: InferenceConfig,
 }
 
@@ -43,7 +53,7 @@ impl InferenceEngine {
     /// Initialize the engine. Downloads/verifies the model if needed.
     /// Returns Ok even if model is unavailable — is_available() will return false.
     pub async fn new(config: InferenceConfig) -> Self {
-        info!("Initializing Lilim local inference engine (Phi-2 via Candle)…");
+        info!("Initializing Lilim local inference engine (Phi-3.5-mini via Candle)…");
 
         // Ensure model files are present
         match downloader::ensure_model_ready(&config).await {
@@ -57,17 +67,14 @@ impl InferenceEngine {
         }
 
         // Load model into memory
-        match Phi2Engine::load(&config).await {
+        match Phi3Engine::load(&config).await {
             Ok(engine) => {
-                info!("Phi-2 engine loaded ✓ ({} device)", config.device_label());
+                info!("Phi-3.5-mini engine loaded ✓ ({} device)", config.device_label());
                 let this = Self { inner: Some(engine), config };
 
-                // ── Model warmup ──────────────────────────────────────────
-                // Run a tiny dummy forward pass immediately after loading.
-                // This pre-warms CPU caches, memory mappings, and any JIT
-                // paths inside Candle/BLAS so the first *real* user request
-                // doesn't pay an extra cold-start penalty on top of its own
-                // prompt-processing time.
+                // ── Model warmup ───────────────────────────────────────────────
+                // Run a tiny dummy forward pass to pre-warm CPU caches so the
+                // first real user request doesn't pay the cold-start penalty.
                 if this.config.warmup_on_startup {
                     info!("Running model warmup pass…");
                     match this.generate("hi", 1).await {
@@ -79,7 +86,7 @@ impl InferenceEngine {
                 this
             }
             Err(e) => {
-                warn!("Failed to load Phi-2 engine: {:?}", e);
+                warn!("Failed to load Phi-3.5-mini engine: {:?}", e);
                 Self { inner: None, config }
             }
         }

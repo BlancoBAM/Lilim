@@ -30,6 +30,9 @@ export interface OIChunk {
   start?: boolean;
   end?: boolean;
   provider?: string;
+  pending_command?: string;
+  pending_short?: string;
+  pending_sudo?: boolean;
 }
 
 export interface ProviderStatus {
@@ -153,6 +156,7 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
               // @ts-ignore — extend chunk with pending command data
               pending_command: data.command,
               pending_short: data.short,
+              pending_sudo: data.sudo === true,
               end: true,
               provider: 'PENDING',
             };
@@ -181,15 +185,20 @@ export async function* streamChat(message: string, signal?: AbortSignal): AsyncG
 /**
  * Execute a confirmed shell command via the Rust security gateway.
  */
-export async function runShellCommand(command: string): Promise<{
+export async function runShellCommand(
+  command: string,
+  sudo?: { sessionId: string; password: string },
+): Promise<{
   stdout: string;
   stderr: string;
   returncode: number;
 }> {
-  const response = await fetch(`${API_BASE_URL}/tools/shell`, {
+  const response = await fetch(`${API_BASE_URL}${sudo ? '/tools/shell/sudo' : '/tools/shell'}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ command, confirmed: true }),
+    body: JSON.stringify(sudo
+      ? { command, confirmed: true, session_id: sudo.sessionId, password: sudo.password }
+      : { command, confirmed: true }),
   });
 
   if (!response.ok) {
@@ -348,4 +357,3 @@ export async function* sendObservation(
   const message = `Observation: ${observationText}`;
   yield* streamChat(message, signal);
 }
-

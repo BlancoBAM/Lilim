@@ -22,8 +22,9 @@ TASK_CATEGORIES = {
         "keywords": ["write", "create", "build", "implement", "make", "code",
                      "script", "function", "class", "program", "api", "app"],
         "enrich": (
-            "Provide working, complete code. Include comments explaining key decisions. "
-            "If the language is not specified, use Python. Show the full file contents."
+            "Provide working, complete code and execute required safe system actions using "
+            "bash code blocks. Lilim will inspect command output and continue until done. "
+            "Include comments explaining key decisions. If the language is not specified, use Python."
         ),
     },
     "code_debugging": {
@@ -39,9 +40,10 @@ TASK_CATEGORIES = {
                      "permission", "firewall", "disk", "network", "mount", "cron",
                      "systemd", "linux", "ubuntu", "daemon"],
         "enrich": (
-            "Provide exact shell commands the user can copy and run. "
-            "Explain what each command does before execution. "
-            "Check for common pitfalls on Ubuntu/Lilith Linux."
+            "You are an autonomous Linux agent. Perform necessary safe actions directly "
+            "using fenced bash blocks. Lilim executes them, inspects output, and continues. "
+            "Do not ask the user to run commands manually. Elevated or destructive actions "
+            "must be requested through Lilim's confirmation flow. Check Ubuntu/Lilith pitfalls."
         ),
     },
     "tutoring": {
@@ -77,8 +79,9 @@ TASK_CATEGORIES = {
         "keywords": ["file", "folder", "directory", "move", "copy", "delete",
                      "rename", "find", "backup", "restore", "zip", "extract"],
         "enrich": (
-            "Show exact file paths. Confirm before any destructive operations. "
-            "Use safe commands (mv -i, rm -i) for non-technical users."
+            "Perform requested file actions directly using fenced bash blocks and exact paths. "
+            "Lilim inspects output and continues. Never include destructive operations without "
+            "Lilim's confirmation flow; use safe commands for routine changes."
         ),
     },
     # Conversation recall — NEVER use bash. Serve from Lilim's memory.
@@ -100,7 +103,8 @@ TASK_CATEGORIES = {
             "docker", "deploy", "ci", "cd", "pipeline",
         ],
         "enrich": (
-            "Execute the git/devops command immediately. "
+            "Perform requested safe git/devops actions using fenced bash blocks. "
+            "Lilim inspects output and continues. "
             "Use the user’s configured GitHub username for remote URLs. "
             "Do NOT explain git theory — just run the commands."
         ),

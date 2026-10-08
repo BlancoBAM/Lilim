@@ -99,6 +99,7 @@ fi
 
 # Python Brain & Configuration
 cp -r "$ROOT_DIR/lilim_core" "$DEB_ROOT/usr/lib/lilim/"
+install -m 0755 "$ROOT_DIR/bin/lilim-cli" "$DEB_ROOT/usr/bin/lilim-cli"
 mkdir -p "$DEB_ROOT/etc/lilith"
 cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
 
@@ -219,8 +220,7 @@ echo "[lilim] Installing for user: $TARGET_USER"
 
 # Patch the service file with the real username
 SERVICE_FILE="/lib/systemd/system/lilith-ai.service"
-sed -i "s|^User=aegon|User=${TARGET_USER}|g" "$SERVICE_FILE"
-sed -i "s|^Group=aegon|Group=${TARGET_USER}|g" "$SERVICE_FILE"
+sed -i "s|LILIM_USER_PLACEHOLDER|${TARGET_USER}|g" "$SERVICE_FILE"
 sed -i "s|^WorkingDirectory=.*|WorkingDirectory=/home/${TARGET_USER}|g" "$SERVICE_FILE"
 sed -i "s|^Environment=HOME=.*|Environment=HOME=/home/${TARGET_USER}|g" "$SERVICE_FILE"
 sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /tmp /usr/lib/lilim/venv|g" "$SERVICE_FILE"

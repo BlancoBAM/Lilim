@@ -50,7 +50,7 @@ class MemoryManager:
 
     # ── Load context for a conversation ───────────────────
 
-    def load_context(self, query: str = "", max_notes: int = 5, max_chars: int = 2000) -> str:
+    def load_context(self, query: str = "", max_notes: int = 5, max_chars: int = 4096) -> str:
         """Load relevant memory context for the current conversation."""
         relevant = []
 

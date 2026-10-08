@@ -7,7 +7,7 @@ import { SettingsPanel } from './SettingsPanel';
 import bannerImage from '../assets/lilim-banner.svg';
 import centerLogo from '../assets/03a17ee9fd4fe33c3ca16baf528b1598cfae5797.png';
 import {
-  streamChat, runShellCommand, sendObservation,
+  streamChat, runShellCommand, sendObservation, getSessionId,
   getUserProfile, saveUserProfile,
   type LilimMessage
 } from '../api/lilim';
@@ -37,7 +37,8 @@ export function ChatInterface() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [showNoBrainBanner, setShowNoBrainBanner] = useState(false);
   // Pending confirmation state — set when server sends tool_pending
-  const [pendingCommand, setPendingCommand] = useState<{ command: string; short: string } | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<{ command: string; short: string; sudo: boolean } | null>(null);
+  const [sudoPassword, setSudoPassword] = useState('');
   // First-launch profile modal
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileDraft, setProfileDraft] = useState({ display_name: '', github_username: '' });
@@ -138,7 +139,10 @@ export function ChatInterface() {
             command: chunk.pending_command,
             // @ts-ignore
             short: chunk.pending_short || chunk.pending_command.slice(0, 80),
+            // @ts-ignore
+            sudo: chunk.pending_sudo === true,
           });
+          setSudoPassword('');
           continue;
         }
         if (chunk.end) {
@@ -193,8 +197,10 @@ export function ChatInterface() {
   };
 
   /* ── Shell command confirmation ── */
-  const handleRunCommand = async (command: string) => {
+  const handleRunCommand = async (command: string, sudo = false) => {
+    const password = sudoPassword;
     setPendingCommand(null);
+    setSudoPassword('');
     setIsStreaming(true);
     const execId = Date.now().toString();
 
@@ -210,7 +216,10 @@ export function ChatInterface() {
     ]);
 
     try {
-      const result = await runShellCommand(command);
+      const result = await runShellCommand(
+        command,
+        sudo ? { sessionId: getSessionId(), password } : undefined,
+      );
       const stdout = (result.stdout || '').trim();
       const stderr = (result.stderr || '').trim();
       const output = [stdout, stderr].filter(Boolean).join('\n') || '(Command completed — no output)';
@@ -262,6 +271,7 @@ export function ChatInterface() {
   /* ── Skip a pending command ── */
   const handleSkipCommand = async () => {
     setPendingCommand(null);
+    setSudoPassword('');
     setIsStreaming(true);
     const controller = new AbortController();
     setAbortController(controller);
@@ -559,17 +569,29 @@ export function ChatInterface() {
                       className="mt-3 bg-black/50 border border-orange-500/50 rounded-lg p-3"
                     >
                       <p className="text-orange-300 text-xs mb-2 flex items-center gap-1">
-                        <Flame size={12} /> Confirm command:
+                        <Flame size={12} /> {pendingCommand.sudo ? 'Confirm elevated command:' : 'Confirm command:'}
                       </p>
                       <pre className="bg-gray-950/80 text-green-300 p-2 rounded text-xs font-mono mb-3 overflow-x-auto whitespace-pre-wrap">
                         <code>{pendingCommand.command}</code>
                       </pre>
+                      {pendingCommand.sudo && (
+                        <input
+                          type="password"
+                          value={sudoPassword}
+                          onChange={e => setSudoPassword(e.target.value)}
+                          autoComplete="current-password"
+                          placeholder="Sudo password (kept in memory for 5 minutes)"
+                          aria-label="Sudo password"
+                          className="w-full bg-gray-950 text-white text-xs px-2 py-2 rounded border border-orange-500/30 mb-3 focus:outline-none focus:border-orange-400"
+                        />
+                      )}
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleRunCommand(pendingCommand.command)}
+                          onClick={() => handleRunCommand(pendingCommand.command, pendingCommand.sudo)}
+                          disabled={pendingCommand.sudo && !sudoPassword}
                           className="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-xs transition-colors"
                         >
-                          ✓ Run it
+                          ✓ {pendingCommand.sudo ? 'Authenticate & run' : 'Run it'}
                         </button>
                         <button
                           onClick={handleSkipCommand}

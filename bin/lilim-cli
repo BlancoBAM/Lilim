@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -f /usr/lib/lilim/lilim_core/lilim_cli.py ]]; then
+    export PYTHONPATH="/usr/lib/lilim${PYTHONPATH:+:$PYTHONPATH}"
+    python="/usr/lib/lilim/venv/bin/python3"
+else
+    root_dir="$(cd "$(dirname "$0")/.." && pwd)"
+    export PYTHONPATH="$root_dir${PYTHONPATH:+:$PYTHONPATH}"
+    python="$(command -v python3)"
+fi
+
+if [[ ! -x "$python" ]]; then
+    python="$(command -v python3)"
+fi
+exec "$python" -m lilim_core.lilim_cli "$@"

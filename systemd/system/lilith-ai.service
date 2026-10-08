@@ -5,29 +5,29 @@ Wants=network.target
 
 [Service]
 Type=simple
-# NOTE: Recommended deployment uses the template unit lilith-ai@.service
-# e.g., systemctl enable --now lilith-ai@<username>.service
-# For single-user install, replace %i with your username.
-User=%i
-Group=%i
-WorkingDirectory=/home/%i
+# User/Group/WorkingDirectory/HOME are patched to the real account at install time.
+# The install script replaces LILIM_USER_PLACEHOLDER with the actual username.
+User=LILIM_USER_PLACEHOLDER
+Group=LILIM_USER_PLACEHOLDER
+WorkingDirectory=/home/LILIM_USER_PLACEHOLDER
 ExecStart=/usr/bin/lilim-runtime
 Restart=on-failure
 RestartSec=10
-TimeoutStartSec=90
+TimeoutStartSec=120
 TimeoutStopSec=30
 
+Environment=HOME=/home/LILIM_USER_PLACEHOLDER
 Environment=LILIM_INSTALL=/usr/lib/lilim
 Environment=LILIM_VENV=/usr/lib/lilim/venv
 Environment=PYTHONUNBUFFERED=1
 Environment=RUST_LOG=lilim_runtime=info,lilim_inference=info
 
-# Safe security directives (no namespace requirements)
+# Safe security directives
 NoNewPrivileges=yes
 
-# Resource limits
-MemoryMax=4G
-MemoryHigh=3.5G
+# Resource limits — tuned for Phi-4-mini (needs more RAM than Phi-2)
+MemoryMax=6G
+MemoryHigh=5G
 TasksMax=1024
 
 [Install]

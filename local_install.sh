@@ -106,6 +106,7 @@ fi
 sudo mkdir -p /usr/lib/lilim/lilim_core /etc/lilith
 sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
 sudo cp -r "$ROOT_DIR/config/"* /etc/lilith/ 2>/dev/null || true
+sudo install -m 0755 "$ROOT_DIR/bin/lilim-cli" /usr/bin/lilim-cli
 
 # Python venv
 if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
@@ -116,12 +117,9 @@ sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apsched
 
 # Service file (always sync from repo to pick up latest)
 sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /lib/systemd/system/lilith-ai.service
-# Patch the User= line to this machine's actual user
+# Replace the service template's explicit user placeholder.
 CURRENT_USER="$(logname 2>/dev/null || echo "$SUDO_USER" || echo "$USER")"
-sudo sed -i "s|^User=.*|User=${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
-sudo sed -i "s|^Group=.*|Group=${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
-sudo sed -i "s|^WorkingDirectory=.*|WorkingDirectory=/home/${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
-sudo sed -i "s|Environment=HOME=.*|Environment=HOME=/home/${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
+sudo sed -i "s|LILIM_USER_PLACEHOLDER|${CURRENT_USER}|g" /lib/systemd/system/lilith-ai.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable lilith-ai.service

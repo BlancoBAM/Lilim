@@ -139,6 +139,7 @@ async fn main() -> anyhow::Result<()> {
 
         // ── System tools (Rust-native) ────────────────────────
         .route("/tools/shell", post(tools::handle_shell))
+        .route("/tools/shell/sudo", post(handle_sudo_shell))
         .route("/tools/file", get(tools::handle_file_read))
         .route("/system/info", get(tools::handle_system_info))
 
@@ -328,5 +329,21 @@ async fn handle_settings_model_config(
     match proxy::proxy_json_post(&url, &state.http_client, body).await {
         Ok(v) => (StatusCode::OK, Json(v)),
         Err(_) => (StatusCode::OK, Json(json!({"status": "saved", "brain_reload": "pending"}))),
+    }
+}
+
+async fn handle_sudo_shell(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    // The brain validates classification and confirmation and owns the
+    // short-lived in-memory credential token. Do not log this request body.
+    if body.get("confirmed").and_then(Value::as_bool) != Some(true) {
+        return (StatusCode::BAD_REQUEST, Json(json!({"error": "Command not confirmed."})));
+    }
+    let url = format!("{}/tools/shell/sudo", state.brain_base_url);
+    match proxy::proxy_json_post(&url, &state.http_client, body).await {
+        Ok(value) => (StatusCode::OK, Json(value)),
+        Err((code, message)) => (code, Json(json!({"error": message}))),
     }
 }
