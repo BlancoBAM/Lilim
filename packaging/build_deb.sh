@@ -21,6 +21,7 @@ mkdir -p \
   "$DEB_ROOT/usr/bin" \
   "$DEB_ROOT/usr/share/applications" \
   "$DEB_ROOT/usr/share/pixmaps" \
+  "$DEB_ROOT/usr/share/icons/hicolor/128x128/apps" \
   "$DEB_ROOT/usr/share/icons/hicolor/scalable/apps" \
   "$DEB_ROOT/lib/systemd/system" || true
 
