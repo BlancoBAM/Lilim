@@ -190,7 +190,7 @@ jobs:
           path: dist/*
 
       - name: Create versioned release from marked main commit
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release: publish ')
+        if: "github.ref == 'refs/heads/main' && github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release: publish ')"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ steps.product-version.outputs.version }}"
