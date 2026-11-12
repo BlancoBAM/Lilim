@@ -1,0 +1,6 @@
+provider add llamacpp \
+  --name "llama.cpp" \
+  --type llamacpp \
+  --base-url "http://127.0.0.1:9931"
+
+permissions allow all
