@@ -1,0 +1,169 @@
+{
+  "build": "hf6aed72_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libgcc >=14",
+    "openssl >=3.5.7,<4.0a0"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "md5": "c2c10c26daa24d0be3e4f7896f8fce9e",
+  "name": "s2n",
+  "sha256": "a19d1c5939d00b37f576088b8a939944076108c1d62ab99e18528a7724175238",
+  "size": 378572,
+  "subdir": "linux-64",
+  "timestamp": 1786912013267,
+  "version": "1.7.7",
+  "fn": "s2n-1.7.7-hf6aed72_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/s2n-1.7.7-hf6aed72_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/s2n-1.7.7-hf6aed72_0",
+  "requested_specs": [],
+  "files": [
+    "lib/s2n/cmake/shared/s2n-targets-release.cmake",
+    "lib/s2n/cmake/shared/s2n-targets.cmake",
+    "include/s2n/unstable/allow_ip_in_cn.h",
+    "include/s2n/unstable/async_offload.h",
+    "include/s2n/unstable/cert_authorities.h",
+    "include/s2n/unstable/cleanup.h",
+    "include/s2n/unstable/crl.h",
+    "include/s2n/unstable/custom_x509_extensions.h",
+    "include/s2n/unstable/events.h",
+    "include/s2n/unstable/fingerprint.h",
+    "include/s2n/unstable/ktls.h",
+    "include/s2n/unstable/npn.h",
+    "include/s2n/unstable/renegotiate.h",
+    "lib/s2n/cmake/modules/Findcrypto.cmake",
+    "lib/libs2n.so",
+    "lib/libs2n.so.1",
+    "lib/libs2n.so.1.0.0",
+    "include/s2n.h",
+    "lib/s2n/cmake/s2n-config.cmake"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/s2n/cmake/shared/s2n-targets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "063de9a6f04e6e8d5b1a6f4fedc1867b50afb4f96a113cf6ea6d6d3b929de1ec",
+        "size_in_bytes": 811
+      },
+      {
+        "_path": "lib/s2n/cmake/shared/s2n-targets.cmake",
+        "path_type": "hardlink",
+        "sha256": "8262a7f9be0590abbe561173efde8f89632bde68a7875d93f279e3270e04b4cf",
+        "size_in_bytes": 4223
+      },
+      {
+        "_path": "include/s2n/unstable/allow_ip_in_cn.h",
+        "path_type": "hardlink",
+        "sha256": "69c93cc190daac07d8e554b0da0bf9c7e8b10cf447be089c8f33996b3ee9e618",
+        "size_in_bytes": 1930
+      },
+      {
+        "_path": "include/s2n/unstable/async_offload.h",
+        "path_type": "hardlink",
+        "sha256": "d0122a16e737a939220d1bd7ced295f567e1c5bf82c19539436e36a1afa4e74d",
+        "size_in_bytes": 4055
+      },
+      {
+        "_path": "include/s2n/unstable/cert_authorities.h",
+        "path_type": "hardlink",
+        "sha256": "c4071035675c5dba09bc5c025a979fc0c7aac270d9e122779369e24a38798645",
+        "size_in_bytes": 4681
+      },
+      {
+        "_path": "include/s2n/unstable/cleanup.h",
+        "path_type": "hardlink",
+        "sha256": "aff584c81084a3d4e3e63aba5c288e9c433e7b352b5fc0da65cc23a7e3e96719",
+        "size_in_bytes": 913
+      },
+      {
+        "_path": "include/s2n/unstable/crl.h",
+        "path_type": "hardlink",
+        "sha256": "7f0054982e8181ded019c3a3ae3c281acc58f45b379fc981ed1ab59037a94345",
+        "size_in_bytes": 10927
+      },
+      {
+        "_path": "include/s2n/unstable/custom_x509_extensions.h",
+        "path_type": "hardlink",
+        "sha256": "278617f1041f314671172a5cee04cc4ed6fa3e64e9ee5f3fccbbc4d96f764d95",
+        "size_in_bytes": 2511
+      },
+      {
+        "_path": "include/s2n/unstable/events.h",
+        "path_type": "hardlink",
+        "sha256": "13f418a8a08d92f3c6844c25a1daf955dbb1e195ff1f8eb67fbd4d8c8d85c404",
+        "size_in_bytes": 5033
+      },
+      {
+        "_path": "include/s2n/unstable/fingerprint.h",
+        "path_type": "hardlink",
+        "sha256": "925fb3d587e3f6c133818a0958bbb18abd199c497511ded7e0f5e07dbe5bdf4b",
+        "size_in_bytes": 9279
+      },
+      {
+        "_path": "include/s2n/unstable/ktls.h",
+        "path_type": "hardlink",
+        "sha256": "52b6c8f2ceaac03e16878e60347911b11cfe155957651b430322782771769f85",
+        "size_in_bytes": 7764
+      },
+      {
+        "_path": "include/s2n/unstable/npn.h",
+        "path_type": "hardlink",
+        "sha256": "0b917b69243f47a3bc3995d45e1913319f466e1f047f6f5a4a8dab2a9e0dbf3c",
+        "size_in_bytes": 2141
+      },
+      {
+        "_path": "include/s2n/unstable/renegotiate.h",
+        "path_type": "hardlink",
+        "sha256": "e99ba2d196076e722738494fd3cf6e61f95651a1d77f7db29286d0ad40a2e793",
+        "size_in_bytes": 8944
+      },
+      {
+        "_path": "lib/s2n/cmake/modules/Findcrypto.cmake",
+        "path_type": "hardlink",
+        "sha256": "1f0bc98c53345c40a0e9a9056ce791810ab1e3918edaa8195645d8571676fd7a",
+        "size_in_bytes": 3904
+      },
+      {
+        "_path": "lib/libs2n.so",
+        "path_type": "softlink",
+        "sha256": "f6404c39edc8b84b487ea5e3fef432039e31a9395b59aae1520e42f698bf23bf",
+        "sha256_in_prefix": "fe818e44a91e805afc9831717c80fa24c258352179a8567c9a6cf6385bd0ea36",
+        "size_in_bytes": 1579016
+      },
+      {
+        "_path": "lib/libs2n.so.1",
+        "path_type": "softlink",
+        "sha256": "f6404c39edc8b84b487ea5e3fef432039e31a9395b59aae1520e42f698bf23bf",
+        "sha256_in_prefix": "fe818e44a91e805afc9831717c80fa24c258352179a8567c9a6cf6385bd0ea36",
+        "size_in_bytes": 1579016
+      },
+      {
+        "_path": "lib/libs2n.so.1.0.0",
+        "path_type": "hardlink",
+        "sha256": "f6404c39edc8b84b487ea5e3fef432039e31a9395b59aae1520e42f698bf23bf",
+        "size_in_bytes": 1579016
+      },
+      {
+        "_path": "include/s2n.h",
+        "path_type": "hardlink",
+        "sha256": "55e23590d62ca5065a1ec3dc83cea9263db032e6aacb4c753fa58d3c4f36ab43",
+        "size_in_bytes": 189572
+      },
+      {
+        "_path": "lib/s2n/cmake/s2n-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "a12dff5dd700667a7faa53845074dc011dcafc2597729c1349eb276210edd18e",
+        "size_in_bytes": 785
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/s2n-1.7.7-hf6aed72_0",
+    "type": 1
+  }
+}

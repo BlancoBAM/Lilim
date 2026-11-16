@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: SQLite
+Description: SQL database engine
+Version: 3.54.1
+Libs: -L${libdir} -lsqlite3
+Libs.private: -lm -lz -ldl -lpthread 
+Cflags: -I${includedir}

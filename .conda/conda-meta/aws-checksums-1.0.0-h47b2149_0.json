@@ -1,0 +1,113 @@
+{
+  "build": "h47b2149_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "aws-c-common >=1.0.1,<1.0.2.0a0",
+    "libgcc >=14"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "md5": "da5f7dff3edfe7f83e7e43b58a57fb9a",
+  "name": "aws-checksums",
+  "sha256": "b6eac0603b2815cdaad4484cb33c748246e129bcdb5dc7e319627572498eaed8",
+  "size": 98017,
+  "subdir": "linux-64",
+  "timestamp": 1790765178057,
+  "version": "1.0.0",
+  "fn": "aws-checksums-1.0.0-h47b2149_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/aws-checksums-1.0.0-h47b2149_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/aws-checksums-1.0.0-h47b2149_0",
+  "requested_specs": [],
+  "files": [
+    "lib/libaws-checksums.so",
+    "lib/libaws-checksums.so.1.0",
+    "lib/libaws-checksums.so.1.0.0",
+    "bin/checksum-profile",
+    "lib/cmake/aws-checksums/aws-checksums-config.cmake",
+    "lib/cmake/aws-checksums/shared/aws-checksums-targets-release.cmake",
+    "lib/cmake/aws-checksums/shared/aws-checksums-targets.cmake",
+    "include/aws/checksums/checksums.h",
+    "include/aws/checksums/crc.h",
+    "include/aws/checksums/exports.h",
+    "include/aws/checksums/xxhash.h"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/libaws-checksums.so",
+        "path_type": "softlink",
+        "sha256": "34a103a24e6d7b786ee8b0465b4674d650e516d4724081dc79a43ca555bdc985",
+        "sha256_in_prefix": "d6f7d33659026b6182da3f61654ec65bbecbccc64d45d68e0e6624bbc67a1593",
+        "size_in_bytes": 139768
+      },
+      {
+        "_path": "lib/libaws-checksums.so.1.0",
+        "path_type": "softlink",
+        "sha256": "34a103a24e6d7b786ee8b0465b4674d650e516d4724081dc79a43ca555bdc985",
+        "sha256_in_prefix": "d6f7d33659026b6182da3f61654ec65bbecbccc64d45d68e0e6624bbc67a1593",
+        "size_in_bytes": 139768
+      },
+      {
+        "_path": "lib/libaws-checksums.so.1.0.0",
+        "path_type": "hardlink",
+        "sha256": "34a103a24e6d7b786ee8b0465b4674d650e516d4724081dc79a43ca555bdc985",
+        "size_in_bytes": 139768
+      },
+      {
+        "_path": "bin/checksum-profile",
+        "path_type": "hardlink",
+        "sha256": "dc0badf415365282dec74b0ce74d27c174a14d57233068d69bfc929d2e5639d9",
+        "size_in_bytes": 18312
+      },
+      {
+        "_path": "lib/cmake/aws-checksums/aws-checksums-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "ac1243406c196f025ef849fc9bb322194c13ba1c54cd86bf1e4eac984b876b80",
+        "size_in_bytes": 506
+      },
+      {
+        "_path": "lib/cmake/aws-checksums/shared/aws-checksums-targets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "a8341acbe9169ab60d082fa798eebb6531ff6431183edf0c59026273878ba0e2",
+        "size_in_bytes": 893
+      },
+      {
+        "_path": "lib/cmake/aws-checksums/shared/aws-checksums-targets.cmake",
+        "path_type": "hardlink",
+        "sha256": "0a3883e9134ac8ac872ae75efa5aba45f366cc3f578caf3ee3b144d10bd67e99",
+        "size_in_bytes": 4320
+      },
+      {
+        "_path": "include/aws/checksums/checksums.h",
+        "path_type": "hardlink",
+        "sha256": "bde060cce0b390856fde03d3929f82919c1b5491d9ac7fcf0aeac2fc4052a74b",
+        "size_in_bytes": 913
+      },
+      {
+        "_path": "include/aws/checksums/crc.h",
+        "path_type": "hardlink",
+        "sha256": "f0a17121cec331d95a7ada574747f893369ab4af38e8f9a0c707b0b08f686463",
+        "size_in_bytes": 6079
+      },
+      {
+        "_path": "include/aws/checksums/exports.h",
+        "path_type": "hardlink",
+        "sha256": "6d6d2202b28d993981927e36ee50774e39b4b4ecfa6460c4f473aa6134c6544f",
+        "size_in_bytes": 1005
+      },
+      {
+        "_path": "include/aws/checksums/xxhash.h",
+        "path_type": "hardlink",
+        "sha256": "432a23066e6beebd09a78757c6b0e5160441a9a476c278a9b1b46d04d4b36242",
+        "size_in_bytes": 2446
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/aws-checksums-1.0.0-h47b2149_0",
+    "type": 1
+  }
+}

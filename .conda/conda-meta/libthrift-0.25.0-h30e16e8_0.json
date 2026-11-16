@@ -1,0 +1,875 @@
+{
+  "build": "h30e16e8_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libevent >=2.1.13,<2.1.14.0a0",
+    "libgcc >=14",
+    "libstdcxx >=14",
+    "libzlib >=1.3.2,<2.0a0",
+    "openssl >=3.5.9,<4.0a0",
+    "zlib"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "md5": "26298fda440fe1e2e8e3b1c7f71121bd",
+  "name": "libthrift",
+  "sha256": "5e59c4ec779f35efbbf90d69b9df99a6bb54db04253b17e3b16ee6ed6982015e",
+  "size": 438690,
+  "subdir": "linux-64",
+  "timestamp": 1791277471492,
+  "version": "0.25.0",
+  "fn": "libthrift-0.25.0-h30e16e8_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/libthrift-0.25.0-h30e16e8_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/libthrift-0.25.0-h30e16e8_0",
+  "requested_specs": [],
+  "files": [
+    "include/thrift/concurrency/Exception.h",
+    "include/thrift/concurrency/FunctionRunner.h",
+    "include/thrift/concurrency/Monitor.h",
+    "include/thrift/concurrency/Mutex.h",
+    "include/thrift/concurrency/Thread.h",
+    "include/thrift/concurrency/ThreadFactory.h",
+    "include/thrift/concurrency/ThreadManager.h",
+    "include/thrift/concurrency/TimerManager.h",
+    "lib/libthrift.so",
+    "lib/libthrift.so.0.25.0",
+    "lib/libthriftnb.so",
+    "lib/libthriftnb.so.0.25.0",
+    "lib/libthriftz.so",
+    "lib/libthriftz.so.0.25.0",
+    "include/thrift/protocol/TBase64Utils.h",
+    "include/thrift/protocol/TBinaryProtocol.h",
+    "include/thrift/protocol/TBinaryProtocol.tcc",
+    "include/thrift/protocol/TCompactProtocol.h",
+    "include/thrift/protocol/TCompactProtocol.tcc",
+    "include/thrift/protocol/TDebugProtocol.h",
+    "include/thrift/protocol/TEnum.h",
+    "include/thrift/protocol/THeaderProtocol.h",
+    "include/thrift/protocol/TJSONProtocol.h",
+    "include/thrift/protocol/TList.h",
+    "include/thrift/protocol/TMap.h",
+    "include/thrift/protocol/TMultiplexedProtocol.h",
+    "include/thrift/protocol/TProtocol.h",
+    "include/thrift/protocol/TProtocolDecorator.h",
+    "include/thrift/protocol/TProtocolException.h",
+    "include/thrift/protocol/TProtocolTap.h",
+    "include/thrift/protocol/TProtocolTypes.h",
+    "include/thrift/protocol/TSet.h",
+    "include/thrift/protocol/TVirtualProtocol.h",
+    "include/thrift/TApplicationException.h",
+    "include/thrift/TBase.h",
+    "include/thrift/TConfiguration.h",
+    "include/thrift/TDispatchProcessor.h",
+    "include/thrift/TLogging.h",
+    "include/thrift/TNonCopyable.h",
+    "include/thrift/TOutput.h",
+    "include/thrift/TPrintTo.h",
+    "include/thrift/TProcessor.h",
+    "include/thrift/TToString.h",
+    "include/thrift/TUuid.h",
+    "include/thrift/Thrift.h",
+    "include/thrift/config.h",
+    "include/thrift/thrift-config.h",
+    "include/thrift/thrift_export.h",
+    "include/thrift/qt/TQIODeviceTransport.h",
+    "include/thrift/qt/TQTcpServer.h",
+    "lib/pkgconfig/thrift-nb.pc",
+    "lib/pkgconfig/thrift-z.pc",
+    "lib/pkgconfig/thrift.pc",
+    "include/thrift/async/TAsyncBufferProcessor.h",
+    "include/thrift/async/TAsyncChannel.h",
+    "include/thrift/async/TAsyncDispatchProcessor.h",
+    "include/thrift/async/TAsyncProcessor.h",
+    "include/thrift/async/TAsyncProtocolProcessor.h",
+    "include/thrift/async/TConcurrentClientSyncInfo.h",
+    "include/thrift/async/TEvhttpClientChannel.h",
+    "include/thrift/async/TEvhttpServer.h",
+    "include/thrift/server/TConnectedClient.h",
+    "include/thrift/server/TNonblockingServer.h",
+    "include/thrift/server/TServer.h",
+    "include/thrift/server/TServerFramework.h",
+    "include/thrift/server/TSimpleServer.h",
+    "include/thrift/server/TThreadPoolServer.h",
+    "include/thrift/server/TThreadedServer.h",
+    "include/thrift/windows/GetTimeOfDay.h",
+    "include/thrift/windows/Operators.h",
+    "include/thrift/windows/OverlappedSubmissionThread.h",
+    "include/thrift/windows/SocketPair.h",
+    "include/thrift/windows/Sync.h",
+    "include/thrift/windows/TWinsockSingleton.h",
+    "include/thrift/windows/WinFcntl.h",
+    "include/thrift/windows/config.h",
+    "include/thrift/processor/PeekProcessor.h",
+    "include/thrift/processor/StatsProcessor.h",
+    "include/thrift/processor/TMultiplexedProcessor.h",
+    "lib/cmake/thrift/FindLibevent.cmake",
+    "lib/cmake/thrift/ThriftConfig.cmake",
+    "lib/cmake/thrift/ThriftConfigVersion.cmake",
+    "lib/cmake/thrift/thriftTargets-release.cmake",
+    "lib/cmake/thrift/thriftTargets.cmake",
+    "lib/cmake/thrift/thriftnbTargets-release.cmake",
+    "lib/cmake/thrift/thriftnbTargets.cmake",
+    "lib/cmake/thrift/thriftzTargets-release.cmake",
+    "lib/cmake/thrift/thriftzTargets.cmake",
+    "include/thrift/transport/PlatformSocket.h",
+    "include/thrift/transport/SocketCommon.h",
+    "include/thrift/transport/TBufferTransports.h",
+    "include/thrift/transport/TFDTransport.h",
+    "include/thrift/transport/TFileTransport.h",
+    "include/thrift/transport/THeaderTransport.h",
+    "include/thrift/transport/THttpClient.h",
+    "include/thrift/transport/THttpServer.h",
+    "include/thrift/transport/THttpTransport.h",
+    "include/thrift/transport/TNonblockingSSLServerSocket.h",
+    "include/thrift/transport/TNonblockingServerSocket.h",
+    "include/thrift/transport/TNonblockingServerTransport.h",
+    "include/thrift/transport/TPipe.h",
+    "include/thrift/transport/TPipeServer.h",
+    "include/thrift/transport/TSSLServerSocket.h",
+    "include/thrift/transport/TSSLSocket.h",
+    "include/thrift/transport/TServerSocket.h",
+    "include/thrift/transport/TServerTransport.h",
+    "include/thrift/transport/TShortReadTransport.h",
+    "include/thrift/transport/TSimpleFileTransport.h",
+    "include/thrift/transport/TSocket.h",
+    "include/thrift/transport/TSocketPool.h",
+    "include/thrift/transport/TSocketUtils.h",
+    "include/thrift/transport/TTransport.h",
+    "include/thrift/transport/TTransportException.h",
+    "include/thrift/transport/TTransportUtils.h",
+    "include/thrift/transport/TVirtualTransport.h",
+    "include/thrift/transport/TWebSocketServer.h",
+    "include/thrift/transport/TZlibTransport.h"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "include/thrift/concurrency/Exception.h",
+        "path_type": "hardlink",
+        "sha256": "4e9a1083efe162e09f7b5bc9e62bcdeafb126a85d3f43af59aa542a77e6b575b",
+        "size_in_bytes": 2150
+      },
+      {
+        "_path": "include/thrift/concurrency/FunctionRunner.h",
+        "path_type": "hardlink",
+        "sha256": "57b81186019c52524f2666828664ffeb6462f8fa3778a7f66a3f47ae385c5165",
+        "size_in_bytes": 3802
+      },
+      {
+        "_path": "include/thrift/concurrency/Monitor.h",
+        "path_type": "hardlink",
+        "sha256": "1aecfc835a196bf47c605fab44e638ae708b0b4c68d603ae10ce45c8d7a94c74",
+        "size_in_bytes": 4186
+      },
+      {
+        "_path": "include/thrift/concurrency/Mutex.h",
+        "path_type": "hardlink",
+        "sha256": "fde33eff96aaa26f266d6c12e33bcd42686e1751ff9df1e6a0bc06beec7e5fe1",
+        "size_in_bytes": 2134
+      },
+      {
+        "_path": "include/thrift/concurrency/Thread.h",
+        "path_type": "hardlink",
+        "sha256": "f790d5e1489f8e3609831b14faab455fb3f0aae104e618493bec86486116c442",
+        "size_in_bytes": 4954
+      },
+      {
+        "_path": "include/thrift/concurrency/ThreadFactory.h",
+        "path_type": "hardlink",
+        "sha256": "692127d0900a9278c7d42bcbfbf79fcfc2e5f23bd4cc3fd19398518a27ac8596",
+        "size_in_bytes": 2182
+      },
+      {
+        "_path": "include/thrift/concurrency/ThreadManager.h",
+        "path_type": "hardlink",
+        "sha256": "7114b9f3e59de800dc5a88617d6d2569add300ded4c385f5f8e745165bdd31e6",
+        "size_in_bytes": 6903
+      },
+      {
+        "_path": "include/thrift/concurrency/TimerManager.h",
+        "path_type": "hardlink",
+        "sha256": "33468aabeab03cee275cbe7d4e0e22a49328e23e7c7848af09b8b5ec4edb5d75",
+        "size_in_bytes": 4447
+      },
+      {
+        "_path": "lib/libthrift.so",
+        "path_type": "softlink",
+        "sha256": "94bc20184f56b95035848802348d4d067abe2a7dd3de1304022b892809e345d2",
+        "sha256_in_prefix": "bde436e1aec7874bcb9a665479c0963e0dc52e83b7fdc598fe58f0a03b59d5e6",
+        "size_in_bytes": 979040
+      },
+      {
+        "_path": "lib/libthrift.so.0.25.0",
+        "path_type": "hardlink",
+        "sha256": "94bc20184f56b95035848802348d4d067abe2a7dd3de1304022b892809e345d2",
+        "sha256_in_prefix": "677edbe95a1003b119cf00565b76f16812b04052d0fdb79f4a39a5cd4a41883a",
+        "size_in_bytes": 979040,
+        "file_mode": "binary",
+        "prefix_placeholder": "/home/task_179127726738022/croot/thrift-split_1791277316238/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol"
+      },
+      {
+        "_path": "lib/libthriftnb.so",
+        "path_type": "softlink",
+        "sha256": "92e82bb95510fef7955a87cd45b74d74874edea4074202034c435b2e019efcf1",
+        "sha256_in_prefix": "3df22a440b89add83caf416907b2e28e5c63464762de5f8a54c308d148344227",
+        "size_in_bytes": 203112
+      },
+      {
+        "_path": "lib/libthriftnb.so.0.25.0",
+        "path_type": "hardlink",
+        "sha256": "92e82bb95510fef7955a87cd45b74d74874edea4074202034c435b2e019efcf1",
+        "size_in_bytes": 203112
+      },
+      {
+        "_path": "lib/libthriftz.so",
+        "path_type": "softlink",
+        "sha256": "29363ecae8cc1df05fc4bd0c005ec7f3a1733b762a7127e4e699cb4fa259e50f",
+        "sha256_in_prefix": "f9741ed1acf8ab29fd759bc4485d975ea6bb56c1b65f2e6568fd176634617837",
+        "size_in_bytes": 223216
+      },
+      {
+        "_path": "lib/libthriftz.so.0.25.0",
+        "path_type": "hardlink",
+        "sha256": "29363ecae8cc1df05fc4bd0c005ec7f3a1733b762a7127e4e699cb4fa259e50f",
+        "size_in_bytes": 223216
+      },
+      {
+        "_path": "include/thrift/protocol/TBase64Utils.h",
+        "path_type": "hardlink",
+        "sha256": "7d2407d4454ce55e6efd80709024468da2b3b305ab099d86c92d59b07fa20750",
+        "size_in_bytes": 1629
+      },
+      {
+        "_path": "include/thrift/protocol/TBinaryProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "3b43023866d7afacc37ef3eb7dc47143240eb96dc5d175a151eb3acef9034d39",
+        "size_in_bytes": 8699
+      },
+      {
+        "_path": "include/thrift/protocol/TBinaryProtocol.tcc",
+        "path_type": "hardlink",
+        "sha256": "9f18b1c5f18c1d212e3d18edfe12d07098316a0077e813027e69615c825c49fa",
+        "size_in_bytes": 16300
+      },
+      {
+        "_path": "include/thrift/protocol/TCompactProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "ee318d165707cd93801020456bca68c4e1ed6853fa477c3b4879fbd972af1fee",
+        "size_in_bytes": 8653
+      },
+      {
+        "_path": "include/thrift/protocol/TCompactProtocol.tcc",
+        "path_type": "hardlink",
+        "sha256": "d4952a52311e1f736350f3a482ef32e0c399c624799d6d8673a760f3feafb4c1",
+        "size_in_bytes": 26443
+      },
+      {
+        "_path": "include/thrift/protocol/TDebugProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "a33b16fdf4ec6ba28180ef2a26091247fd3df8a7724688241646896216c75746",
+        "size_in_bytes": 5665
+      },
+      {
+        "_path": "include/thrift/protocol/TEnum.h",
+        "path_type": "hardlink",
+        "sha256": "62127c9bd0b868efd5081bf035d3e14e7c7c2fd31965226ddf1ac0e52d8ef277",
+        "size_in_bytes": 1732
+      },
+      {
+        "_path": "include/thrift/protocol/THeaderProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "1f841af7c453831dc3856875640547e609df33e9c857a7cc05c1c9b1bf9b01cf",
+        "size_in_bytes": 6069
+      },
+      {
+        "_path": "include/thrift/protocol/TJSONProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "a6aeedb6fa04c507e855eb4456056870817e773e0479394c2edbc9b9164ef542",
+        "size_in_bytes": 10054
+      },
+      {
+        "_path": "include/thrift/protocol/TList.h",
+        "path_type": "hardlink",
+        "sha256": "030c6d25f3475f291905c2c6f92fe667c48fd4d3eeea39cdb168239a6bc32e93",
+        "size_in_bytes": 1280
+      },
+      {
+        "_path": "include/thrift/protocol/TMap.h",
+        "path_type": "hardlink",
+        "sha256": "188445d56146d5cd8801e0b69d50bb05acf8f518b3dfd247c82b76775ede838b",
+        "size_in_bytes": 1335
+      },
+      {
+        "_path": "include/thrift/protocol/TMultiplexedProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "cea5efef544e4ba2b86051b16076c9331b1d2ed4c39d7b5510b1b0ea3797643b",
+        "size_in_bytes": 3700
+      },
+      {
+        "_path": "include/thrift/protocol/TProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "2b9ef7e175a7f46c3b95f89dcf7f9dbf0acef2b01435d1c65629cf3067ddd64f",
+        "size_in_bytes": 23353
+      },
+      {
+        "_path": "include/thrift/protocol/TProtocolDecorator.h",
+        "path_type": "hardlink",
+        "sha256": "0abd2cfbc248cd76be99b49992dfe11a159d49d9b1ff80124df6cb04c1d14e1d",
+        "size_in_bytes": 6540
+      },
+      {
+        "_path": "include/thrift/protocol/TProtocolException.h",
+        "path_type": "hardlink",
+        "sha256": "03dba217759a6859724edaf12f6dd82d4bdd392634deaa5026d6839cb022b9c8",
+        "size_in_bytes": 3264
+      },
+      {
+        "_path": "include/thrift/protocol/TProtocolTap.h",
+        "path_type": "hardlink",
+        "sha256": "a08a5dec9360d994be87a5d7a686548bbd1f8f983002390aa1ba9ad7d977e1be",
+        "size_in_bytes": 4917
+      },
+      {
+        "_path": "include/thrift/protocol/TProtocolTypes.h",
+        "path_type": "hardlink",
+        "sha256": "5df4e5349a2ec53281d1fbf224378cb3b1d3b23c24ade5c18234d19864ff4d96",
+        "size_in_bytes": 1141
+      },
+      {
+        "_path": "include/thrift/protocol/TSet.h",
+        "path_type": "hardlink",
+        "sha256": "989311eed80daab99b70dd2f1352da2b8fc3e106dd682488aa8ed17d179a1e57",
+        "size_in_bytes": 1385
+      },
+      {
+        "_path": "include/thrift/protocol/TVirtualProtocol.h",
+        "path_type": "hardlink",
+        "sha256": "4a11954a8f74252c53f7c1ed8d57762f4e4203d6cd713b6fa0f8a2522209411c",
+        "size_in_bytes": 18473
+      },
+      {
+        "_path": "include/thrift/TApplicationException.h",
+        "path_type": "hardlink",
+        "sha256": "82fe2df360b32d325ab350af5149c249c505ec540441690ae64fc519d2c3a0d3",
+        "size_in_bytes": 3545
+      },
+      {
+        "_path": "include/thrift/TBase.h",
+        "path_type": "hardlink",
+        "sha256": "6c6535eb0a2ab61b310851770aecaa528f87e64073d5c0255937044de226acfa",
+        "size_in_bytes": 1198
+      },
+      {
+        "_path": "include/thrift/TConfiguration.h",
+        "path_type": "hardlink",
+        "sha256": "4189068c0c1f0456aa6d5a09c0a741f66b6c144912d695297873b31578ae8e18",
+        "size_in_bytes": 2189
+      },
+      {
+        "_path": "include/thrift/TDispatchProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "e4dba6ada02ce62043ae159458e1926d2a806dc8f615fcfd7ab3503ef5c3b752",
+        "size_in_bytes": 5168
+      },
+      {
+        "_path": "include/thrift/TLogging.h",
+        "path_type": "hardlink",
+        "sha256": "20dbb9da5f23769ef98983924ea2841ab8c75ebf53ca311311c5001dd1012099",
+        "size_in_bytes": 10429
+      },
+      {
+        "_path": "include/thrift/TNonCopyable.h",
+        "path_type": "hardlink",
+        "sha256": "fd943b2be342b2044894f42f87299b9427683313c679562683fc5916850851cc",
+        "size_in_bytes": 1272
+      },
+      {
+        "_path": "include/thrift/TOutput.h",
+        "path_type": "hardlink",
+        "sha256": "bab8872d046a225b3cf739ed0ec64101edc63fd02a17366212a7f06202fc0035",
+        "size_in_bytes": 1901
+      },
+      {
+        "_path": "include/thrift/TPrintTo.h",
+        "path_type": "hardlink",
+        "sha256": "0ccd46e3238ef9553ea31373fd57787cef4ba08b4891b74c145e98234a1cfe66",
+        "size_in_bytes": 2689
+      },
+      {
+        "_path": "include/thrift/TProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "c1aff04ebc3892d60b227fd8789d1886ad4ab80c1e9bb723c2f13be69b92f061",
+        "size_in_bytes": 6786
+      },
+      {
+        "_path": "include/thrift/TToString.h",
+        "path_type": "hardlink",
+        "sha256": "735862f4419c38abaebc2e32c83c2bf63f91fa811a6fbe31861900eef54a7cf3",
+        "size_in_bytes": 3660
+      },
+      {
+        "_path": "include/thrift/TUuid.h",
+        "path_type": "hardlink",
+        "sha256": "fa57365dd59f14cb34eae4c09592fe125a3176fa8d9cbf76df5a4c50cf575a8f",
+        "size_in_bytes": 4852
+      },
+      {
+        "_path": "include/thrift/Thrift.h",
+        "path_type": "hardlink",
+        "sha256": "7c55edb1df2f5b0feeb21059f6bd6bc4878b42d43c8d353b47722a0182c4d31b",
+        "size_in_bytes": 3585
+      },
+      {
+        "_path": "include/thrift/config.h",
+        "path_type": "hardlink",
+        "sha256": "f3ede6aacb4606af838d2294576379b5a557d5be509c6359521f56cfe0480a94",
+        "size_in_bytes": 4785
+      },
+      {
+        "_path": "include/thrift/thrift-config.h",
+        "path_type": "hardlink",
+        "sha256": "6838f773a3c82e9855f502df0b9098e24e34129124ad31acbf4bed24e48cc724",
+        "size_in_bytes": 888
+      },
+      {
+        "_path": "include/thrift/thrift_export.h",
+        "path_type": "hardlink",
+        "sha256": "49b0641ef3099d882116be7f671467bf138666d6aedf9716e584a68eaa9aa23c",
+        "size_in_bytes": 460
+      },
+      {
+        "_path": "include/thrift/qt/TQIODeviceTransport.h",
+        "path_type": "hardlink",
+        "sha256": "734f378656bacb9f367c57ce3ffddf212380d867a05bc8caf5c2edb84d99ac20",
+        "size_in_bytes": 2001
+      },
+      {
+        "_path": "include/thrift/qt/TQTcpServer.h",
+        "path_type": "hardlink",
+        "sha256": "f97494310e73f6b378258f74ce6f62b256f2aeecc5d59a0e46d3d32434327b65",
+        "size_in_bytes": 2378
+      },
+      {
+        "_path": "lib/pkgconfig/thrift-nb.pc",
+        "path_type": "hardlink",
+        "sha256": "c054601b3c178d5f4973658d2abb4cac5980952db3b7b0467a8a01869bb7e04d",
+        "sha256_in_prefix": "c1b22cabc6f8986adfca52c89427dc1bbdcede2ebf85f926f8779d5c084b88d6",
+        "size_in_bytes": 1116,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179127726738022/croot/thrift-split_1791277316238/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol"
+      },
+      {
+        "_path": "lib/pkgconfig/thrift-z.pc",
+        "path_type": "hardlink",
+        "sha256": "a6fef8b68b4117fc41860dd93f612576ac8b966f50f512a57a61630354456b83",
+        "sha256_in_prefix": "fb821cf66a5998d66cc778ea58e517621e1b2ed22a8cdbccfffecf6e02292f4a",
+        "size_in_bytes": 1108,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179127726738022/croot/thrift-split_1791277316238/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol"
+      },
+      {
+        "_path": "lib/pkgconfig/thrift.pc",
+        "path_type": "hardlink",
+        "sha256": "aa34cd7f172ac24dec431843e466679e5e9b9fae0454f2dbc20e3806b15eb6b7",
+        "sha256_in_prefix": "f1eb76192adcc56a48e586e9e6293fe002b38dfeba518fc375f23782cd16622f",
+        "size_in_bytes": 1080,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179127726738022/croot/thrift-split_1791277316238/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol"
+      },
+      {
+        "_path": "include/thrift/async/TAsyncBufferProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "1ec0d280bbafb27260518c5854262de99656e17eb8cab57a6f2ba19ad9ce0181",
+        "size_in_bytes": 1679
+      },
+      {
+        "_path": "include/thrift/async/TAsyncChannel.h",
+        "path_type": "hardlink",
+        "sha256": "f4e1ee9ba562fe44258052cf196889e9535f2d03f0ab1efbbb2d1b1133730974",
+        "size_in_bytes": 2167
+      },
+      {
+        "_path": "include/thrift/async/TAsyncDispatchProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "4f741a139611dc906d74f5fb7a422aec668cad0de4ee4dc28c838c77b6428eb2",
+        "size_in_bytes": 5701
+      },
+      {
+        "_path": "include/thrift/async/TAsyncProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "cca11167cbe1008ef518ca45bd53c0592717df68bad89e8f0e2798a381a4343d",
+        "size_in_bytes": 2616
+      },
+      {
+        "_path": "include/thrift/async/TAsyncProtocolProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "b1ed60a49e93412ad11c3fe9753475574651a0b94aad3dfa7cbc4c6c63b0796e",
+        "size_in_bytes": 2006
+      },
+      {
+        "_path": "include/thrift/async/TConcurrentClientSyncInfo.h",
+        "path_type": "hardlink",
+        "sha256": "cca7dde69599073cc131312f3eacffc1c4e27e62c26d241f58ea531ab7991d77",
+        "size_in_bytes": 3871
+      },
+      {
+        "_path": "include/thrift/async/TEvhttpClientChannel.h",
+        "path_type": "hardlink",
+        "sha256": "17eaf81c17b8fddcac524859a2ac8cf8e443fdce6d0859a483a0df14b0dd5b6f",
+        "size_in_bytes": 2762
+      },
+      {
+        "_path": "include/thrift/async/TEvhttpServer.h",
+        "path_type": "hardlink",
+        "sha256": "455610976737fab7367672b765a52d30da81a432f5e71070377bb7e26e2799bb",
+        "size_in_bytes": 2142
+      },
+      {
+        "_path": "include/thrift/server/TConnectedClient.h",
+        "path_type": "hardlink",
+        "sha256": "5902b0b01ed6127ba24973be34e007efe9461ee687f6a3a9f05a24962b3b7a30",
+        "size_in_bytes": 3874
+      },
+      {
+        "_path": "include/thrift/server/TNonblockingServer.h",
+        "path_type": "hardlink",
+        "sha256": "55c1a0c41036c0bf9eb1ddc3f5371c7c3f7b77cf9873c3e68116ba176bd04089",
+        "size_in_bytes": 31609
+      },
+      {
+        "_path": "include/thrift/server/TServer.h",
+        "path_type": "hardlink",
+        "sha256": "2309d320a7fed7bb433f84ee6fb1f1c45f0af967bdb560f2cf5bdc640c43e6ab",
+        "size_in_bytes": 10832
+      },
+      {
+        "_path": "include/thrift/server/TServerFramework.h",
+        "path_type": "hardlink",
+        "sha256": "c1a85c3e0409dd243ce85073893361385c2464c9ddd20d86301513c1593094e4",
+        "size_in_bytes": 6934
+      },
+      {
+        "_path": "include/thrift/server/TSimpleServer.h",
+        "path_type": "hardlink",
+        "sha256": "5a80e7ca530615071945cb7dd0385883668bcec5c887b1255082c33539335e74",
+        "size_in_bytes": 3528
+      },
+      {
+        "_path": "include/thrift/server/TThreadPoolServer.h",
+        "path_type": "hardlink",
+        "sha256": "8125f707845895c095d28199e6c17e371f16ef403d6ff1c0b79d413e7e170b04",
+        "size_in_bytes": 4592
+      },
+      {
+        "_path": "include/thrift/server/TThreadedServer.h",
+        "path_type": "hardlink",
+        "sha256": "b666a18e88dd63a1f35f4bf6c8f25f5caaedc09ec137fd1748f11ac4d1dade3e",
+        "size_in_bytes": 6134
+      },
+      {
+        "_path": "include/thrift/windows/GetTimeOfDay.h",
+        "path_type": "hardlink",
+        "sha256": "3bf5a5b3f93680fa3f34cd103b0a7e4f13bbafa1e68f67fed42f2e991a16b3a1",
+        "size_in_bytes": 1391
+      },
+      {
+        "_path": "include/thrift/windows/Operators.h",
+        "path_type": "hardlink",
+        "sha256": "09e99a32cb7bc3766f06dc1f9f009018cf4bf2e2daef7ab33294bed822508b82",
+        "size_in_bytes": 1079
+      },
+      {
+        "_path": "include/thrift/windows/OverlappedSubmissionThread.h",
+        "path_type": "hardlink",
+        "sha256": "46387042a707e32e1abe53247278ea3076f32bfc4cda6c4bd71d735d2bb010c2",
+        "size_in_bytes": 4747
+      },
+      {
+        "_path": "include/thrift/windows/SocketPair.h",
+        "path_type": "hardlink",
+        "sha256": "689561642a08c43075c555b40a571e443dd0d86901bcb0720b460c3e1202f34a",
+        "size_in_bytes": 1200
+      },
+      {
+        "_path": "include/thrift/windows/Sync.h",
+        "path_type": "hardlink",
+        "sha256": "057bc25f85ae8453b7c88cb24d3e05da5e7e98509780d2715a84dd2b8f8f823f",
+        "size_in_bytes": 3528
+      },
+      {
+        "_path": "include/thrift/windows/TWinsockSingleton.h",
+        "path_type": "hardlink",
+        "sha256": "e26fdbf356ab178a15b02f09d69d5fe898973bdb103bc4e51f159778ebe09ac2",
+        "size_in_bytes": 1840
+      },
+      {
+        "_path": "include/thrift/windows/WinFcntl.h",
+        "path_type": "hardlink",
+        "sha256": "66fef73c0f3065e677a3a41d0748aac60c9c7b15fab7e350ca3174e95955a02c",
+        "size_in_bytes": 1308
+      },
+      {
+        "_path": "include/thrift/windows/config.h",
+        "path_type": "hardlink",
+        "sha256": "0a1c338833d11dafea8ea1d22c5ab4ae3a8c74f3615040c0a24036e7290360b5",
+        "size_in_bytes": 2568
+      },
+      {
+        "_path": "include/thrift/processor/PeekProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "8c6c063f6c8800f298aa64910cea1b3c1693904eb409c27b081d808f19993b22",
+        "size_in_bytes": 3278
+      },
+      {
+        "_path": "include/thrift/processor/StatsProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "f7e56466dbfc67bc32310830e95017b50cf24ed90935145a00b63f7c746e5b74",
+        "size_in_bytes": 6220
+      },
+      {
+        "_path": "include/thrift/processor/TMultiplexedProcessor.h",
+        "path_type": "hardlink",
+        "sha256": "8c303eac81148ba276639fee8b82e039bee63d39870f84d33014199704f334ca",
+        "size_in_bytes": 8471
+      },
+      {
+        "_path": "lib/cmake/thrift/FindLibevent.cmake",
+        "path_type": "hardlink",
+        "sha256": "f6df8488f300236f7ca5c4add80201d8d5892c0bbeeec216caf0ad1431b11c38",
+        "size_in_bytes": 1517
+      },
+      {
+        "_path": "lib/cmake/thrift/ThriftConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "052452879f6ec1f81087996d15f48bb66a1ebc8bfa269461a59b83643de34080",
+        "size_in_bytes": 3540
+      },
+      {
+        "_path": "lib/cmake/thrift/ThriftConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "375e80d7e913d65f26536d54fed55da68a50a4ac58e4b17edc7a88b936b4e0fc",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "e4649257970193cb919d2822924bd029d598ab4d7c3639f5608f3d36f43799fa",
+        "size_in_bytes": 857
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "0a075a3912bff4e344ed867ebefbb71bc65aaa15e367581eb34ab59e7bcb5905",
+        "size_in_bytes": 4185
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftnbTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "e47910d8ecbe54fb1133518fc3e989ca3144e6c4db983953247187f8ff59f94c",
+        "size_in_bytes": 883
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftnbTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "429a64fe43e5e49c9960eca89ba964ae77eaff94ac26ecc360b212f234572d7c",
+        "sha256_in_prefix": "d3afc1349175726b4a2029ee8dfefe4fbbc2ab4471ffba4b1f50d88c539a1d37",
+        "size_in_bytes": 5016,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179127726738022/croot/thrift-split_1791277316238/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol"
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftzTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "23cb99ce5b659991ce863e66a0287f15ff135697545975c6dbe7413454e0d303",
+        "size_in_bytes": 870
+      },
+      {
+        "_path": "lib/cmake/thrift/thriftzTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "8a1a7e6a49128096b63e53501ea74e35ae1995c7891d31ca9ce89d0d6e006d6c",
+        "size_in_bytes": 4969
+      },
+      {
+        "_path": "include/thrift/transport/PlatformSocket.h",
+        "path_type": "hardlink",
+        "sha256": "d62deed7c1a2fda664e916ef80481c585905244b9d3c2008accd4f24c101bbef",
+        "size_in_bytes": 4422
+      },
+      {
+        "_path": "include/thrift/transport/SocketCommon.h",
+        "path_type": "hardlink",
+        "sha256": "f726f43a50b6cedfd9acff98ce099638e3651b045503f67c485ac98935564bcf",
+        "size_in_bytes": 1385
+      },
+      {
+        "_path": "include/thrift/transport/TBufferTransports.h",
+        "path_type": "hardlink",
+        "sha256": "1e89eb5559e7c76eda1636bb3a898fda554f3ea8dbf2d79765d3ea9bd5fc1dce",
+        "size_in_bytes": 25656
+      },
+      {
+        "_path": "include/thrift/transport/TFDTransport.h",
+        "path_type": "hardlink",
+        "sha256": "aff4de60a8846138263716bfc3da3abad6d8a9b6a32359ac0b5ddc19389ff254",
+        "size_in_bytes": 2192
+      },
+      {
+        "_path": "include/thrift/transport/TFileTransport.h",
+        "path_type": "hardlink",
+        "sha256": "a035d6663cf3de03121edc1fb6d651907063b59294fee70b1cdb98d8ca1067b4",
+        "size_in_bytes": 12916
+      },
+      {
+        "_path": "include/thrift/transport/THeaderTransport.h",
+        "path_type": "hardlink",
+        "sha256": "add36cc1bd898ea12efb363c7b96b7c826742c879f6c75d78b3a93d5a3726e96",
+        "size_in_bytes": 8273
+      },
+      {
+        "_path": "include/thrift/transport/THttpClient.h",
+        "path_type": "hardlink",
+        "sha256": "53f5ab559e6274796e0ed1755a9adfa4678a7b213390ad3d32922519a0b6d3af",
+        "size_in_bytes": 2471
+      },
+      {
+        "_path": "include/thrift/transport/THttpServer.h",
+        "path_type": "hardlink",
+        "sha256": "d4860f858b846fe3c8d68b54f06796e573fc0323178725bfa6c1c4deeafba1c0",
+        "size_in_bytes": 1998
+      },
+      {
+        "_path": "include/thrift/transport/THttpTransport.h",
+        "path_type": "hardlink",
+        "sha256": "45ddec7ed767644870c5db1add96e43e21eb802f92f04c1d1637d84c038bec80",
+        "size_in_bytes": 3844
+      },
+      {
+        "_path": "include/thrift/transport/TNonblockingSSLServerSocket.h",
+        "path_type": "hardlink",
+        "sha256": "7d6489e3683d3303b09525e40af3bf5115521e9923b8dbe0f19cca695dc22237",
+        "size_in_bytes": 2367
+      },
+      {
+        "_path": "include/thrift/transport/TNonblockingServerSocket.h",
+        "path_type": "hardlink",
+        "sha256": "82e29235331cf36f5776d62e2c4b11b9726aa735763c4c7b3ee7adda184d3dad",
+        "size_in_bytes": 4191
+      },
+      {
+        "_path": "include/thrift/transport/TNonblockingServerTransport.h",
+        "path_type": "hardlink",
+        "sha256": "d01274b65bc70116cb05e2a6dd768c9f794f50057e82a7b5da21d315a13a96a0",
+        "size_in_bytes": 3822
+      },
+      {
+        "_path": "include/thrift/transport/TPipe.h",
+        "path_type": "hardlink",
+        "sha256": "7d3542ca668a3751ab94abf001da27b6cd8c0fa58a1b1ede5a10ca0f08bff739",
+        "size_in_bytes": 3599
+      },
+      {
+        "_path": "include/thrift/transport/TPipeServer.h",
+        "path_type": "hardlink",
+        "sha256": "eb8bbcd2a7c659bab696f2806d0580c3b359a6484bc751ab80c8ce057ef1cb84",
+        "size_in_bytes": 3448
+      },
+      {
+        "_path": "include/thrift/transport/TSSLServerSocket.h",
+        "path_type": "hardlink",
+        "sha256": "9d35067928d4c069451f33480021a11840659eaa8e5988ef32c9db5582568d1a",
+        "size_in_bytes": 2267
+      },
+      {
+        "_path": "include/thrift/transport/TSSLSocket.h",
+        "path_type": "hardlink",
+        "sha256": "6b8e4356bddc6f55621aa4a4b414f60017e04d6855c001560ae15134b0c94fca",
+        "size_in_bytes": 15466
+      },
+      {
+        "_path": "include/thrift/transport/TServerSocket.h",
+        "path_type": "hardlink",
+        "sha256": "55d46c8318c9772f94a31d0af1e65af2dec47ee3f4e3891689a85df95649755f",
+        "size_in_bytes": 5947
+      },
+      {
+        "_path": "include/thrift/transport/TServerTransport.h",
+        "path_type": "hardlink",
+        "sha256": "e18d43c787c9ad5c948abeedbaf9c1dd4205f09d0c8715e47cfe1259a111380f",
+        "size_in_bytes": 3734
+      },
+      {
+        "_path": "include/thrift/transport/TShortReadTransport.h",
+        "path_type": "hardlink",
+        "sha256": "51f509bd662a5853614a30aea9ef417a927e1ec78c4da03f78fc356337d2bdbd",
+        "size_in_bytes": 2740
+      },
+      {
+        "_path": "include/thrift/transport/TSimpleFileTransport.h",
+        "path_type": "hardlink",
+        "sha256": "ad72dafe0ce5cc29fe1d061c10928ae8c61356b8b07670cf2346e1245ccc40fb",
+        "size_in_bytes": 1443
+      },
+      {
+        "_path": "include/thrift/transport/TSocket.h",
+        "path_type": "hardlink",
+        "sha256": "6ba57b76434debb46dbf2da11141e866fa8df2438381a3d5c5292b9b3c5cbf82",
+        "size_in_bytes": 9232
+      },
+      {
+        "_path": "include/thrift/transport/TSocketPool.h",
+        "path_type": "hardlink",
+        "sha256": "19aedd26bc9979c8c35f1093909a7b4a93fcd5d50555f98d02693b9a1f39b5f7",
+        "size_in_bytes": 4582
+      },
+      {
+        "_path": "include/thrift/transport/TSocketUtils.h",
+        "path_type": "hardlink",
+        "sha256": "1097f52d52a8adf7af86f5c68c9396c3c1cfd579acb22444ee141f7e254211bd",
+        "size_in_bytes": 4950
+      },
+      {
+        "_path": "include/thrift/transport/TTransport.h",
+        "path_type": "hardlink",
+        "sha256": "2234aa4f8cec49e2ba08030509f1923de53300c232df3279a989899e95240f0c",
+        "size_in_bytes": 12527
+      },
+      {
+        "_path": "include/thrift/transport/TTransportException.h",
+        "path_type": "hardlink",
+        "sha256": "3d39ae666888dea145959dca24312903cb84a8c7c379692be83367c7f0edcb36",
+        "size_in_bytes": 2902
+      },
+      {
+        "_path": "include/thrift/transport/TTransportUtils.h",
+        "path_type": "hardlink",
+        "sha256": "28d84d50588ecb8512d4b7196e3c91823a12e59d8bc973e7abd164723d69ecdb",
+        "size_in_bytes": 9623
+      },
+      {
+        "_path": "include/thrift/transport/TVirtualTransport.h",
+        "path_type": "hardlink",
+        "sha256": "6ee51734e053b7a3aea1fd0f23a85735efce3bae2feff04a181c21f2d85a9666",
+        "size_in_bytes": 5216
+      },
+      {
+        "_path": "include/thrift/transport/TWebSocketServer.h",
+        "path_type": "hardlink",
+        "sha256": "671038a99ebcc3d90bab1b430f25317f2e29c94b555c26cfe5fd4385ed6f5967",
+        "size_in_bytes": 16694
+      },
+      {
+        "_path": "include/thrift/transport/TZlibTransport.h",
+        "path_type": "hardlink",
+        "sha256": "01ae68da4bc653b2d26ef6e2e238db120a953e0c2fe0a2382586f3852f7dee54",
+        "size_in_bytes": 7442
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/libthrift-0.25.0-h30e16e8_0",
+    "type": 1
+  }
+}

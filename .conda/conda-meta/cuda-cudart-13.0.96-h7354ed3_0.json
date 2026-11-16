@@ -1,0 +1,51 @@
+{
+  "build": "h7354ed3_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "cuda-cudart_linux-64 13.0.96 hfb20e49_0",
+    "cuda-version >=13.0,<13.1.0a0",
+    "libgcc >=14",
+    "libstdcxx >=14"
+  ],
+  "license": "LicenseRef-NVIDIA-End-User-License-Agreement",
+  "md5": "241c33162e9a154e889015aabe5f7812",
+  "name": "cuda-cudart",
+  "sha256": "d88d14b7a4650d93de5cc0202ced4d1509d027518688aa56602a4038510f7d0a",
+  "size": 22346,
+  "subdir": "linux-64",
+  "timestamp": 1763497225984,
+  "version": "13.0.96",
+  "fn": "cuda-cudart-13.0.96-h7354ed3_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/cuda-cudart-13.0.96-h7354ed3_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/cuda-cudart-13.0.96-h7354ed3_0",
+  "requested_specs": [],
+  "files": [
+    "lib/libcudart.so.13",
+    "lib/libcudart.so.13.0.96"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/libcudart.so.13",
+        "path_type": "softlink",
+        "sha256": "b374a180c3560b9639f9db997f7f4d85322b91692ea06bc044296f24a8de4b7b",
+        "sha256_in_prefix": "348e3a15241d1aa58fae0e83020e347f5a9365e5155cdc8d2c20df7a8b892c3b",
+        "size_in_bytes": 721097
+      },
+      {
+        "_path": "lib/libcudart.so.13.0.96",
+        "path_type": "softlink",
+        "sha256": "b374a180c3560b9639f9db997f7f4d85322b91692ea06bc044296f24a8de4b7b",
+        "sha256_in_prefix": "348e3a15241d1aa58fae0e83020e347f5a9365e5155cdc8d2c20df7a8b892c3b",
+        "size_in_bytes": 721097
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/cuda-cudart-13.0.96-h7354ed3_0",
+    "type": 1
+  }
+}

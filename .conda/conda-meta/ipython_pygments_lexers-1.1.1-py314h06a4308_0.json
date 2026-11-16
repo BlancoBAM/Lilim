@@ -1,0 +1,104 @@
+{
+  "build": "py314h06a4308_0",
+  "build_number": 0,
+  "depends": [
+    "pygments",
+    "python >=3.14,<3.15.0a0",
+    "python_abi 3.14.* *_cp314"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "md5": "06275458c235f707108468f039f864bd",
+  "name": "ipython_pygments_lexers",
+  "sha256": "bd6aa637b1f90c56b0b1b969d92f749faf9fc8185f82623b13509eb672a923e3",
+  "size": 20568,
+  "subdir": "linux-64",
+  "timestamp": 1759953086879,
+  "version": "1.1.1",
+  "fn": "ipython_pygments_lexers-1.1.1-py314h06a4308_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/ipython_pygments_lexers-1.1.1-py314h06a4308_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/ipython_pygments_lexers-1.1.1-py314h06a4308_0",
+  "requested_specs": [],
+  "files": [
+    "lib/python3.14/site-packages/ipython_pygments_lexers.py",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/INSTALLER",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/METADATA",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/RECORD",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/REQUESTED",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/WHEEL",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/direct_url.json",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/entry_points.txt",
+    "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/licenses/LICENSE",
+    "lib/python3.14/site-packages/__pycache__/ipython_pygments_lexers.cpython-314.pyc"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers.py",
+        "path_type": "hardlink",
+        "sha256": "20f33c986812f30d79637c824a792f6ca62f180bfaeedf4ec171f0b5a2850a97",
+        "size_in_bytes": 19656
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "c4e12d8ac68c03648f70e25d4f0ccf65152ec5d81c940679fd358b6afce0f7eb",
+        "size_in_bytes": 1143
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "b018caa0b7be4ce206cf2434594d1de6a7808fc2c506cb97d33da97c55fa1eaf",
+        "size_in_bytes": 943
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1b68144734c4b66791f27add5d425f3620775585718a03d0f9b110ba3a4d88db",
+        "size_in_bytes": 82
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "b861a25dc9bf461bd20098e99fc45aee0be1097d11b017d6e0b7e459a8509644",
+        "size_in_bytes": 97
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "87285eeabd14bc7bd93d5f4426fcae8c895bf0282d46543b47aa1b86f33fb3e6",
+        "size_in_bytes": 170
+      },
+      {
+        "_path": "lib/python3.14/site-packages/ipython_pygments_lexers-1.1.1.dist-info/licenses/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "b1d0dbc0fa79774d34b8e2d0aec91d50d8caf05f7b40fc22c3010a4bd9ad2bf9",
+        "size_in_bytes": 1535
+      },
+      {
+        "_path": "lib/python3.14/site-packages/__pycache__/ipython_pygments_lexers.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "64153f7673c889a2c3e369fd031480e755c08ac8ec43056fddcbd59059889cc3",
+        "size_in_bytes": 17017
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/ipython_pygments_lexers-1.1.1-py314h06a4308_0",
+    "type": 1
+  }
+}

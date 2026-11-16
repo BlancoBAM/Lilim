@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_random_internal_fast_uniform_bits
+Description: Abseil random_internal_fast_uniform_bits library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_config = 20260526
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

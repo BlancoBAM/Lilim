@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_civil_time
+Description: Abseil civil_time library
+URL: https://abseil.io/
+Version: 20260526
+Requires:
+Libs: -L${libdir}  -labsl_civil_time 
+Cflags: -I${includedir} -DNOMINMAX

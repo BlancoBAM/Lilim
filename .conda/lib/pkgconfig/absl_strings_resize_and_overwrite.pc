@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_strings_resize_and_overwrite
+Description: Abseil strings_resize_and_overwrite library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_config = 20260526, absl_core_headers = 20260526, absl_dynamic_annotations = 20260526, absl_hardening = 20260526, absl_throw_delegate = 20260526
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

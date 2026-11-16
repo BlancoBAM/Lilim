@@ -1,0 +1,7 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+includedir=${prefix}/include
+
+Name: RenderProto
+Description: Render extension headers
+Version: 0.11.1
+Cflags: -I${includedir}

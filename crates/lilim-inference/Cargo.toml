@@ -2,7 +2,7 @@
 name = "lilim-inference"
 version = "1.0.0"
 edition = "2021"
-description = "Lilim AI — Embedded Candle inference engine (Phi-3.5-mini local model)"
+description = "Lilim AI — Embedded mistral.rs inference engine (Phi-4-mini local model)"
 license = "AGPL-3.0"
 
 [lib]
@@ -12,15 +12,13 @@ path = "src/lib.rs"
 [features]
 default = ["cpu"]
 cpu = []
-cuda = ["candle-core/cuda", "candle-nn/cuda", "candle-transformers/cuda"]
-metal = ["candle-core/metal", "candle-nn/metal", "candle-transformers/metal"]
-accelerate = ["candle-core/accelerate", "candle-nn/accelerate", "candle-transformers/accelerate"]
+cuda = ["mistralrs/cuda"]
+metal = ["mistralrs/metal"]
+accelerate = ["mistralrs/accelerate"]
 
 [dependencies]
-# ── Candle ML framework ───────────────────────────────────────
-candle-core = { git = "https://github.com/huggingface/candle", branch = "main" }
-candle-nn = { git = "https://github.com/huggingface/candle", branch = "main" }
-candle-transformers = { git = "https://github.com/huggingface/candle", branch = "main" }
+# ── mistral.rs ML framework ──────────────────────────────────────
+mistralrs = "0.8"
 
 # ── HuggingFace Hub downloader ────────────────────────────────
 hf-hub = { version = "0.3", features = ["tokio"] }

@@ -1,0 +1,475 @@
+{
+  "build": "py314h06a4308_0",
+  "build_number": 0,
+  "depends": [
+    "python >=3.14,<3.15.0a0",
+    "python_abi 3.14.* *_cp314",
+    "wrapt"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "md5": "b955d5315399007c2be00783d4fc29c2",
+  "name": "psygnal",
+  "sha256": "cbf6d0d2c3c76fb302b1fadef36ab05010449e7bbaea679d44f909ca79192b0e",
+  "size": 185996,
+  "subdir": "linux-64",
+  "timestamp": 1779264719150,
+  "version": "0.15.1",
+  "fn": "psygnal-0.15.1-py314h06a4308_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/psygnal-0.15.1-py314h06a4308_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/psygnal-0.15.1-py314h06a4308_0",
+  "requested_specs": [],
+  "files": [
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/INSTALLER",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/METADATA",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/RECORD",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/REQUESTED",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/WHEEL",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/direct_url.json",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/entry_points.txt",
+    "lib/python3.14/site-packages/psygnal/__pycache__/__init__.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_async.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_dataclass_utils.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_evented_decorator.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_evented_model.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_exceptions.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_group.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_group_descriptor.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_mypyc.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_queue.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_signal.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_throttler.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/_weak_callback.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/qt.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/testing.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/__pycache__/utils.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/__init__.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/_pyinstaller_hook.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/hook-psygnal.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/licenses/LICENSE",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/__init__.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_dict.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_list.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_proxy.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_set.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_selectable_evented_list.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__pycache__/_selection.cpython-314.pyc",
+    "lib/python3.14/site-packages/psygnal/containers/__init__.py",
+    "lib/python3.14/site-packages/psygnal/containers/_evented_dict.py",
+    "lib/python3.14/site-packages/psygnal/containers/_evented_list.py",
+    "lib/python3.14/site-packages/psygnal/containers/_evented_proxy.py",
+    "lib/python3.14/site-packages/psygnal/containers/_evented_set.py",
+    "lib/python3.14/site-packages/psygnal/containers/_selectable_evented_list.py",
+    "lib/python3.14/site-packages/psygnal/containers/_selection.py",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__init__.py",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/_pyinstaller_hook.py",
+    "lib/python3.14/site-packages/psygnal/_pyinstaller_util/hook-psygnal.py",
+    "lib/python3.14/site-packages/psygnal/__init__.py",
+    "lib/python3.14/site-packages/psygnal/_async.py",
+    "lib/python3.14/site-packages/psygnal/_dataclass_utils.py",
+    "lib/python3.14/site-packages/psygnal/_evented_decorator.py",
+    "lib/python3.14/site-packages/psygnal/_evented_model.py",
+    "lib/python3.14/site-packages/psygnal/_exceptions.py",
+    "lib/python3.14/site-packages/psygnal/_group.py",
+    "lib/python3.14/site-packages/psygnal/_group.pyi",
+    "lib/python3.14/site-packages/psygnal/_group_descriptor.py",
+    "lib/python3.14/site-packages/psygnal/_mypyc.py",
+    "lib/python3.14/site-packages/psygnal/_queue.py",
+    "lib/python3.14/site-packages/psygnal/_signal.py",
+    "lib/python3.14/site-packages/psygnal/_throttler.py",
+    "lib/python3.14/site-packages/psygnal/_throttler.pyi",
+    "lib/python3.14/site-packages/psygnal/_weak_callback.py",
+    "lib/python3.14/site-packages/psygnal/py.typed",
+    "lib/python3.14/site-packages/psygnal/qt.py",
+    "lib/python3.14/site-packages/psygnal/testing.py",
+    "lib/python3.14/site-packages/psygnal/utils.py"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "cccdfaa8e1e9150bc863073cf63f1182d057c5178675d97279ebead5c752aa39",
+        "size_in_bytes": 6065
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "eb3085538cac966b220c4d8c8809712de615cca87c91e5f445e615467c866785",
+        "size_in_bytes": 4576
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "41c708c5adba6e097513ab8ccb9f1d7865a2fb469e22491a9e01dcc64da459fc",
+        "size_in_bytes": 87
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "2e8acdde0f8e7321206cabf554e3f8945a26f3c181a89cd6f9f2575152a5e9a5",
+        "size_in_bytes": 93
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "a46a28b3453314754db047d79b029e7670b56e56969cc81812feff68d1aeeab3",
+        "size_in_bytes": 86
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/__init__.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "d46df190a09e5ba376da952966cdf37bf51765a0346adda8e6479c4e3321466f",
+        "size_in_bytes": 2384
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_async.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "c3b7f12def0c65a62c4645b514f9c66bc880ff114cd30220e0721aeef4abeccf",
+        "size_in_bytes": 16763
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_dataclass_utils.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "2ea1fa8a255822566806ed7663583edb43741ee456d8ac87daff4631a923541f",
+        "size_in_bytes": 10229
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_evented_decorator.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "2d204375cd4767beda781ca5d5da6ca9ea95dacc10a5c4ceb2ea6658f8e0be31",
+        "size_in_bytes": 7181
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_evented_model.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "21e87ebb07a7391d20d95f6ace2775d14d3a3408cf4aaf7bae6f3741854b9a32",
+        "size_in_bytes": 33935
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_exceptions.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "952035838201217db4e2982d5fce57e1fdd3d7ce9235300d618ded6f004f4f9d",
+        "size_in_bytes": 7399
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_group.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "3b32c3fb4a8d3bd57db87706fbdb5d64f1af4abe5817a757521fa6a94e75dd03",
+        "size_in_bytes": 39443
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_group_descriptor.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "7066b0eb12cb8d216127b58a4252042686233a21b8a2ded5b86d0a7e35a57ac1",
+        "size_in_bytes": 37304
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_mypyc.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "06da45051f3401a2faf1735b2b24e2e1f5cad4ef04dff090064fe194aff357d1",
+        "size_in_bytes": 516
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_queue.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "50da8c074f696238235b1c517267da10205b0e32cd5d2e9291bbdfa4c4324063",
+        "size_in_bytes": 5762
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_signal.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "a77bb8ff35ace7cdd307599a4381a42d1851ebaf3e8612383bdb71e24b18d9e1",
+        "size_in_bytes": 84907
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_throttler.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "238b11be974b2ba09978374971f42d9e71b000176ec55ce97a513df592127e2e",
+        "size_in_bytes": 12733
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/_weak_callback.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "ee0a4b6f9a179a536e306f3c8f4a386da68de3d3b248d0415efc6684bdc40444",
+        "size_in_bytes": 37714
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/qt.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "0eaad872f17f938b3823954d2e87fad43f17dee2ec5323621d9bbb7ded0b58a0",
+        "size_in_bytes": 4052
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/testing.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "b205f2678ff414a0ed1f0fd0bd086e9ad812a68658ca44369fd8de44bbd3d932",
+        "size_in_bytes": 18785
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__pycache__/utils.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "fc424f9a9970c3df93484f50d60dede8c1733c13d8c291ebdc0d2f41aa662875",
+        "size_in_bytes": 7433
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/__init__.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "ab67cccf735d08d3472e3399f0a9b97e58b88de17085f36dd127151f7e8278fa",
+        "size_in_bytes": 165
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/_pyinstaller_hook.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "057878e3a2bc2e503d2bc7600b0e540af3706c329fe91e5ff1918d55b4a50e2d",
+        "size_in_bytes": 646
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__pycache__/hook-psygnal.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "179870d3832ed398f9a872e4ead936dd5debecf8c9665a71a201b4ea0ce8464b",
+        "size_in_bytes": 2584
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal-0.15.1.dist-info/licenses/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "50169b145e35e6ae11a1e05cebdaa7052a58a8a2325dd5c394f8a68199c78415",
+        "size_in_bytes": 1479
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/__init__.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "4153beebbd8da146af2a51446486449d0d7273d2764a99190db969896499de4e",
+        "size_in_bytes": 1970
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_dict.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "461a28fdc9e0af401e7ce343a618ef8c78c5580531a1df6d6248409ee03a9095",
+        "size_in_bytes": 14088
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_list.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "1508aeeed37ea6566d4badbcaa5d0839b99c64a5427da197811022c6eef7595f",
+        "size_in_bytes": 26165
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_proxy.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "d162dc3b49d904c8304243f3d9018d951e4e7d6152a1b70d8b16d6c5546455af",
+        "size_in_bytes": 16050
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_evented_set.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "6165c39d82e9aaca4b15b43151a147e02f0be8b89ebe7b327346f6dd6d4e44bf",
+        "size_in_bytes": 28347
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_selectable_evented_list.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "6637f9cdafce3f07519f4c10a83c09d838312aa822effa48c5ae5f68de340f25",
+        "size_in_bytes": 7587
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__pycache__/_selection.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "d9206dd507d62de8bfd782b49bfd417d221cef5d45770ef82f97c038d3fc4386",
+        "size_in_bytes": 12552
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "f4352756474b7660aeef955a6e7eace1e5f10fe7efccc82ef5962920e0ec4090",
+        "size_in_bytes": 1866
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_evented_dict.py",
+        "path_type": "hardlink",
+        "sha256": "a0c9635fad05f521aa8fd24c66d179fb47374e39595587ec91b175d79d0e0406",
+        "size_in_bytes": 7619
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_evented_list.py",
+        "path_type": "hardlink",
+        "sha256": "09395c33a507c77588d280370cd2bb4eae2c01fe91a99a1cb5527a154339331c",
+        "size_in_bytes": 16976
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_evented_proxy.py",
+        "path_type": "hardlink",
+        "sha256": "b3e82c9c1f4f74c8c9b7955f02c54430e0ddb47b020d84bdd069fa011877c663",
+        "size_in_bytes": 8024
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_evented_set.py",
+        "path_type": "hardlink",
+        "sha256": "7df4ef662691fbe9e4f2388bec9a3858e33a48f38196977d5d0d925f1bc718c6",
+        "size_in_bytes": 12007
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_selectable_evented_list.py",
+        "path_type": "hardlink",
+        "sha256": "e7381b18f1d28399bdab03f7160ace1d0b4e4a5e266837e24f93c48792a487f1",
+        "size_in_bytes": 4224
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/containers/_selection.py",
+        "path_type": "hardlink",
+        "sha256": "c1dbfb3140efea0f0527bc8fb229ec7844cad21883b1d22909a4085bb578fd00",
+        "size_in_bytes": 7106
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/_pyinstaller_hook.py",
+        "path_type": "hardlink",
+        "sha256": "6020be2f64904c14fbb093e0ab9221dda926a40616e6a21cb5dfe8e58c092b23",
+        "size_in_bytes": 128
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_pyinstaller_util/hook-psygnal.py",
+        "path_type": "hardlink",
+        "sha256": "ce51ddce39955051824bfbc8a5d5ef669ed8c50fc38a8f42321efd0071217871",
+        "size_in_bytes": 1252
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "b2bf39c1fd84eda8b21fee259b44843df7268ae41fbeaf02e2f3b5031e44d6af",
+        "size_in_bytes": 1946
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_async.py",
+        "path_type": "hardlink",
+        "sha256": "69a88083b24cc1e8f9308e1b198de6e9e3d530650d7da870276c70ca36234214",
+        "size_in_bytes": 7691
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_dataclass_utils.py",
+        "path_type": "hardlink",
+        "sha256": "7dbe49d8fb59f91443ecdf88466babe2f6b9b4a6aa243c5ed8a4b69d0c37f5ed",
+        "size_in_bytes": 5400
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_evented_decorator.py",
+        "path_type": "hardlink",
+        "sha256": "5f6d0a6db86c852c1a900c311bacdbd919e39cc6d74e06954c19d8ab60e1e0b9",
+        "size_in_bytes": 5894
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_evented_model.py",
+        "path_type": "hardlink",
+        "sha256": "3bf1ff515658256bc61d32fcda52e5b1cb7a8018dcea173bb075b0023849bea4",
+        "size_in_bytes": 27000
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_exceptions.py",
+        "path_type": "hardlink",
+        "sha256": "e146153b7d66087f879bfecffc338e92040edb52d875ba93d19d43485f1fe5d6",
+        "size_in_bytes": 4536
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_group.py",
+        "path_type": "hardlink",
+        "sha256": "383c42e78bfbb02ab21abf9c5d7b3f4ae3841fceb3cb2dddf62f297430dff572",
+        "size_in_bytes": 27083
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_group.pyi",
+        "path_type": "hardlink",
+        "sha256": "92c92e39a696be2cd86655dbda41cbb538dffbc00f71a94e5ef9d6871b7ca70c",
+        "size_in_bytes": 1403
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_group_descriptor.py",
+        "path_type": "hardlink",
+        "sha256": "15e57b39c7141da4be3fe6ed6deb59c57d8e08c9a1745a1c0c912ffeccbde8d5",
+        "size_in_bytes": 32587
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_mypyc.py",
+        "path_type": "hardlink",
+        "sha256": "d9ddad530deef98a228e31fa90dd5904c914d7fa5beff6763042ec130eec5348",
+        "size_in_bytes": 441
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_queue.py",
+        "path_type": "hardlink",
+        "sha256": "ecb759ae53969ebc43279314cd2e966b785e2d90daf2ed7fb1b9ffd2a66e0a15",
+        "size_in_bytes": 3827
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_signal.py",
+        "path_type": "hardlink",
+        "sha256": "b3b1d1cd7e9710e9f7b63d9b027d748f6cf5ffe80b9d927c104a4816a1fe785c",
+        "size_in_bytes": 67715
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_throttler.py",
+        "path_type": "hardlink",
+        "sha256": "ffdb5d82cff83e0d8d6297b21a38f2893fa695837f337a0e966678aec81571a7",
+        "size_in_bytes": 8347
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_throttler.pyi",
+        "path_type": "hardlink",
+        "sha256": "65ce04af5b50495a06aeb1823d3adba79f7ac9d261b492640ab3745f344eefa8",
+        "size_in_bytes": 2295
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/_weak_callback.py",
+        "path_type": "hardlink",
+        "sha256": "3babfd1ee211f8a0d3e1859763e9ae0e580b3822ea606a13002d3d914631dee0",
+        "size_in_bytes": 24283
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/py.typed",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/qt.py",
+        "path_type": "hardlink",
+        "sha256": "f62286b2acea03414b8b7e67e04e38f298309ae0f045e8cc84723ffcf5efeb02",
+        "size_in_bytes": 2933
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/testing.py",
+        "path_type": "hardlink",
+        "sha256": "c5fd58e8ebe3f96ecb703b8607104367896234bc6900cd720953433ebdde2852",
+        "size_in_bytes": 12556
+      },
+      {
+        "_path": "lib/python3.14/site-packages/psygnal/utils.py",
+        "path_type": "hardlink",
+        "sha256": "28f5c795eb628b00406c304a015cb18b96f50f7caa6ba0dd555dcae1bc3f125f",
+        "size_in_bytes": 4827
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/psygnal-0.15.1-py314h06a4308_0",
+    "type": 1
+  }
+}

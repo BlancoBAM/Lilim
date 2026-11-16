@@ -1,0 +1,102 @@
+{
+  "build": "h363ae44_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libgcc >=14",
+    "libstdcxx >=14"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "md5": "702bfd9d78442c720b625b87e9e67ccf",
+  "name": "simdjson",
+  "sha256": "f6412ce0a852c3a8e713a61c56bc09e0ebe0c9ba54ed8fd78c7ef810b558ed05",
+  "size": 315804,
+  "subdir": "linux-64",
+  "timestamp": 1779778840213,
+  "version": "4.6.4",
+  "fn": "simdjson-4.6.4-h363ae44_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/simdjson-4.6.4-h363ae44_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/simdjson-4.6.4-h363ae44_0",
+  "requested_specs": [],
+  "files": [
+    "include/simdjson.h",
+    "lib/cmake/simdjson/simdjson-config-version.cmake",
+    "lib/cmake/simdjson/simdjson-config.cmake",
+    "lib/cmake/simdjson/simdjsonTargets-release.cmake",
+    "lib/cmake/simdjson/simdjsonTargets.cmake",
+    "lib/pkgconfig/simdjson.pc",
+    "lib/libsimdjson.so",
+    "lib/libsimdjson.so.33",
+    "lib/libsimdjson.so.33.0.0"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "include/simdjson.h",
+        "path_type": "hardlink",
+        "sha256": "fec0cb4559e25456789efb153b7e5eaa27b50ce2bc2c9d3b531ea2000928380a",
+        "size_in_bytes": 7724701
+      },
+      {
+        "_path": "lib/cmake/simdjson/simdjson-config-version.cmake",
+        "path_type": "hardlink",
+        "sha256": "21b5078dd48fb758b594758bf85e035d0c2d21c26638bc957d3ea7f69a4d1bfb",
+        "size_in_bytes": 3675
+      },
+      {
+        "_path": "lib/cmake/simdjson/simdjson-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "7112e60de69e538cfa37bccf32295cd0bddfe1618226e08b2cdabbdbe006ca79",
+        "size_in_bytes": 213
+      },
+      {
+        "_path": "lib/cmake/simdjson/simdjsonTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "7e84d5aa62e550f08815079c5c1c75f9389b72ec0c688e9a5c0095a5d661710e",
+        "size_in_bytes": 879
+      },
+      {
+        "_path": "lib/cmake/simdjson/simdjsonTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "b702b2940b91e41ead2059d30a20163356aa96aa75ab4e9defdeef7f63e4ca60",
+        "size_in_bytes": 4314
+      },
+      {
+        "_path": "lib/pkgconfig/simdjson.pc",
+        "path_type": "hardlink",
+        "sha256": "a1a3fd0ecea9b83597f4f73c5a13abcfd3b9a757335e3137c84c697ff7a4276e",
+        "sha256_in_prefix": "170a6e8263c7742d7a0bc9832d2019894e69550dba474e06018110c8ed593863",
+        "size_in_bytes": 303,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_177977878094896/croot/simdjson-split_1779778809111/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh"
+      },
+      {
+        "_path": "lib/libsimdjson.so",
+        "path_type": "softlink",
+        "sha256": "8865b69411fa39ac5cf5076147567877d495cff82e18bd01e0e23df7517e0ce7",
+        "sha256_in_prefix": "95e99277e5eb3edf7ef877fb4b7b74b8c41f01f10ef788e5348636225449cc7f",
+        "size_in_bytes": 229456
+      },
+      {
+        "_path": "lib/libsimdjson.so.33",
+        "path_type": "softlink",
+        "sha256": "8865b69411fa39ac5cf5076147567877d495cff82e18bd01e0e23df7517e0ce7",
+        "sha256_in_prefix": "95e99277e5eb3edf7ef877fb4b7b74b8c41f01f10ef788e5348636225449cc7f",
+        "size_in_bytes": 229456
+      },
+      {
+        "_path": "lib/libsimdjson.so.33.0.0",
+        "path_type": "hardlink",
+        "sha256": "8865b69411fa39ac5cf5076147567877d495cff82e18bd01e0e23df7517e0ce7",
+        "size_in_bytes": 229456
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/simdjson-4.6.4-h363ae44_0",
+    "type": 1
+  }
+}

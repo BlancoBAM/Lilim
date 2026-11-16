@@ -1,13 +1,13 @@
 // lilim-inference: Public API
 //
-// Provides the InferenceEngine — a self-contained Phi-3.5-mini inference engine
-// built on HuggingFace Candle. No Ollama, no Python, no external tools.
+// Provides the InferenceEngine — a self-contained Phi-4-mini inference engine
+// built on mistral.rs. No Ollama, no Python, no external tools.
 //
 // Key features:
-//   • Loads Phi-3.5-mini-instruct (GGUF Q4_K_M) from the bundled model path
+//   • Loads Phi-4-mini-instruct (GGUF Q4_K_M via mistral.rs auto-ISQ) from the bundled model path
 //   • Streams tokens via async Stream
 //   • Reports inference speed; caller can fall back to online model if slow
-//   • Works on CPU (default) and CUDA/Metal (optional features)
+//   • Works on CPU (default), CUDA, and Metal (optional features)
 //   • Carries the Lilim agent system prompt — model understands tool use
 //
 // Usage:
@@ -19,15 +19,15 @@
 //   }
 //
 // Model selection:
-//   Phi-3.5-mini-instruct (Q4_K_M, ~2.4 GB) is used via Candle's built-in
-//   `quantized_phi3` module, keeping the inference path in Rust.
+//   Phi-4-mini-instruct (Q4_K_M, ~2.5 GB) is used via mistral.rs's ModelBuilder
+//   with automatic ISQ quantization, keeping the inference path in Rust.
 
 pub mod config;
 pub mod downloader;
-pub mod phi3;
+pub mod phi4;
 
 pub use config::InferenceConfig;
-pub use phi3::Phi3Engine;
+pub use phi4::Phi3Engine;
 
 use anyhow::Result;
 use futures_util::Stream;
@@ -48,7 +48,7 @@ impl InferenceEngine {
     /// Initialize the engine. Downloads/verifies the model if needed.
     /// Returns Ok even if model is unavailable — is_available() will return false.
     pub async fn new(config: InferenceConfig) -> Self {
-        info!("Initializing Lilim local inference engine (Phi-3.5-mini via Candle)…");
+        info!("Initializing Lilim local inference engine (Phi-4-mini via mistral.rs)…");
 
         // Ensure model files are present
         match downloader::ensure_model_ready(&config).await {
@@ -68,7 +68,7 @@ impl InferenceEngine {
         match Phi3Engine::load(&config).await {
             Ok(engine) => {
                 info!(
-                    "Phi-3.5-mini engine loaded ✓ ({} device)",
+                    "Phi-4-mini engine loaded ✓ ({} device)",
                     config.device_label()
                 );
                 let this = Self {
@@ -90,7 +90,7 @@ impl InferenceEngine {
                 this
             }
             Err(e) => {
-                warn!("Failed to load Phi-3.5-mini engine: {:?}", e);
+                warn!("Failed to load Phi-4-mini engine: {:?}", e);
                 Self {
                     inner: None,
                     config,

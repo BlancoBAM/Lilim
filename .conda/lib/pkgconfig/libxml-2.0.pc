@@ -1,0 +1,13 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+modules=1
+
+Name: libXML
+Version: 2.15.3
+Description: libXML library version2.
+Requires.private:  icu-uc
+Libs: -L${libdir} -lxml2 
+Libs.private:  -ldl -lpthread -L/home/s8n/Lilim/b5bf2e54cb654f7b/lib -lz -L/home/s8n/Lilim/b5bf2e54cb654f7b/lib  -lm 
+Cflags: -I${includedir}/libxml2  

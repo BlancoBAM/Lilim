@@ -1,0 +1,10 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=/home/s8n/Lilim/b5bf2e54cb654f7b/bin
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: libutf8proc
+Description: UTF8 processing
+Version: 2.11.3
+Libs: -L${libdir} -lutf8proc
+Cflags: -I${includedir} -DUTF8PROC_EXPORTS

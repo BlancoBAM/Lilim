@@ -1,0 +1,101 @@
+{
+  "build": "hadbecdc_1",
+  "build_number": 1,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libgcc >=14"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "60823c7a4f880c1a99c3642772779ee7",
+  "name": "libutf8proc",
+  "sha256": "d2f82b7e3868ffeb74f1c9dc01591cfea08fbfc59ce3a573d0960b2cb50dc813",
+  "size": 85014,
+  "subdir": "linux-64",
+  "timestamp": 1781116103405,
+  "version": "2.11.3",
+  "fn": "libutf8proc-2.11.3-hadbecdc_1.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/libutf8proc-2.11.3-hadbecdc_1.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/libutf8proc-2.11.3-hadbecdc_1",
+  "requested_specs": [],
+  "files": [
+    "lib/libutf8proc.so",
+    "lib/libutf8proc.so.3",
+    "lib/libutf8proc.so.3.2.3",
+    "lib/cmake/utf8proc/utf8proc-config-version.cmake",
+    "lib/cmake/utf8proc/utf8proc-config.cmake",
+    "lib/cmake/utf8proc/utf8proc-targets-release.cmake",
+    "lib/cmake/utf8proc/utf8proc-targets.cmake",
+    "lib/pkgconfig/libutf8proc.pc",
+    "include/utf8proc.h"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/libutf8proc.so",
+        "path_type": "softlink",
+        "sha256": "46262b13fb470d6bba26c9e025a7860d6fd798ee5d6227863f19cb2637a8e532",
+        "sha256_in_prefix": "1d1a9f57a11b5b516bb2962427732c7c3ae6ab84febda03c53dba4d14a256845",
+        "size_in_bytes": 361496
+      },
+      {
+        "_path": "lib/libutf8proc.so.3",
+        "path_type": "softlink",
+        "sha256": "46262b13fb470d6bba26c9e025a7860d6fd798ee5d6227863f19cb2637a8e532",
+        "sha256_in_prefix": "1d1a9f57a11b5b516bb2962427732c7c3ae6ab84febda03c53dba4d14a256845",
+        "size_in_bytes": 361496
+      },
+      {
+        "_path": "lib/libutf8proc.so.3.2.3",
+        "path_type": "hardlink",
+        "sha256": "46262b13fb470d6bba26c9e025a7860d6fd798ee5d6227863f19cb2637a8e532",
+        "size_in_bytes": 361496
+      },
+      {
+        "_path": "lib/cmake/utf8proc/utf8proc-config-version.cmake",
+        "path_type": "hardlink",
+        "sha256": "9e493c01dc92558682b1ac7037e28fa8625da0dd131272bbdbf7dfb49c64fb22",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/utf8proc/utf8proc-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "a6fedadca3702ebba6dad98edf96af2ced6df8b232d409990a61747545ca6e21",
+        "size_in_bytes": 904
+      },
+      {
+        "_path": "lib/cmake/utf8proc/utf8proc-targets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "834840b523d2935bb59a5d6442478f8b8d711503812106db227f7d04a716f951",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "lib/cmake/utf8proc/utf8proc-targets.cmake",
+        "path_type": "hardlink",
+        "sha256": "3056a155c728a585f5b782306ea83814d7e6cda8e8bc5dcc18655063117181d7",
+        "size_in_bytes": 4134
+      },
+      {
+        "_path": "lib/pkgconfig/libutf8proc.pc",
+        "path_type": "hardlink",
+        "sha256": "da1601f1847ba90dbe749d428f9a008516d3b8a3412cfe490512b5fe7b42c668",
+        "sha256_in_prefix": "703d98db35caadc74db9413fb56b573578e8ce72e464e468bc560306e3ceff09",
+        "size_in_bytes": 321,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_178111344412458/croot/libutf8proc_1781116075422/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold"
+      },
+      {
+        "_path": "include/utf8proc.h",
+        "path_type": "hardlink",
+        "sha256": "a4e498b7392c383cf3b22e662da21e0b48f1264806235d87b5d8bd166232f658",
+        "size_in_bytes": 34049
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/libutf8proc-2.11.3-hadbecdc_1",
+    "type": 1
+  }
+}

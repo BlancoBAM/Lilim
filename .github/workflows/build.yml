@@ -199,13 +199,13 @@ jobs:
           body: |
             ## Major model and feature upgrades
 
-            - Phi-3.5-mini GGUF inference through Rust and Candle replaces Phi-2.
+            - Phi-4-mini GGUF inference through Rust and mistral.rs replaces Phi-3.5-mini.
             - Autonomous tool use, MCP servers, BrowserOS, persistent memory, and prompt enhancement.
             - Linux desktop launcher, Tauri UI, command-line client, and one-command Debian installer.
 
-            ## Why Phi-4 was deferred
+            ## Why mistral.rs
 
-            Phi-4 was considered, but Candle support was not stable enough for the production inference path. Lilim prioritizes quality, speed, memory safety, and a dependable Rust implementation for Lilith Linux.
+            The switch from Candle to mistral.rs provides significantly faster token generation speeds on CPU with automatic ISQ quantization and paged attention, while maintaining the same 3.8B parameter footprint. Phi-4-mini also brings native function-calling support and improved reasoning capabilities.
 
             ## Planned features
 

@@ -8,18 +8,18 @@
 #   │                         │                            │
 #   │              ┌──────────┴─────────┐                  │
 #   │              ▼                    ▼                   │
-#   │     Candle Phi-3.5 (local)  Python Brain (8081)       │
-#   │     GGUF Q4_K_M             litellm → online APIs    │
+#   │     mistral.rs Phi-4-mini (local)  Python Brain (8081) │
+#   │     GGUF Q4_K_M (auto-ISQ)         litellm → online APIs │
 #   └──────────────────────────────────────────────────────┘
 
 # ═══════════════════════════════════════════════════════════
-# Local Inference Engine (Rust/Candle — Primary)
+# Local Inference Engine (Rust/mistral.rs — Primary)
 # ═══════════════════════════════════════════════════════════
 local_inference:
-  # Phi-3.5-mini Q4_K_M, bundled in the Debian package or downloaded on first run.
-  # Model files live at ~/.local/share/lilim/models/phi-3.5-mini-q4/ or
-  # /usr/lib/lilim/models/phi-3.5-mini-q4/ (bundled in .deb).
-  model: "phi-3.5-mini-q4"
+  # Phi-4-mini-instruct Q4_K_M, bundled in the Debian package or downloaded on first run.
+  # Model files live at ~/.local/share/lilim/models/phi-4-mini-q4/ or
+  # /usr/lib/lilim/models/phi-4-mini-q4/ (bundled in .deb).
+  model: "phi-4-mini-q4"
   model_type: "gguf"
   context_size: 4096
   max_gen_tokens: 512
@@ -165,7 +165,7 @@ server:
 # ═══════════════════════════════════════════════════════════
 # Personality Configuration
 # Applied by Python Brain to all responses regardless of
-# which model (local Phi-3.5-mini or online provider) is used.
+# which model (local Phi-4-mini or online provider) is used.
 # ═══════════════════════════════════════════════════════════
 personality:
   responses_yaml_path: "/etc/lilith/lilim-responses.yaml"

@@ -1,0 +1,8 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+
+Name: pthread stubs
+Description: Stubs missing from libc for standard pthread functions
+Version: 0.3
+Libs: 

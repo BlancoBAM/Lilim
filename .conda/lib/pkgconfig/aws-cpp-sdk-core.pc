@@ -1,0 +1,10 @@
+includedir=include
+libdir=lib
+
+Name: aws-cpp-sdk-core
+Description: 
+Version: 1.11.895
+Cflags: -I${includedir} -fno-exceptions -std=c++11
+Libs: -L${libdir} -laws-cpp-sdk-core 
+Libs.private: -lAWS::aws-crt-cpp -lAWS::aws-c-http -lAWS::aws-c-mqtt -lAWS::aws-c-cal -lAWS::aws-c-auth -lAWS::aws-c-common -lAWS::aws-c-io -lAWS::aws-checksums -lAWS::aws-c-event-stream -lAWS::aws-c-s3 -lAWS::aws-c-compression -lAWS::aws-c-sdkutils -lpthread -lcurl
+Requires: 

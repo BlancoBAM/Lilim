@@ -1,0 +1,31 @@
+{
+  "build": "hd3eb1b0_0",
+  "build_number": 0,
+  "depends": [
+    "prompt-toolkit >=3.0.53,<3.0.54.0a0"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "md5": "ff6d038ed57b6726411846fe9dff1034",
+  "name": "prompt_toolkit",
+  "noarch": "generic",
+  "sha256": "9c9bfa0f6b8859ebdbf304b6e133b6fa656a51d5829c11bcee5434cbecb386e7",
+  "size": 6218,
+  "subdir": "noarch",
+  "timestamp": 1785325249298,
+  "version": "3.0.53",
+  "fn": "prompt_toolkit-3.0.53-hd3eb1b0_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/prompt_toolkit-3.0.53-hd3eb1b0_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/prompt_toolkit-3.0.53-hd3eb1b0_0",
+  "requested_specs": [],
+  "files": [],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": []
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/prompt_toolkit-3.0.53-hd3eb1b0_0",
+    "type": 1
+  }
+}

@@ -1,0 +1,7 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+includedir=${prefix}/include
+
+Name: XExtProto
+Description: XExt extension headers
+Version: 7.3.0
+Cflags: -I${includedir}

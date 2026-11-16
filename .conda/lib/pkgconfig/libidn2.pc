@@ -1,0 +1,11 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: libidn2
+Description: Library implementing IDNA2008 and TR46
+Version: 2.3.8
+Cflags: -I${includedir}
+Libs: -L${libdir} -lidn2
+Libs.private: -L/home/s8n/Lilim/b5bf2e54cb654f7b/lib -liconv -R/home/s8n/Lilim/b5bf2e54cb654f7b/lib -L/home/s8n/Lilim/b5bf2e54cb654f7b/lib -lunistring -R/home/s8n/Lilim/b5bf2e54cb654f7b/lib

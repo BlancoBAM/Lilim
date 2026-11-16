@@ -1,0 +1,337 @@
+{
+  "build": "py314h06a4308_0",
+  "build_number": 0,
+  "depends": [
+    "ipywidgets >=7.6.0",
+    "psygnal >=0.8.1",
+    "python >=3.14,<3.15.0a0",
+    "python_abi 3.14.* *_cp314",
+    "typing_extensions >=4.2.0"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "95938a5a9579304d7b7ccdbfa2b3c51d",
+  "name": "anywidget",
+  "sha256": "011a0b7cdd7eaa8abccfd28d001380a4a3ed529a85d2e2c4c4fab13ce03d4b5f",
+  "size": 159417,
+  "subdir": "linux-64",
+  "timestamp": 1778599910693,
+  "version": "0.11.0",
+  "fn": "anywidget-0.11.0-py314h06a4308_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/anywidget-0.11.0-py314h06a4308_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/anywidget-0.11.0-py314h06a4308_0",
+  "requested_specs": [],
+  "files": [
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/INSTALLER",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/METADATA",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/RECORD",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/REQUESTED",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/WHEEL",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/direct_url.json",
+    "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/licenses/LICENSE",
+    "share/jupyter/labextensions/anywidget/static/2.3dbf81c0.js",
+    "share/jupyter/labextensions/anywidget/static/528.d9f5934c.js",
+    "share/jupyter/labextensions/anywidget/static/main.15ebcf03.js",
+    "share/jupyter/labextensions/anywidget/static/remoteEntry.698dcaf7.js",
+    "lib/python3.14/site-packages/anywidget/labextension/package.json",
+    "lib/python3.14/site-packages/anywidget/labextension/static/2.3dbf81c0.js",
+    "lib/python3.14/site-packages/anywidget/labextension/static/528.d9f5934c.js",
+    "lib/python3.14/site-packages/anywidget/labextension/static/main.15ebcf03.js",
+    "lib/python3.14/site-packages/anywidget/labextension/static/remoteEntry.698dcaf7.js",
+    "lib/python3.14/site-packages/anywidget/nbextension/extension.js",
+    "lib/python3.14/site-packages/anywidget/nbextension/index.js",
+    "lib/python3.14/site-packages/anywidget/__pycache__/__init__.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_cellmagic.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_descriptor.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_file_contents.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_protocols.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_traits.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_util.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/_version.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/experimental.cpython-314.pyc",
+    "lib/python3.14/site-packages/anywidget/__pycache__/widget.cpython-314.pyc",
+    "etc/jupyter/nbconfig/notebook.d/anywidget.json",
+    "lib/python3.14/site-packages/anywidget/__init__.py",
+    "lib/python3.14/site-packages/anywidget/_cellmagic.py",
+    "lib/python3.14/site-packages/anywidget/_descriptor.py",
+    "lib/python3.14/site-packages/anywidget/_file_contents.py",
+    "lib/python3.14/site-packages/anywidget/_protocols.py",
+    "lib/python3.14/site-packages/anywidget/_traits.py",
+    "lib/python3.14/site-packages/anywidget/_util.py",
+    "lib/python3.14/site-packages/anywidget/_version.py",
+    "lib/python3.14/site-packages/anywidget/experimental.py",
+    "lib/python3.14/site-packages/anywidget/py.typed",
+    "lib/python3.14/site-packages/anywidget/widget.py",
+    "share/jupyter/labextensions/anywidget/package.json",
+    "share/jupyter/nbextensions/anywidget/extension.js",
+    "share/jupyter/nbextensions/anywidget/index.js"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "99d9768337b6c9ba0ca00aa40a3ee0ee54cde3611a58421ea69019ae9c179ae7",
+        "size_in_bytes": 8870
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "a1dbba9b13c6415e89c6ef6b80f0762be481b303215ac40cc9e98619e6ead501",
+        "size_in_bytes": 3658
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "41c708c5adba6e097513ab8ccb9f1d7865a2fb469e22491a9e01dcc64da459fc",
+        "size_in_bytes": 87
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "71621f57a3d2dc2a1e8a1fbffdf673230276a4b6d4c4e616bb3aa9f246bce3da",
+        "size_in_bytes": 95
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget-0.11.0.dist-info/licenses/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "22c698b6e5f3878c292471980ffd352ee0fad053f9428c2281f34b5e28a6151f",
+        "size_in_bytes": 1073
+      },
+      {
+        "_path": "share/jupyter/labextensions/anywidget/static/2.3dbf81c0.js",
+        "path_type": "hardlink",
+        "sha256": "5d11acdec8e2b53be23ba45a1ae76b57aed11d5123bcb0d580d9ecadaf66a4ba",
+        "size_in_bytes": 137866
+      },
+      {
+        "_path": "share/jupyter/labextensions/anywidget/static/528.d9f5934c.js",
+        "path_type": "hardlink",
+        "sha256": "3b9dd238b841813d19a6ea2f4b54d86ebae26d203aa98736481e9394ea80dff3",
+        "size_in_bytes": 146332
+      },
+      {
+        "_path": "share/jupyter/labextensions/anywidget/static/main.15ebcf03.js",
+        "path_type": "hardlink",
+        "sha256": "02ec88995dba33d2e93b5e62eaf8b9aaae8a71175b63d291b08197dfb06e474d",
+        "size_in_bytes": 181337
+      },
+      {
+        "_path": "share/jupyter/labextensions/anywidget/static/remoteEntry.698dcaf7.js",
+        "path_type": "hardlink",
+        "sha256": "5ede432c41466349c7cee040b40bc89999c9a1ce50487db5967c95734d8fa071",
+        "size_in_bytes": 85020
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/labextension/package.json",
+        "path_type": "hardlink",
+        "sha256": "8794c03a7ad94adb86287e17c36b9c46fe2012e42cb80da5d21e24ade8e04fb2",
+        "size_in_bytes": 223
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/labextension/static/2.3dbf81c0.js",
+        "path_type": "hardlink",
+        "sha256": "5d11acdec8e2b53be23ba45a1ae76b57aed11d5123bcb0d580d9ecadaf66a4ba",
+        "size_in_bytes": 137866
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/labextension/static/528.d9f5934c.js",
+        "path_type": "hardlink",
+        "sha256": "3b9dd238b841813d19a6ea2f4b54d86ebae26d203aa98736481e9394ea80dff3",
+        "size_in_bytes": 146332
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/labextension/static/main.15ebcf03.js",
+        "path_type": "hardlink",
+        "sha256": "02ec88995dba33d2e93b5e62eaf8b9aaae8a71175b63d291b08197dfb06e474d",
+        "size_in_bytes": 181337
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/labextension/static/remoteEntry.698dcaf7.js",
+        "path_type": "hardlink",
+        "sha256": "5ede432c41466349c7cee040b40bc89999c9a1ce50487db5967c95734d8fa071",
+        "size_in_bytes": 85020
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/nbextension/extension.js",
+        "path_type": "hardlink",
+        "sha256": "e483cf250b7d5b65f12323c80afa5d2be5ab73e46eccca6597e0bba1d8d3cd1b",
+        "size_in_bytes": 360
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/nbextension/index.js",
+        "path_type": "hardlink",
+        "sha256": "b257c384632cd992e1758322ccaeeb6de8af7d57c0173efd462fc93041f9f5b6",
+        "size_in_bytes": 33501
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/__init__.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "c1ce6fb72e5deff4ffd6662d5ffacf1c144412e1bf353532b65e190135e289ab",
+        "size_in_bytes": 1542
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_cellmagic.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "564c18a054e081aa4a34c1829cba2f3e926870a7761db76e56eccc0006207164",
+        "size_in_bytes": 3638
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_descriptor.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "fd21af764dce4ce169c1a99e49dd14f730c4b3103e0e9c84f63ab55378ed5481",
+        "size_in_bytes": 37725
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_file_contents.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "4caaab0bc4bb34dc312a9b5af3a3734b4ee8e5a71270a1d9c5d71cb234593dec",
+        "size_in_bytes": 7846
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_protocols.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "40c71b80f93437286828d4f2ca5ed8294dc05f199446acc101e0d8a0a3bca13e",
+        "size_in_bytes": 4283
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_traits.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "db06bdcf585698d49fc39d17313ce0dff94b0d57f111eb93c216f1cf2c223660",
+        "size_in_bytes": 3588
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_util.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "2e69a44bca37fb52dcdc2b4afac0646a62dcae94089176d0639c0ac3bf5f6d9b",
+        "size_in_bytes": 11405
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/_version.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "2f320cf3d034786f8519b570d5a6d2cf09cde5e154beb05b85d23339e1d4e8df",
+        "size_in_bytes": 1113
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/experimental.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "421da66650ce64b83ec1290072a4549909b202efcf160d22cd57f24e963391f3",
+        "size_in_bytes": 7637
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__pycache__/widget.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "db7e2928a5ce19fdd0cea1754d37443f9f9e994871978017e0cb0c433953f36c",
+        "size_in_bytes": 5557
+      },
+      {
+        "_path": "etc/jupyter/nbconfig/notebook.d/anywidget.json",
+        "path_type": "hardlink",
+        "sha256": "fd3f77e23a3399c95ead424c16c0c56b259740e6bc0c52b5c7b721bb2e2016ed",
+        "size_in_bytes": 63
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "871f54b0b2c869eddf996ae4aee6f6422ed025e505637106e8b6a5f10454f3ad",
+        "size_in_bytes": 831
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_cellmagic.py",
+        "path_type": "hardlink",
+        "sha256": "45cd6f0e24949fd083fb513db630383b4ab2f649977a426019a76c4962d50100",
+        "size_in_bytes": 1935
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_descriptor.py",
+        "path_type": "hardlink",
+        "sha256": "210bf31ac836296c7b324dfb0d8babbf488a6e7071ec4d2a88d147cc28da1b40",
+        "size_in_bytes": 30470
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_file_contents.py",
+        "path_type": "hardlink",
+        "sha256": "2425cba1a0b16ea43fc3538d37b0ae9fff0a4f1a6aa88a06f7366b231e042943",
+        "size_in_bytes": 4473
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_protocols.py",
+        "path_type": "hardlink",
+        "sha256": "d137c00121cec027a107fd1c2cfa5c6713ea3df3acefc760e57bead9213cfa78",
+        "size_in_bytes": 2050
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_traits.py",
+        "path_type": "hardlink",
+        "sha256": "74cf73467cb69c346bbd9c82fb5c13b457ed0834a23d29ced2bc6ca00c380468",
+        "size_in_bytes": 2248
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_util.py",
+        "path_type": "hardlink",
+        "sha256": "a79c2329f9b99c6447dc867c2960ce56420c0da6765916f78010a9f37f1ea94f",
+        "size_in_bytes": 9462
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/_version.py",
+        "path_type": "hardlink",
+        "sha256": "8b8460925c3822f0717ab566a7effcc3a48ab74413aca80ccfd364a1128696b1",
+        "size_in_bytes": 483
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/experimental.py",
+        "path_type": "hardlink",
+        "sha256": "12e96d1ae41b82a28bd62113dcb750a8acbe25b0ffeadd9a2493e485c3c10a25",
+        "size_in_bytes": 4993
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/py.typed",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/anywidget/widget.py",
+        "path_type": "hardlink",
+        "sha256": "648dc50f46d39aea88177d67ff031ea71433803c40798a9be7237c366eeafc47",
+        "size_in_bytes": 3298
+      },
+      {
+        "_path": "share/jupyter/labextensions/anywidget/package.json",
+        "path_type": "hardlink",
+        "sha256": "8794c03a7ad94adb86287e17c36b9c46fe2012e42cb80da5d21e24ade8e04fb2",
+        "size_in_bytes": 223
+      },
+      {
+        "_path": "share/jupyter/nbextensions/anywidget/extension.js",
+        "path_type": "hardlink",
+        "sha256": "e483cf250b7d5b65f12323c80afa5d2be5ab73e46eccca6597e0bba1d8d3cd1b",
+        "size_in_bytes": 360
+      },
+      {
+        "_path": "share/jupyter/nbextensions/anywidget/index.js",
+        "path_type": "hardlink",
+        "sha256": "b257c384632cd992e1758322ccaeeb6de8af7d57c0173efd462fc93041f9f5b6",
+        "size_in_bytes": 33501
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/anywidget-0.11.0-py314h06a4308_0",
+    "type": 1
+  }
+}

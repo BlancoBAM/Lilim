@@ -1,0 +1,32 @@
+{
+  "build": "h8445db7_3",
+  "build_number": 3,
+  "constrains": [
+    "cudatoolkit 13.0|13.0.*",
+    "__cuda >=13"
+  ],
+  "depends": [],
+  "license": "LicenseRef-NVIDIA-End-User-License-Agreement",
+  "md5": "7e59842a04182bfee0911b8186dbad7b",
+  "name": "cuda-version",
+  "noarch": "generic",
+  "sha256": "edaefc939040fb1404e14f4e28aadf96abcd085f522bf09988e52c6c27a0e36a",
+  "size": 19801,
+  "subdir": "noarch",
+  "timestamp": 1763150736141,
+  "version": "13.0",
+  "fn": "cuda-version-13.0-h8445db7_3.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/cuda-version-13.0-h8445db7_3.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/cuda-version-13.0-h8445db7_3",
+  "requested_specs": [],
+  "files": [],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": []
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/cuda-version-13.0-h8445db7_3",
+    "type": 1
+  }
+}

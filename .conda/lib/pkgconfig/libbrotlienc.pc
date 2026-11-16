@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libbrotlienc
+URL: https://github.com/google/brotli
+Description: Brotli encoder library
+Version: 1.2.1
+Libs: -L${libdir} -lbrotlienc
+Requires.private: libbrotlicommon >= 1.2.0
+Cflags: -I${includedir}

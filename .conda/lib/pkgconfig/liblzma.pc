@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: 0BSD
+# Author: Lasse Collin
+
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: liblzma
+Description: General purpose data compression library
+License: 0BSD
+URL: https://tukaani.org/xz/
+Version: 5.8.4
+Cflags: -I${includedir}
+Cflags.private: -DLZMA_API_STATIC
+Libs: -L${libdir} -llzma
+Libs.private: -pthread 

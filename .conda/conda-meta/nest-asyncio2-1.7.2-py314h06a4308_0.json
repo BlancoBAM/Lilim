@@ -1,0 +1,103 @@
+{
+  "build": "py314h06a4308_0",
+  "build_number": 0,
+  "depends": [
+    "python >=3.14,<3.15.0a0",
+    "python_abi 3.14.* *_cp314"
+  ],
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "md5": "bdf1c8ab2c21df6f4e2f45d237d11c21",
+  "name": "nest-asyncio2",
+  "sha256": "831e33d0948f4325fc8d3c4cf5002363e3a105d72d515249616961bb99c0643e",
+  "size": 26080,
+  "subdir": "linux-64",
+  "timestamp": 1785322396297,
+  "version": "1.7.2",
+  "fn": "nest-asyncio2-1.7.2-py314h06a4308_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/nest-asyncio2-1.7.2-py314h06a4308_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/nest-asyncio2-1.7.2-py314h06a4308_0",
+  "requested_specs": [],
+  "files": [
+    "lib/python3.14/site-packages/__pycache__/nest_asyncio2.cpython-314.pyc",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/licenses/LICENSE",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/INSTALLER",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/METADATA",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/RECORD",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/REQUESTED",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/WHEEL",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/direct_url.json",
+    "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/top_level.txt",
+    "lib/python3.14/site-packages/nest_asyncio2.py"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/python3.14/site-packages/__pycache__/nest_asyncio2.cpython-314.pyc",
+        "path_type": "hardlink",
+        "sha256": "8fad1dee5fd600be5e63429183a9a8151eca9b17d563e55e8ff8242d91d1334f",
+        "size_in_bytes": 18510
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/licenses/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "cec819c02a99e78449d64f3c0217d415c3a210f2a6abfcd827c6b1cb76954e78",
+        "size_in_bytes": 1347
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "98ffc74509fa364ffa6951e2991636d6fbe2ea8ed364dc37f4c01c538af7d358",
+        "size_in_bytes": 6105
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "219cc51dd82a43b6d19000a14cf273150e04e30d055728c06a7245bb07a5d233",
+        "size_in_bytes": 839
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "2b6eb4118ce7cd7b09601406aa623c553c4476265836f0d9c16f5c061f7efcc0",
+        "size_in_bytes": 91
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "0c2fbd3ee2a8deca429c050437bb4fb3c71a4dfc3cf11b734b4fa442636d739e",
+        "size_in_bytes": 99
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2-1.7.2.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "60c61ddbc8f513034557faac75331b88181926c23209e64979419df28a761297",
+        "size_in_bytes": 14
+      },
+      {
+        "_path": "lib/python3.14/site-packages/nest_asyncio2.py",
+        "path_type": "hardlink",
+        "sha256": "fb84947011c875480640305d0e77ebcdf54c82b87210e6454d77927ef953a498",
+        "size_in_bytes": 13737
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/nest-asyncio2-1.7.2-py314h06a4308_0",
+    "type": 1
+  }
+}

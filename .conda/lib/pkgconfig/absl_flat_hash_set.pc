@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_flat_hash_set
+Description: Abseil flat_hash_set library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_container_memory = 20260526, absl_hash_container_defaults = 20260526, absl_raw_hash_set = 20260526, absl_algorithm_container = 20260526, absl_core_headers = 20260526, absl_memory = 20260526, absl_type_traits = 20260526
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

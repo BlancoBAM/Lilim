@@ -1,11 +1,11 @@
 // lilim-inference: Configuration
 //
 // InferenceConfig controls where the model lives and what hardware to use.
-// Default model: microsoft/Phi-3.5-mini-instruct (GGUF Q4_K_M, ~2.4 GB on disk)
+// Default model: microsoft/Phi-4-mini-instruct (GGUF Q4_K_M, ~2.5 GB on disk)
 
 use std::path::PathBuf;
 
-/// The default Lilim system prompt for the Phi-3.5-mini agent.
+/// The default Lilim system prompt for the Phi-4-mini agent.
 ///
 /// Kept concise (~80 tokens) to minimise TTFT on CPU while still establishing
 /// the assistant persona and tool-calling behaviour.
@@ -20,11 +20,11 @@ Be concise, helpful, and prefer direct action over lengthy explanation.";
 #[derive(Debug, Clone)]
 pub struct InferenceConfig {
     /// Directory containing the model weights and tokenizer.
-    /// Default: ~/.local/share/lilim/models/phi-3.5-mini-q4
+    /// Default: ~/.local/share/lilim/models/phi-4-mini-q4
     pub model_dir_override: Option<PathBuf>,
 
     /// Maximum context window size in tokens.
-    /// Phi-3.5-mini supports 128K, but we cap at 4096 for CPU practicality.
+    /// Phi-4-mini supports 128K, but we cap at 4096 for CPU practicality.
     pub context_size: usize,
 
     /// Default max tokens to generate for local inference.
@@ -84,7 +84,7 @@ impl InferenceConfig {
             .unwrap_or_else(|| PathBuf::from("/tmp"))
             .join("lilim")
             .join("models")
-            .join("phi-3.5-mini-q4")
+            .join("phi-4-mini-q4")
     }
 
     /// Returns a human-readable label for the device being used.
@@ -100,7 +100,7 @@ impl InferenceConfig {
 
     /// Path to the GGUF model weights file.
     pub fn weights_path(&self) -> PathBuf {
-        self.model_dir().join("Phi-3.5-mini-instruct-Q4_K_M.gguf")
+        self.model_dir().join("Phi-4-mini-instruct-Q4_K_M.gguf")
     }
 
     /// Path to the tokenizer file.

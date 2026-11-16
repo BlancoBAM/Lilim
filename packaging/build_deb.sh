@@ -26,12 +26,17 @@ mkdir -p \
   "$DEB_ROOT/lib/systemd/system" || true
 
 RUNTIME_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-runtime"
+CORE_BIN="${ROOT_DIR:-$(pwd)}/target/release/lilim-core"
 TAURI_BIN=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --runtime)
       RUNTIME_BIN="$2"
+      shift 2
+      ;;
+    --core)
+      CORE_BIN="$2"
       shift 2
       ;;
     --ui-binary)
@@ -88,6 +93,17 @@ else
   exit 1
 fi
 
+# Lilim Core binary (pure Rust backend - replaces Python brain)
+if [ -f "$CORE_BIN" ]; then
+  cp "$CORE_BIN" "$DEB_ROOT/usr/bin/lilim-core"
+  chmod +x "$DEB_ROOT/usr/bin/lilim-core"
+else
+  # If lilim-core binary doesn't exist yet, copy lilim-runtime as lilim-core
+  # (they're the same binary with different entry points)
+  cp "$RUNTIME_BIN" "$DEB_ROOT/usr/bin/lilim-core"
+  chmod +x "$DEB_ROOT/usr/bin/lilim-core"
+fi
+
 # Desktop UI (Tauri binary)
 if [ -n "$TAURI_BIN" ] && [ -f "$TAURI_BIN" ]; then
   cp "$TAURI_BIN" "$DEB_ROOT/usr/bin/lilim"
@@ -99,10 +115,7 @@ else
   exit 1
 fi
 
-# Python Brain & Configuration
-cp -r "$ROOT_DIR/lilim_core" "$DEB_ROOT/usr/lib/lilim/"
-install -m 0755 "$ROOT_DIR/bin/lilim-cli" "$DEB_ROOT/usr/bin/lilim-cli"
-mkdir -p "$DEB_ROOT/etc/lilith"
+# Configuration files
 cp -r "$ROOT_DIR/config/"* "$DEB_ROOT/etc/lilith/"
 
 # Systemd Service
@@ -124,18 +137,19 @@ LILIM_HOME="/home/${TARGET_USER}/.local/share/lilim"
 mkdir -p "$LILIM_HOME"
 chown "${TARGET_USER}:${TARGET_USER}" "$LILIM_HOME" 2>/dev/null || true
 export HOME="/home/${TARGET_USER}"
+# Run the pure Rust lilim-runtime (no Python needed)
 exec sudo -u "${TARGET_USER}" \
-    --preserve-env=LILIM_INSTALL,LILIM_VENV,PYTHONUNBUFFERED,RUST_LOG,HOME \
+    --preserve-env=LILIM_INSTALL,PYTHONUNBUFFERED,RUST_LOG,HOME \
     /usr/bin/lilim-runtime
 WRAPPER
 chmod +x "$DEB_ROOT/usr/lib/lilim/run-lilim.sh"
 
 # Model (if provided via --model-dir)
 if [ -n "${MODEL_DIR:-}" ] && [ -d "$MODEL_DIR" ]; then
-  echo "Bundling Phi-3.5-mini model from $MODEL_DIR..."
-  MODEL_DEST="$DEB_ROOT/usr/lib/lilim/models/phi-3.5-mini-q4"
+  echo "Bundling Phi-4-mini model from $MODEL_DIR..."
+  MODEL_DEST="$DEB_ROOT/usr/lib/lilim/models/phi-4-mini-q4"
   mkdir -p "$MODEL_DEST"
-  install -m 0644 "$MODEL_DIR/Phi-3.5-mini-instruct-Q4_K_M.gguf" "$MODEL_DEST/"
+  install -m 0644 "$MODEL_DIR/Phi-4-mini-instruct-Q4_K_M.gguf" "$MODEL_DEST/"
   install -m 0644 "$MODEL_DIR/tokenizer.json" "$MODEL_DEST/"
   if [ -f "$MODEL_DIR/tokenizer_config.json" ]; then
     install -m 0644 "$MODEL_DIR/tokenizer_config.json" "$MODEL_DEST/"
@@ -172,6 +186,7 @@ DES
 
 # Debian control file — libwebkit2gtk-4.0-37 does not exist on Ubuntu 26.04;
 # use 4.1-0 or libwebkitgtk-6.0-4 instead.
+# Removed python3, python3-venv dependencies - now pure Rust!
 cat > "$DEB_ROOT/DEBIAN/control" <<CTRL
 Package: lilim
 Version: $PACKAGE_VERSION
@@ -179,9 +194,9 @@ Section: base
 Priority: optional
 Architecture: amd64
 Maintainer: BlancoBAM <blancobam@protonmail.com>
-Depends: python3, python3-venv, systemd, libwebkit2gtk-4.1-0 | libwebkitgtk-6.0-4
+Depends: systemd, libwebkit2gtk-4.1-0 | libwebkitgtk-6.0-4
 Description: Lilim AI Assistant for Lilith Linux
- Rust runtime, Python agent service, Tauri desktop UI, and Phi-3.5-mini local inference.
+ Pure Rust backend, Tauri desktop UI, and Phi-4-mini local inference.
 CTRL
 
 # postinst — dynamically detects the primary desktop user; no hardcoded name
@@ -206,11 +221,7 @@ SERVICE_FILE="/lib/systemd/system/lilith-ai.service"
 sed -i "s|LILIM_USER_PLACEHOLDER|${TARGET_USER}|g" "$SERVICE_FILE"
 sed -i "s|^WorkingDirectory=.*|WorkingDirectory=/home/${TARGET_USER}|g" "$SERVICE_FILE"
 sed -i "s|^Environment=HOME=.*|Environment=HOME=/home/${TARGET_USER}|g" "$SERVICE_FILE"
-sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /tmp /usr/lib/lilim/venv|g" "$SERVICE_FILE"
-
-echo "[lilim] Creating Python virtual environment..."
-python3 -m venv /usr/lib/lilim/venv
-/usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12" "mcp>=1.19,<2"
+sed -i "s|ReadWritePaths=.*|ReadWritePaths=/home/${TARGET_USER} /var/log/lilim /tmp|g" "$SERVICE_FILE"
 
 mkdir -p /var/log/lilim
 chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
@@ -218,12 +229,12 @@ chown -R "${TARGET_USER}:${TARGET_USER}" /var/log/lilim
 mkdir -p "/home/${TARGET_USER}/.local/share/lilim"
 chown -R "${TARGET_USER}:${TARGET_USER}" "/home/${TARGET_USER}/.local/share/lilim"
 
+mkdir -p "/home/${TARGET_USER}/.config/lilim"
+chown -R "${TARGET_USER}:${TARGET_USER}" "/home/${TARGET_USER}/.config/lilim"
+
 # Ensure the desktop launcher and icon are discoverable immediately after install.
 test -s /usr/share/applications/lilim.desktop
 test -s /usr/share/icons/hicolor/128x128/apps/lilim.png
-
-# Allow user to write to the venv (for pip updates)
-chown -R "${TARGET_USER}:${TARGET_USER}" /usr/lib/lilim/venv 2>/dev/null || true
 
 systemctl daemon-reload
 systemctl enable lilith-ai.service || true

@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: liburiparser
+Description: URI parsing and handling library
+
+Version: 1.0.2
+URL: https://uriparser.github.io/
+Libs: -L${libdir} -luriparser
+Cflags: -I${includedir}

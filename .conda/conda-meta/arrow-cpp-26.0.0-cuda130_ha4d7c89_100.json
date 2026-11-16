@@ -1,0 +1,3901 @@
+{
+  "build": "cuda130_ha4d7c89_100",
+  "build_number": 100,
+  "constrains": [
+    "__cuda"
+  ],
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "aws-crt-cpp >=0.43.6,<0.43.7.0a0",
+    "aws-sdk-cpp >=1.11.895,<1.11.896.0a0",
+    "bzip2 >=1.0.8,<2.0a0",
+    "cuda-cudart >=13.0.96,<14.0a0",
+    "cuda-version >=13.0,<13.1.0a0",
+    "cuda-version >=13.0,<14",
+    "glog >=0.7.1,<0.8.0a0",
+    "libabseil * cxx17*",
+    "libabseil >=20260526.0,<20260527.0a0",
+    "libboost >=1.88.0,<1.89.0a0",
+    "libbrotlicommon",
+    "libbrotlidec >=1.2.0,<1.3.0a0",
+    "libbrotlienc >=1.2.0,<1.3.0a0",
+    "libgcc >=14",
+    "libgrpc >=1.83.0,<1.84.0a0",
+    "libprotobuf >=7.35.1,<7.35.2.0a0",
+    "libre2-11 >=2025.11.5,<2026.0a0",
+    "libstdcxx >=14",
+    "libthrift >=0.25.0,<0.26.0a0",
+    "libutf8proc >=2.11.3,<2.12.0a0",
+    "libzlib >=1.3.2,<2.0a0",
+    "lz4-c >=1.9.4,<1.10.0a0",
+    "openssl >=3.5.9,<4.0a0",
+    "orc >=2.2.0,<2.2.1.0a0",
+    "simdjson >=4.6.4,<4.7.0a0",
+    "snappy >=1.2.2,<2.0a0",
+    "uriparser >=0.9.6",
+    "zlib",
+    "zstd >=1.5.7,<1.6.0a0"
+  ],
+  "license": "Apache-2.0 AND MIT",
+  "license_family": "Other",
+  "md5": "fa5987594703043c3429487ebedcb524",
+  "name": "arrow-cpp",
+  "sha256": "5a31189cd78fd244bb8637b7a4844e722ced7540647a3c059df62947b02c4b89",
+  "size": 13243215,
+  "subdir": "linux-64",
+  "timestamp": 1792696002366,
+  "version": "26.0.0",
+  "fn": "arrow-cpp-26.0.0-cuda130_ha4d7c89_100.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/arrow-cpp-26.0.0-cuda130_ha4d7c89_100.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/arrow-cpp-26.0.0-cuda130_ha4d7c89_100",
+  "requested_specs": [],
+  "files": [
+    "lib/cmake/ArrowCompute/ArrowComputeConfig.cmake",
+    "lib/cmake/ArrowCompute/ArrowComputeConfigVersion.cmake",
+    "lib/cmake/ArrowCompute/ArrowComputeTargets-release.cmake",
+    "lib/cmake/ArrowCompute/ArrowComputeTargets.cmake",
+    "lib/cmake/ArrowS3/ArrowS3Config.cmake",
+    "lib/cmake/ArrowS3/ArrowS3ConfigVersion.cmake",
+    "lib/cmake/ArrowS3/ArrowS3Targets-release.cmake",
+    "lib/cmake/ArrowS3/ArrowS3Targets.cmake",
+    "lib/cmake/ArrowS3/FindAWSSDKAlt.cmake",
+    "lib/cmake/Arrow/ArrowConfig.cmake",
+    "lib/cmake/Arrow/ArrowConfigVersion.cmake",
+    "lib/cmake/Arrow/ArrowOptions.cmake",
+    "lib/cmake/Arrow/ArrowTargets-release.cmake",
+    "lib/cmake/Arrow/ArrowTargets.cmake",
+    "lib/cmake/Arrow/FindBrotliAlt.cmake",
+    "lib/cmake/Arrow/FindOpenSSLAlt.cmake",
+    "lib/cmake/Arrow/FindProtobufAlt.cmake",
+    "lib/cmake/Arrow/FindSnappyAlt.cmake",
+    "lib/cmake/Arrow/FindabslAlt.cmake",
+    "lib/cmake/Arrow/FindglogAlt.cmake",
+    "lib/cmake/Arrow/Findlz4Alt.cmake",
+    "lib/cmake/Arrow/FindorcAlt.cmake",
+    "lib/cmake/Arrow/Findre2Alt.cmake",
+    "lib/cmake/Arrow/FinduriparserAlt.cmake",
+    "lib/cmake/Arrow/Findutf8proc.cmake",
+    "lib/cmake/Arrow/FindzstdAlt.cmake",
+    "lib/cmake/Arrow/arrow-config.cmake",
+    "include/arrow/flight/sql/api.h",
+    "include/arrow/flight/sql/client.h",
+    "include/arrow/flight/sql/column_metadata.h",
+    "include/arrow/flight/sql/server.h",
+    "include/arrow/flight/sql/server_session_middleware.h",
+    "include/arrow/flight/sql/server_session_middleware_factory.h",
+    "include/arrow/flight/sql/types.h",
+    "include/arrow/flight/sql/visibility.h",
+    "include/parquet/encryption/crypto_factory.h",
+    "include/parquet/encryption/encryption.h",
+    "include/parquet/encryption/file_key_material_store.h",
+    "include/parquet/encryption/file_key_unwrapper.h",
+    "include/parquet/encryption/file_key_wrapper.h",
+    "include/parquet/encryption/file_system_key_material_store.h",
+    "include/parquet/encryption/key_encryption_key.h",
+    "include/parquet/encryption/key_material.h",
+    "include/parquet/encryption/key_metadata.h",
+    "include/parquet/encryption/key_toolkit.h",
+    "include/parquet/encryption/kms_client.h",
+    "include/parquet/encryption/kms_client_factory.h",
+    "include/parquet/encryption/local_wrap_kms_client.h",
+    "include/parquet/encryption/test_encryption_util.h",
+    "include/parquet/encryption/test_in_memory_kms.h",
+    "include/parquet/encryption/two_level_cache_with_expiration.h",
+    "include/parquet/encryption/type_fwd.h",
+    "include/arrow/compute/api.h",
+    "include/arrow/compute/api_aggregate.h",
+    "include/arrow/compute/api_scalar.h",
+    "include/arrow/compute/api_vector.h",
+    "include/arrow/compute/cast.h",
+    "include/arrow/compute/exec.h",
+    "include/arrow/compute/expression.h",
+    "include/arrow/compute/function.h",
+    "include/arrow/compute/function_options.h",
+    "include/arrow/compute/initialize.h",
+    "include/arrow/compute/kernel.h",
+    "include/arrow/compute/ordering.h",
+    "include/arrow/compute/registry.h",
+    "include/arrow/compute/type_fwd.h",
+    "include/arrow/compute/util.h",
+    "include/arrow/compute/visibility.h",
+    "include/arrow/csv/api.h",
+    "include/arrow/csv/chunker.h",
+    "include/arrow/csv/column_builder.h",
+    "include/arrow/csv/column_decoder.h",
+    "include/arrow/csv/converter.h",
+    "include/arrow/csv/invalid_row.h",
+    "include/arrow/csv/options.h",
+    "include/arrow/csv/parser.h",
+    "include/arrow/csv/reader.h",
+    "include/arrow/csv/test_common.h",
+    "include/arrow/csv/type_fwd.h",
+    "include/arrow/csv/writer.h",
+    "include/parquet/benchmark_util.h",
+    "include/parquet/bloom_filter.h",
+    "include/parquet/bloom_filter_reader.h",
+    "include/parquet/bloom_filter_writer.h",
+    "include/parquet/column_page.h",
+    "include/parquet/column_reader.h",
+    "include/parquet/column_scanner.h",
+    "include/parquet/column_writer.h",
+    "include/parquet/encoding.h",
+    "include/parquet/exception.h",
+    "include/parquet/file_reader.h",
+    "include/parquet/file_writer.h",
+    "include/parquet/hasher.h",
+    "include/parquet/index_location.h",
+    "include/parquet/level_comparison.h",
+    "include/parquet/level_comparison_inc.h",
+    "include/parquet/level_conversion.h",
+    "include/parquet/level_conversion_inc.h",
+    "include/parquet/metadata.h",
+    "include/parquet/page_index.h",
+    "include/parquet/parquet_version.h",
+    "include/parquet/platform.h",
+    "include/parquet/printer.h",
+    "include/parquet/properties.h",
+    "include/parquet/schema.h",
+    "include/parquet/size_statistics.h",
+    "include/parquet/statistics.h",
+    "include/parquet/stream_reader.h",
+    "include/parquet/stream_writer.h",
+    "include/parquet/test_util.h",
+    "include/parquet/type_fwd.h",
+    "include/parquet/types.h",
+    "include/parquet/visit_type_inline.h",
+    "include/parquet/windows_compatibility.h",
+    "include/parquet/windows_fixup.h",
+    "include/parquet/xxhasher.h",
+    "include/arrow/io/api.h",
+    "include/arrow/io/buffered.h",
+    "include/arrow/io/caching.h",
+    "include/arrow/io/compressed.h",
+    "include/arrow/io/concurrency.h",
+    "include/arrow/io/file.h",
+    "include/arrow/io/interfaces.h",
+    "include/arrow/io/memory.h",
+    "include/arrow/io/mman.h",
+    "include/arrow/io/slow.h",
+    "include/arrow/io/stdio.h",
+    "include/arrow/io/test_common.h",
+    "include/arrow/io/transform.h",
+    "include/arrow/io/type_fwd.h",
+    "include/parquet/geospatial/statistics.h",
+    "include/arrow/engine/api.h",
+    "include/arrow/util/algorithm.h",
+    "include/arrow/util/align_util.h",
+    "include/arrow/util/aligned_storage.h",
+    "include/arrow/util/async_generator.h",
+    "include/arrow/util/async_generator_fwd.h",
+    "include/arrow/util/async_util.h",
+    "include/arrow/util/base64.h",
+    "include/arrow/util/basic_decimal.h",
+    "include/arrow/util/benchmark_util.h",
+    "include/arrow/util/binary_view_util.h",
+    "include/arrow/util/bit_block_counter.h",
+    "include/arrow/util/bit_run_reader.h",
+    "include/arrow/util/bit_util.h",
+    "include/arrow/util/bitmap.h",
+    "include/arrow/util/bitmap_builders.h",
+    "include/arrow/util/bitmap_generate.h",
+    "include/arrow/util/bitmap_ops.h",
+    "include/arrow/util/bitmap_reader.h",
+    "include/arrow/util/bitmap_visit.h",
+    "include/arrow/util/bitmap_writer.h",
+    "include/arrow/util/byte_size.h",
+    "include/arrow/util/cancel.h",
+    "include/arrow/util/checked_cast.h",
+    "include/arrow/util/compare.h",
+    "include/arrow/util/compression.h",
+    "include/arrow/util/concurrent_map.h",
+    "include/arrow/util/config.h",
+    "include/arrow/util/converter.h",
+    "include/arrow/util/cpu_info.h",
+    "include/arrow/util/crc32.h",
+    "include/arrow/util/debug.h",
+    "include/arrow/util/decimal.h",
+    "include/arrow/util/delimiting.h",
+    "include/arrow/util/endian.h",
+    "include/arrow/util/float16.h",
+    "include/arrow/util/formatting.h",
+    "include/arrow/util/functional.h",
+    "include/arrow/util/future.h",
+    "include/arrow/util/hash_util.h",
+    "include/arrow/util/hashing.h",
+    "include/arrow/util/int_util.h",
+    "include/arrow/util/int_util_overflow.h",
+    "include/arrow/util/io_util.h",
+    "include/arrow/util/iterator.h",
+    "include/arrow/util/key_value_metadata.h",
+    "include/arrow/util/launder.h",
+    "include/arrow/util/list_util.h",
+    "include/arrow/util/logger.h",
+    "include/arrow/util/logging.h",
+    "include/arrow/util/macros.h",
+    "include/arrow/util/math_constants.h",
+    "include/arrow/util/mutex.h",
+    "include/arrow/util/parallel.h",
+    "include/arrow/util/pcg_random.h",
+    "include/arrow/util/prefetch.h",
+    "include/arrow/util/queue.h",
+    "include/arrow/util/range.h",
+    "include/arrow/util/ree_util.h",
+    "include/arrow/util/regex.h",
+    "include/arrow/util/rows_to_batches.h",
+    "include/arrow/util/secure_string.h",
+    "include/arrow/util/simd.h",
+    "include/arrow/util/small_vector.h",
+    "include/arrow/util/string.h",
+    "include/arrow/util/string_util.h",
+    "include/arrow/util/task_group.h",
+    "include/arrow/util/test_common.h",
+    "include/arrow/util/thread_pool.h",
+    "include/arrow/util/time.h",
+    "include/arrow/util/tracing.h",
+    "include/arrow/util/type_fwd.h",
+    "include/arrow/util/type_traits.h",
+    "include/arrow/util/ubsan.h",
+    "include/arrow/util/union_util.h",
+    "include/arrow/util/unreachable.h",
+    "include/arrow/util/uri.h",
+    "include/arrow/util/utf8.h",
+    "include/arrow/util/value_parsing.h",
+    "include/arrow/util/vector.h",
+    "include/arrow/util/visibility.h",
+    "include/arrow/util/windows_compatibility.h",
+    "include/arrow/util/windows_fixup.h",
+    "lib/pkgconfig/arrow-acero.pc",
+    "lib/pkgconfig/arrow-compute.pc",
+    "lib/pkgconfig/arrow-csv.pc",
+    "lib/pkgconfig/arrow-cuda.pc",
+    "lib/pkgconfig/arrow-dataset.pc",
+    "lib/pkgconfig/arrow-filesystem.pc",
+    "lib/pkgconfig/arrow-flight-sql.pc",
+    "lib/pkgconfig/arrow-flight.pc",
+    "lib/pkgconfig/arrow-json.pc",
+    "lib/pkgconfig/arrow-orc.pc",
+    "lib/pkgconfig/arrow-s3.pc",
+    "lib/pkgconfig/arrow-substrait.pc",
+    "lib/pkgconfig/arrow.pc",
+    "lib/pkgconfig/parquet.pc",
+    "share/arrow/gdb/gdb_arrow.py",
+    "include/parquet/arrow/reader.h",
+    "include/parquet/arrow/schema.h",
+    "include/parquet/arrow/test_util.h",
+    "include/parquet/arrow/writer.h",
+    "include/arrow/adapters/orc/adapter.h",
+    "include/arrow/adapters/orc/options.h",
+    "include/arrow/extension/bool8.h",
+    "include/arrow/extension/fixed_shape_tensor.h",
+    "include/arrow/extension/json.h",
+    "include/arrow/extension/opaque.h",
+    "include/arrow/extension/parquet_variant.h",
+    "include/arrow/extension/uuid.h",
+    "include/arrow/extension/variable_shape_tensor.h",
+    "include/arrow/array/array_base.h",
+    "include/arrow/array/array_binary.h",
+    "include/arrow/array/array_decimal.h",
+    "include/arrow/array/array_dict.h",
+    "include/arrow/array/array_nested.h",
+    "include/arrow/array/array_primitive.h",
+    "include/arrow/array/array_run_end.h",
+    "include/arrow/array/builder_adaptive.h",
+    "include/arrow/array/builder_base.h",
+    "include/arrow/array/builder_binary.h",
+    "include/arrow/array/builder_decimal.h",
+    "include/arrow/array/builder_dict.h",
+    "include/arrow/array/builder_nested.h",
+    "include/arrow/array/builder_primitive.h",
+    "include/arrow/array/builder_run_end.h",
+    "include/arrow/array/builder_time.h",
+    "include/arrow/array/builder_union.h",
+    "include/arrow/array/concatenate.h",
+    "include/arrow/array/data.h",
+    "include/arrow/array/diff.h",
+    "include/arrow/array/statistics.h",
+    "include/arrow/array/util.h",
+    "include/arrow/array/validate.h",
+    "include/arrow/gpu/cuda_api.h",
+    "include/arrow/gpu/cuda_arrow_ipc.h",
+    "include/arrow/gpu/cuda_context.h",
+    "include/arrow/gpu/cuda_memory.h",
+    "include/arrow/gpu/cuda_version.h",
+    "include/arrow/gpu/visibility.h",
+    "include/arrow/vendored/datetime/date.h",
+    "include/arrow/vendored/datetime/ios.h",
+    "include/arrow/vendored/datetime/tz.h",
+    "include/arrow/vendored/datetime/tz_private.h",
+    "include/arrow/vendored/datetime/visibility.h",
+    "include/arrow/json/api.h",
+    "include/arrow/json/chunked_builder.h",
+    "include/arrow/json/chunker.h",
+    "include/arrow/json/converter.h",
+    "include/arrow/json/from_string.h",
+    "include/arrow/json/options.h",
+    "include/arrow/json/parser.h",
+    "include/arrow/json/rapidjson_defs.h",
+    "include/arrow/json/reader.h",
+    "include/arrow/json/test_common.h",
+    "include/arrow/json/type_fwd.h",
+    "include/arrow/testing/async_test_util.h",
+    "include/arrow/testing/builder.h",
+    "include/arrow/testing/examplefs.h",
+    "include/arrow/testing/executor_util.h",
+    "include/arrow/testing/extension_type.h",
+    "include/arrow/testing/fixed_width_test_util.h",
+    "include/arrow/testing/future_util.h",
+    "include/arrow/testing/generator.h",
+    "include/arrow/testing/gtest_compat.h",
+    "include/arrow/testing/gtest_util.h",
+    "include/arrow/testing/matchers.h",
+    "include/arrow/testing/math.h",
+    "include/arrow/testing/process.h",
+    "include/arrow/testing/random.h",
+    "include/arrow/testing/uniform_real.h",
+    "include/arrow/testing/util.h",
+    "include/arrow/testing/visibility.h",
+    "include/arrow/acero/accumulation_queue.h",
+    "include/arrow/acero/aggregate_node.h",
+    "include/arrow/acero/api.h",
+    "include/arrow/acero/asof_join_node.h",
+    "include/arrow/acero/backpressure_handler.h",
+    "include/arrow/acero/benchmark_util.h",
+    "include/arrow/acero/bloom_filter.h",
+    "include/arrow/acero/exec_plan.h",
+    "include/arrow/acero/hash_join.h",
+    "include/arrow/acero/hash_join_dict.h",
+    "include/arrow/acero/hash_join_node.h",
+    "include/arrow/acero/map_node.h",
+    "include/arrow/acero/options.h",
+    "include/arrow/acero/order_by_impl.h",
+    "include/arrow/acero/partition_util.h",
+    "include/arrow/acero/query_context.h",
+    "include/arrow/acero/schema_util.h",
+    "include/arrow/acero/task_util.h",
+    "include/arrow/acero/test_nodes.h",
+    "include/arrow/acero/time_series_util.h",
+    "include/arrow/acero/tpch_node.h",
+    "include/arrow/acero/type_fwd.h",
+    "include/arrow/acero/util.h",
+    "include/arrow/acero/visibility.h",
+    "lib/cmake/ArrowSubstrait/ArrowSubstraitConfig.cmake",
+    "lib/cmake/ArrowSubstrait/ArrowSubstraitConfigVersion.cmake",
+    "lib/cmake/ArrowSubstrait/ArrowSubstraitTargets-release.cmake",
+    "lib/cmake/ArrowSubstrait/ArrowSubstraitTargets.cmake",
+    "include/arrow/compute/row/grouper.h",
+    "include/arrow/filesystem/api.h",
+    "include/arrow/filesystem/azurefs.h",
+    "include/arrow/filesystem/filesystem.h",
+    "include/arrow/filesystem/filesystem_library.h",
+    "include/arrow/filesystem/gcsfs.h",
+    "include/arrow/filesystem/hdfs.h",
+    "include/arrow/filesystem/localfs.h",
+    "include/arrow/filesystem/mockfs.h",
+    "include/arrow/filesystem/path_util.h",
+    "include/arrow/filesystem/s3_test_util.h",
+    "include/arrow/filesystem/s3_visibility.h",
+    "include/arrow/filesystem/s3fs.h",
+    "include/arrow/filesystem/test_util.h",
+    "include/arrow/filesystem/type_fwd.h",
+    "include/arrow/flight/api.h",
+    "include/arrow/flight/client.h",
+    "include/arrow/flight/client_auth.h",
+    "include/arrow/flight/client_cookie_middleware.h",
+    "include/arrow/flight/client_middleware.h",
+    "include/arrow/flight/client_tracing_middleware.h",
+    "include/arrow/flight/middleware.h",
+    "include/arrow/flight/otel_logging.h",
+    "include/arrow/flight/platform.h",
+    "include/arrow/flight/server.h",
+    "include/arrow/flight/server_auth.h",
+    "include/arrow/flight/server_middleware.h",
+    "include/arrow/flight/server_tracing_middleware.h",
+    "include/arrow/flight/test_auth_handlers.h",
+    "include/arrow/flight/test_definitions.h",
+    "include/arrow/flight/test_flight_server.h",
+    "include/arrow/flight/test_util.h",
+    "include/arrow/flight/transport.h",
+    "include/arrow/flight/transport_server.h",
+    "include/arrow/flight/type_fwd.h",
+    "include/arrow/flight/types.h",
+    "include/arrow/flight/types_async.h",
+    "include/arrow/flight/visibility.h",
+    "lib/cmake/ArrowCUDA/ArrowCUDAConfig.cmake",
+    "lib/cmake/ArrowCUDA/ArrowCUDAConfigVersion.cmake",
+    "lib/cmake/ArrowCUDA/ArrowCUDATargets-release.cmake",
+    "lib/cmake/ArrowCUDA/ArrowCUDATargets.cmake",
+    "lib/libarrow.so",
+    "lib/libarrow.so.2600",
+    "lib/libarrow.so.2600.0.0",
+    "lib/libarrow_acero.so",
+    "lib/libarrow_acero.so.2600",
+    "lib/libarrow_acero.so.2600.0.0",
+    "lib/libarrow_compute.so",
+    "lib/libarrow_compute.so.2600",
+    "lib/libarrow_compute.so.2600.0.0",
+    "lib/libarrow_cuda.so",
+    "lib/libarrow_cuda.so.2600",
+    "lib/libarrow_cuda.so.2600.0.0",
+    "lib/libarrow_dataset.so",
+    "lib/libarrow_dataset.so.2600",
+    "lib/libarrow_dataset.so.2600.0.0",
+    "lib/libarrow_flight.so",
+    "lib/libarrow_flight.so.2600",
+    "lib/libarrow_flight.so.2600.0.0",
+    "lib/libarrow_flight_sql.so",
+    "lib/libarrow_flight_sql.so.2600",
+    "lib/libarrow_flight_sql.so.2600.0.0",
+    "lib/libarrow_s3.so",
+    "lib/libarrow_s3.so.2600",
+    "lib/libarrow_s3.so.2600.0.0",
+    "lib/libarrow_substrait.so",
+    "lib/libarrow_substrait.so.2600",
+    "lib/libarrow_substrait.so.2600.0.0",
+    "lib/libparquet.so",
+    "lib/libparquet.so.2600",
+    "lib/libparquet.so.2600.0.0",
+    "include/arrow/ipc/api.h",
+    "include/arrow/ipc/dictionary.h",
+    "include/arrow/ipc/feather.h",
+    "include/arrow/ipc/message.h",
+    "include/arrow/ipc/options.h",
+    "include/arrow/ipc/reader.h",
+    "include/arrow/ipc/test_common.h",
+    "include/arrow/ipc/type_fwd.h",
+    "include/arrow/ipc/util.h",
+    "include/arrow/ipc/writer.h",
+    "include/arrow/vendored/double-conversion/bignum-dtoa.h",
+    "include/arrow/vendored/double-conversion/bignum.h",
+    "include/arrow/vendored/double-conversion/cached-powers.h",
+    "include/arrow/vendored/double-conversion/diy-fp.h",
+    "include/arrow/vendored/double-conversion/double-conversion.h",
+    "include/arrow/vendored/double-conversion/double-to-string.h",
+    "include/arrow/vendored/double-conversion/fast-dtoa.h",
+    "include/arrow/vendored/double-conversion/fixed-dtoa.h",
+    "include/arrow/vendored/double-conversion/ieee.h",
+    "include/arrow/vendored/double-conversion/string-to-double.h",
+    "include/arrow/vendored/double-conversion/strtod.h",
+    "include/arrow/vendored/double-conversion/utils.h",
+    "lib/cmake/Parquet/FindThriftAlt.cmake",
+    "lib/cmake/Parquet/ParquetConfig.cmake",
+    "lib/cmake/Parquet/ParquetConfigVersion.cmake",
+    "lib/cmake/Parquet/ParquetTargets-release.cmake",
+    "lib/cmake/Parquet/ParquetTargets.cmake",
+    "include/arrow/vendored/xxhash/xxhash.h",
+    "include/arrow/vendored/portable-snippets/debug-trap.h",
+    "share/gdb/auto-load/replace_this_section_with_absolute_slashed_path_to_CONDA_PREFIX/lib/libarrow.so.2600.0.0-gdb.py",
+    "lib/cmake/ArrowFlight/ArrowFlightConfig.cmake",
+    "lib/cmake/ArrowFlight/ArrowFlightConfigVersion.cmake",
+    "lib/cmake/ArrowFlight/ArrowFlightTargets-release.cmake",
+    "lib/cmake/ArrowFlight/ArrowFlightTargets.cmake",
+    "lib/cmake/ArrowFlight/FindgRPCAlt.cmake",
+    "include/arrow/vendored/ProducerConsumerQueue.h",
+    "include/arrow/vendored/datetime.h",
+    "include/arrow/vendored/strptime.h",
+    "include/arrow/vendored/xxhash.h",
+    "etc/conda/activate.d/arrow-cpp_activate.sh",
+    "lib/cmake/ArrowDataset/ArrowDatasetConfig.cmake",
+    "lib/cmake/ArrowDataset/ArrowDatasetConfigVersion.cmake",
+    "lib/cmake/ArrowDataset/ArrowDatasetTargets-release.cmake",
+    "lib/cmake/ArrowDataset/ArrowDatasetTargets.cmake",
+    "lib/cmake/ArrowFlightSql/ArrowFlightSqlConfig.cmake",
+    "lib/cmake/ArrowFlightSql/ArrowFlightSqlConfigVersion.cmake",
+    "lib/cmake/ArrowFlightSql/ArrowFlightSqlTargets-release.cmake",
+    "lib/cmake/ArrowFlightSql/ArrowFlightSqlTargets.cmake",
+    "share/doc/arrow/LICENSE.txt",
+    "share/doc/arrow/NOTICE.txt",
+    "share/doc/arrow/README.md",
+    "include/parquet/api/io.h",
+    "include/parquet/api/reader.h",
+    "include/parquet/api/schema.h",
+    "include/parquet/api/writer.h",
+    "include/arrow/tensor/converter.h",
+    "include/arrow/vendored/safeint/safe_math.h",
+    "include/arrow/vendored/safeint/safe_math_impl.h",
+    "include/arrow/c/abi.h",
+    "include/arrow/c/bridge.h",
+    "include/arrow/c/dlpack.h",
+    "include/arrow/c/dlpack_abi.h",
+    "include/arrow/c/helpers.h",
+    "include/arrow/dataset/api.h",
+    "include/arrow/dataset/dataset.h",
+    "include/arrow/dataset/dataset_writer.h",
+    "include/arrow/dataset/discovery.h",
+    "include/arrow/dataset/file_base.h",
+    "include/arrow/dataset/file_csv.h",
+    "include/arrow/dataset/file_ipc.h",
+    "include/arrow/dataset/file_json.h",
+    "include/arrow/dataset/file_orc.h",
+    "include/arrow/dataset/file_parquet.h",
+    "include/arrow/dataset/parquet_encryption_config.h",
+    "include/arrow/dataset/partition.h",
+    "include/arrow/dataset/plan.h",
+    "include/arrow/dataset/projector.h",
+    "include/arrow/dataset/scanner.h",
+    "include/arrow/dataset/type_fwd.h",
+    "include/arrow/dataset/visibility.h",
+    "include/arrow/api.h",
+    "include/arrow/array.h",
+    "include/arrow/buffer.h",
+    "include/arrow/buffer_builder.h",
+    "include/arrow/builder.h",
+    "include/arrow/chunk_resolver.h",
+    "include/arrow/chunked_array.h",
+    "include/arrow/compare.h",
+    "include/arrow/config.h",
+    "include/arrow/datum.h",
+    "include/arrow/device.h",
+    "include/arrow/device_allocation_type_set.h",
+    "include/arrow/extension_type.h",
+    "include/arrow/memory_pool.h",
+    "include/arrow/memory_pool_test.h",
+    "include/arrow/pretty_print.h",
+    "include/arrow/record_batch.h",
+    "include/arrow/result.h",
+    "include/arrow/scalar.h",
+    "include/arrow/sparse_tensor.h",
+    "include/arrow/status.h",
+    "include/arrow/stl.h",
+    "include/arrow/stl_allocator.h",
+    "include/arrow/stl_iterator.h",
+    "include/arrow/table.h",
+    "include/arrow/table_builder.h",
+    "include/arrow/tensor.h",
+    "include/arrow/type.h",
+    "include/arrow/type_fwd.h",
+    "include/arrow/type_traits.h",
+    "include/arrow/visit_array_inline.h",
+    "include/arrow/visit_data_inline.h",
+    "include/arrow/visit_scalar_inline.h",
+    "include/arrow/visit_type_inline.h",
+    "include/arrow/visitor.h",
+    "include/arrow/visitor_generate.h",
+    "include/arrow/vendored/pcg/pcg_extras.hpp",
+    "include/arrow/vendored/pcg/pcg_random.hpp",
+    "include/arrow/vendored/pcg/pcg_uint128.hpp",
+    "include/arrow/engine/substrait/api.h",
+    "include/arrow/engine/substrait/extension_set.h",
+    "include/arrow/engine/substrait/extension_types.h",
+    "include/arrow/engine/substrait/options.h",
+    "include/arrow/engine/substrait/relation.h",
+    "include/arrow/engine/substrait/serde.h",
+    "include/arrow/engine/substrait/test_plan_builder.h",
+    "include/arrow/engine/substrait/test_util.h",
+    "include/arrow/engine/substrait/type_fwd.h",
+    "include/arrow/engine/substrait/util.h",
+    "include/arrow/engine/substrait/visibility.h",
+    "lib/cmake/ArrowAcero/ArrowAceroConfig.cmake",
+    "lib/cmake/ArrowAcero/ArrowAceroConfigVersion.cmake",
+    "lib/cmake/ArrowAcero/ArrowAceroTargets-release.cmake",
+    "lib/cmake/ArrowAcero/ArrowAceroTargets.cmake"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/cmake/ArrowCompute/ArrowComputeConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "4559752a68fe3113e46ce0aa40898a1cf3b33d6a23a45b0970dd93f157f685e7",
+        "size_in_bytes": 2341
+      },
+      {
+        "_path": "lib/cmake/ArrowCompute/ArrowComputeConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowCompute/ArrowComputeTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "c9c312bd7f1a2417aada6fa2abd8a415aee10a2b1485c3ad622a32e278da3bdb",
+        "size_in_bytes": 1035
+      },
+      {
+        "_path": "lib/cmake/ArrowCompute/ArrowComputeTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "9ca64eb2ba87b04232f47d9eb7de1b23a63a61429ee532d69420329c43c7b33c",
+        "size_in_bytes": 4254
+      },
+      {
+        "_path": "lib/cmake/ArrowS3/ArrowS3Config.cmake",
+        "path_type": "hardlink",
+        "sha256": "bccec93d58d76901f621f688f5ee881e3bc26efd2a8c476a17e87cb8dd202b2c",
+        "size_in_bytes": 2421
+      },
+      {
+        "_path": "lib/cmake/ArrowS3/ArrowS3ConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowS3/ArrowS3Targets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "f8c5127b516c16b97c8ea0e6d4d3cb46f62c4f7751cd9805331a0727438aa0ae",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "lib/cmake/ArrowS3/ArrowS3Targets.cmake",
+        "path_type": "hardlink",
+        "sha256": "6f87cae55dbaf8f6c20364a058a294b32fb58e3942f19e3272cb3f33f1ec2d26",
+        "size_in_bytes": 4209
+      },
+      {
+        "_path": "lib/cmake/ArrowS3/FindAWSSDKAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "ffc9a52e248efe94845ce5d722c6eef62663af3d25360d319bcebbf3e9e0656d",
+        "size_in_bytes": 1874
+      },
+      {
+        "_path": "lib/cmake/Arrow/ArrowConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "f9e7066ef2007450905b7c16c6f337ac33ce7d5bed32a26666a2eac9ad774af0",
+        "size_in_bytes": 10271
+      },
+      {
+        "_path": "lib/cmake/Arrow/ArrowConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/Arrow/ArrowOptions.cmake",
+        "path_type": "hardlink",
+        "sha256": "b813fbd22e79f1719bd2ce62789d1de2591694f7544312eb5411e5e7470fbbc4",
+        "size_in_bytes": 8460
+      },
+      {
+        "_path": "lib/cmake/Arrow/ArrowTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "8cd278b76fc2ea94a637208c4d54398417fe5278c4c6fe6397562838700fbe58",
+        "size_in_bytes": 881
+      },
+      {
+        "_path": "lib/cmake/Arrow/ArrowTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "c867523ccaea024ee6659dfe3857c1b7399cd02d6834823a3f9b9f3dd235b9d5",
+        "size_in_bytes": 4215
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindBrotliAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "4bb80a8a57b0962db564d0142a32fc8752ba25c61f67faf6ed8b1f8d1f85439b",
+        "size_in_bytes": 6728
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindOpenSSLAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "e0d446311233d73dff666764bad25aaf7bcc74e6246d2c5801e3a880394cdbc0",
+        "size_in_bytes": 1846
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindProtobufAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "fd9f2c4e2154e0d7a12577b576d8daa62a0f88689a557628f25cce785f3fac5d",
+        "size_in_bytes": 2213
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindSnappyAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "b93a89677eae713ddbc6dfe932241b65ec97ab216bcf465e70e067a1db310328",
+        "size_in_bytes": 4024
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindabslAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "81b3d0aaeaed4f37e8b226ad3c61dd9597a2345c5b45efe8ac5982a2c23e32f6",
+        "size_in_bytes": 1555
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindglogAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "77c2328616e58c02b4c2855d5ef58182e5f4b44090951dedefb55816b6f54dcb",
+        "size_in_bytes": 2388
+      },
+      {
+        "_path": "lib/cmake/Arrow/Findlz4Alt.cmake",
+        "path_type": "hardlink",
+        "sha256": "e5d24bd091f54dad4e959c0fe21293017190c62d89e3aead983d4da2e1dc2701",
+        "size_in_bytes": 3638
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindorcAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "ae94c00a20a7054c77428245b49d784a49199f01dd7ccbbb7c5dd37916670c79",
+        "size_in_bytes": 2520
+      },
+      {
+        "_path": "lib/cmake/Arrow/Findre2Alt.cmake",
+        "path_type": "hardlink",
+        "sha256": "ac825fd03e4f1b690035a8ebf6baa2e9fd86ed52adb3861dacbda96aa968f8c6",
+        "size_in_bytes": 3261
+      },
+      {
+        "_path": "lib/cmake/Arrow/FinduriparserAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "b78416f0b44ba4d50073c6214033c03684d6028a372e0b4a6a10563ab2618eaa",
+        "size_in_bytes": 2141
+      },
+      {
+        "_path": "lib/cmake/Arrow/Findutf8proc.cmake",
+        "path_type": "hardlink",
+        "sha256": "0133dd1c5d39095105bbb70861364a056aba8c0b8152d39005a62e2496d07adf",
+        "size_in_bytes": 4479
+      },
+      {
+        "_path": "lib/cmake/Arrow/FindzstdAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "0dd0901581f591b88832b9941da7c9aed814d11bd19325a21545fef00f47d217",
+        "size_in_bytes": 5077
+      },
+      {
+        "_path": "lib/cmake/Arrow/arrow-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "545a44ed2caa47c3de839d212e5b56c6c08f1d71a62f366056ae03873a0abe86",
+        "size_in_bytes": 1046
+      },
+      {
+        "_path": "include/arrow/flight/sql/api.h",
+        "path_type": "hardlink",
+        "sha256": "398bea6af5150f2c22b1ccc8da345fb2e152912d00b8033f675948694fe9e44b",
+        "size_in_bytes": 853
+      },
+      {
+        "_path": "include/arrow/flight/sql/client.h",
+        "path_type": "hardlink",
+        "sha256": "02adf80e0ff6cd67600d30cc249a74ff736bc142db721a2312eb4872dcb30067",
+        "size_in_bytes": 24476
+      },
+      {
+        "_path": "include/arrow/flight/sql/column_metadata.h",
+        "path_type": "hardlink",
+        "sha256": "8015fe906b5e6796e81622e2e1fb12f6f6b99e2165a56ab18bbb8f548fe5c15b",
+        "size_in_bytes": 7909
+      },
+      {
+        "_path": "include/arrow/flight/sql/server.h",
+        "path_type": "hardlink",
+        "sha256": "f7354d0a6ca7d10b111add196fad1de76659a65bd5a868dff4c0f9e9052c9343",
+        "size_in_bytes": 36835
+      },
+      {
+        "_path": "include/arrow/flight/sql/server_session_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "1eb27b567de1f1126f67c863c0c19e827343aa47b25901df6c1e8e843cb57cc4",
+        "size_in_bytes": 3400
+      },
+      {
+        "_path": "include/arrow/flight/sql/server_session_middleware_factory.h",
+        "path_type": "hardlink",
+        "sha256": "ae402ab80d8bcc202c528dd4cfc3636b4a740fc6a5e69d110eeb96dd25d64ee7",
+        "size_in_bytes": 2215
+      },
+      {
+        "_path": "include/arrow/flight/sql/types.h",
+        "path_type": "hardlink",
+        "sha256": "6eb90d748b500eaed626943b434224b83db2a7c9ecf22aa4d1a13a4951ca672b",
+        "size_in_bytes": 40848
+      },
+      {
+        "_path": "include/arrow/flight/sql/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "a0e5c087670607bd2b0e4118328dad452d855ecd7d3f2c5f1a28a98ea228c017",
+        "size_in_bytes": 1636
+      },
+      {
+        "_path": "include/parquet/encryption/crypto_factory.h",
+        "path_type": "hardlink",
+        "sha256": "a51b0db7c2593a1ed2725ad60071151adb2e0bab4e0f89159b914e36d988f773",
+        "size_in_bytes": 7755
+      },
+      {
+        "_path": "include/parquet/encryption/encryption.h",
+        "path_type": "hardlink",
+        "sha256": "2fc4ce3eeec93b0386cfaa540de1f34f1ea39766a25e36ec63a31a3305e2c285",
+        "size_in_bytes": 16245
+      },
+      {
+        "_path": "include/parquet/encryption/file_key_material_store.h",
+        "path_type": "hardlink",
+        "sha256": "6330153b73361f9bf9173d9bfd6966077184e7055b3049c54cbdd2f573c7ea4d",
+        "size_in_bytes": 2200
+      },
+      {
+        "_path": "include/parquet/encryption/file_key_unwrapper.h",
+        "path_type": "hardlink",
+        "sha256": "3285817361c08cf5c33ad3f11f4cca12346cdacde55de9b3856d7dcbd1d19509",
+        "size_in_bytes": 4880
+      },
+      {
+        "_path": "include/parquet/encryption/file_key_wrapper.h",
+        "path_type": "hardlink",
+        "sha256": "c57952fb2c988545b6d12df5444b128f92716d56e28ffb5dd1694f6e0c4d6988",
+        "size_in_bytes": 3778
+      },
+      {
+        "_path": "include/parquet/encryption/file_system_key_material_store.h",
+        "path_type": "hardlink",
+        "sha256": "c4071ca7eec897652b9c8b712e6384e32c2140a81e6a9cb154dc2c843a5a9f46",
+        "size_in_bytes": 3695
+      },
+      {
+        "_path": "include/parquet/encryption/key_encryption_key.h",
+        "path_type": "hardlink",
+        "sha256": "e9d24d05803fe19fddc8ca61ef5439288d1ac5efb2cdd8d39d1806ff38f6397d",
+        "size_in_bytes": 2318
+      },
+      {
+        "_path": "include/parquet/encryption/key_material.h",
+        "path_type": "hardlink",
+        "sha256": "ed06dfdcf9b83d287e86c5b8a48bf96d90a71d7f680dd03ee66f2dfdee3cd9d4",
+        "size_in_bytes": 5976
+      },
+      {
+        "_path": "include/parquet/encryption/key_metadata.h",
+        "path_type": "hardlink",
+        "sha256": "3dcd2703d2d6dc573d34b30cc73ee8b1bc3cb22da34a23954c44be27ef51d32d",
+        "size_in_bytes": 4003
+      },
+      {
+        "_path": "include/parquet/encryption/key_toolkit.h",
+        "path_type": "hardlink",
+        "sha256": "c4c2616472e29a53eab731fc04c627b240804645a53d04d65cb53eb713cc5130",
+        "size_in_bytes": 4696
+      },
+      {
+        "_path": "include/parquet/encryption/kms_client.h",
+        "path_type": "hardlink",
+        "sha256": "30cf3bd2a442ff2738864cf1ef154f68f9b5d84ad1f2ca858034c72d61dc457d",
+        "size_in_bytes": 3222
+      },
+      {
+        "_path": "include/parquet/encryption/kms_client_factory.h",
+        "path_type": "hardlink",
+        "sha256": "559f7b08c803431c79a195851a9ae35ec68cd61674c0db9d3e6154d7f9678807",
+        "size_in_bytes": 1293
+      },
+      {
+        "_path": "include/parquet/encryption/local_wrap_kms_client.h",
+        "path_type": "hardlink",
+        "sha256": "756e457b79541cff1d9ac48f0c631b95d1a5d86967111e08f735a1094ea0ffbf",
+        "size_in_bytes": 4037
+      },
+      {
+        "_path": "include/parquet/encryption/test_encryption_util.h",
+        "path_type": "hardlink",
+        "sha256": "ad87650ead67999bb782c73bbcf7010d53b0771112c957275530c234c3dd9a80",
+        "size_in_bytes": 5349
+      },
+      {
+        "_path": "include/parquet/encryption/test_in_memory_kms.h",
+        "path_type": "hardlink",
+        "sha256": "57bfd90b5aea6d41ae4525c0b751efebb6619949725497ef1daffb3d6c2e95cc",
+        "size_in_bytes": 4059
+      },
+      {
+        "_path": "include/parquet/encryption/two_level_cache_with_expiration.h",
+        "path_type": "hardlink",
+        "sha256": "da436f8b1577e9b623525509aaeaa769a38ef8d23b7bc3b7566d71fb10cfc830",
+        "size_in_bytes": 4818
+      },
+      {
+        "_path": "include/parquet/encryption/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "74bf2c9f2530363853404d854367570148d36e8117847d8939e850a2f1df8b17",
+        "size_in_bytes": 955
+      },
+      {
+        "_path": "include/arrow/compute/api.h",
+        "path_type": "hardlink",
+        "sha256": "eb3e8774d1fa4b4026a29d8651faec89fc4ebe0ba97d3a850d97fbe98444b7ee",
+        "size_in_bytes": 2139
+      },
+      {
+        "_path": "include/arrow/compute/api_aggregate.h",
+        "path_type": "hardlink",
+        "sha256": "1823e9200eaacfa5cbd942384b2c578f28cf782ebc3a84f5b6db698ae7bc78c6",
+        "size_in_bytes": 21945
+      },
+      {
+        "_path": "include/arrow/compute/api_scalar.h",
+        "path_type": "hardlink",
+        "sha256": "c53fc439463a1fd2d97ccb203a725641932959dcbf64b3de9ced4e3ff6943292",
+        "size_in_bytes": 72394
+      },
+      {
+        "_path": "include/arrow/compute/api_vector.h",
+        "path_type": "hardlink",
+        "sha256": "6d4e69cad3fa21c72a2b5b70c5c4b04cb16a9a32635d1190e533d76e4dc9eaf5",
+        "size_in_bytes": 39164
+      },
+      {
+        "_path": "include/arrow/compute/cast.h",
+        "path_type": "hardlink",
+        "sha256": "cbcbfe118b3ed73279361ba53063736a029cf42914d7895ddfa5486d8755f788",
+        "size_in_bytes": 4245
+      },
+      {
+        "_path": "include/arrow/compute/exec.h",
+        "path_type": "hardlink",
+        "sha256": "d9b697bead455b0c9f41f4d5e2beaa845f35f0b1183b1ca7fc3893a84e403029",
+        "size_in_bytes": 17975
+      },
+      {
+        "_path": "include/arrow/compute/expression.h",
+        "path_type": "hardlink",
+        "sha256": "2c1c237f52d3b5f09f4d3dd1194abfdcf23f5742d17f61f1b59f8ebeab25c3e7",
+        "size_in_bytes": 11164
+      },
+      {
+        "_path": "include/arrow/compute/function.h",
+        "path_type": "hardlink",
+        "sha256": "aed10a6eb314448a8e5a8dc981d3b11ec0cc93517e2a4e7f273ff17295dabf18",
+        "size_in_bytes": 16419
+      },
+      {
+        "_path": "include/arrow/compute/function_options.h",
+        "path_type": "hardlink",
+        "sha256": "43dae39173eb53df978bae3f7cc2cf6c16d6fdbca18c916cbc7a693f50ae99d0",
+        "size_in_bytes": 3088
+      },
+      {
+        "_path": "include/arrow/compute/initialize.h",
+        "path_type": "hardlink",
+        "sha256": "9acf26b424874da4ad4eb59d6a96cdc8d4a93343cee28c77d8ef5ca256c147b9",
+        "size_in_bytes": 1193
+      },
+      {
+        "_path": "include/arrow/compute/kernel.h",
+        "path_type": "hardlink",
+        "sha256": "ae49a334a8447d6516c39388c83d0c497c1901f110386cffeaf12629323c9651",
+        "size_in_bytes": 32602
+      },
+      {
+        "_path": "include/arrow/compute/ordering.h",
+        "path_type": "hardlink",
+        "sha256": "111fc8f77a9300c6d56348631a5e524a6477f470b9b6b122f275d831b170cbd8",
+        "size_in_bytes": 4758
+      },
+      {
+        "_path": "include/arrow/compute/registry.h",
+        "path_type": "hardlink",
+        "sha256": "c7b2c789a34456f674554b2c645b1ab01e7667503145f964748e6d475861cea7",
+        "size_in_bytes": 4837
+      },
+      {
+        "_path": "include/arrow/compute/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "b621bb32b2c47d700f179dc92a59c5749ee4ce384d3fd6bfc426f6129b77a337",
+        "size_in_bytes": 1555
+      },
+      {
+        "_path": "include/arrow/compute/util.h",
+        "path_type": "hardlink",
+        "sha256": "975cba3f5847b08fa643b941e8a367ffc033602c42c6e85a48138e1bfc2a8dcb",
+        "size_in_bytes": 9376
+      },
+      {
+        "_path": "include/arrow/compute/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "fe1ea007a186e58485dda6a4ea801eaf296ab49be385337d4eaf0c65c7293b43",
+        "size_in_bytes": 1597
+      },
+      {
+        "_path": "include/arrow/csv/api.h",
+        "path_type": "hardlink",
+        "sha256": "2dbc1684fc88b22ffbde1bec4abefb44d47db94c6b5725ccfff869ed0712a26d",
+        "size_in_bytes": 907
+      },
+      {
+        "_path": "include/arrow/csv/chunker.h",
+        "path_type": "hardlink",
+        "sha256": "9d3b3c85dcb80f7373de86569b624cb80d369e863fd29591616abf469b6acc76",
+        "size_in_bytes": 1171
+      },
+      {
+        "_path": "include/arrow/csv/column_builder.h",
+        "path_type": "hardlink",
+        "sha256": "e6ddfce3679716c007b6b2c62782d0907d9ea5402bd3a3db9c5ecf3b0960410c",
+        "size_in_bytes": 2889
+      },
+      {
+        "_path": "include/arrow/csv/column_decoder.h",
+        "path_type": "hardlink",
+        "sha256": "d7489d70f244d95fd36ef823ccfaa6172d5d77fa92196beef5e0e47a74ee0b3d",
+        "size_in_bytes": 2358
+      },
+      {
+        "_path": "include/arrow/csv/converter.h",
+        "path_type": "hardlink",
+        "sha256": "456331b2bb0ca20a610019325bd814d87936fb1d69f3710c6acad94efb7e32bf",
+        "size_in_bytes": 2964
+      },
+      {
+        "_path": "include/arrow/csv/invalid_row.h",
+        "path_type": "hardlink",
+        "sha256": "8131e311b8e4a5e7bab322c603c84563bb29c7544e3099ad31cc215efdb5c794",
+        "size_in_bytes": 1889
+      },
+      {
+        "_path": "include/arrow/csv/options.h",
+        "path_type": "hardlink",
+        "sha256": "7f8ef5214453dc099e640f59434b3bc8a90b241f225143c389f7727a6569d5ab",
+        "size_in_bytes": 8603
+      },
+      {
+        "_path": "include/arrow/csv/parser.h",
+        "path_type": "hardlink",
+        "sha256": "5e07fee8cd89413b50ebb42c3f82134faa70a8851801fc21ad6dcc016cf8ce40",
+        "size_in_bytes": 9544
+      },
+      {
+        "_path": "include/arrow/csv/reader.h",
+        "path_type": "hardlink",
+        "sha256": "e35ea9b77c8d42c827e11848c9132c992266befd6cc37a2e428b6e6d71bdd604",
+        "size_in_bytes": 4606
+      },
+      {
+        "_path": "include/arrow/csv/test_common.h",
+        "path_type": "hardlink",
+        "sha256": "b84633c3c1113af77540c050f7c77831a67b06a325c367b47e5032cfe76ed19e",
+        "size_in_bytes": 1972
+      },
+      {
+        "_path": "include/arrow/csv/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "a6d55b7a782663f6bb633d70d122a628bd7acb2c3dc847b29b4434727442495e",
+        "size_in_bytes": 984
+      },
+      {
+        "_path": "include/arrow/csv/writer.h",
+        "path_type": "hardlink",
+        "sha256": "635cc4ad9e47d6bd90ce302d6b74d7a45add9766eda1aadd085f14482006b468",
+        "size_in_bytes": 3549
+      },
+      {
+        "_path": "include/parquet/benchmark_util.h",
+        "path_type": "hardlink",
+        "sha256": "7a60e96886ed7d43652b4336ccc3fea13cb64b6ada43e2e94142cafc6ef83ad3",
+        "size_in_bytes": 1758
+      },
+      {
+        "_path": "include/parquet/bloom_filter.h",
+        "path_type": "hardlink",
+        "sha256": "b2cc2b8cc3d27ed7b2e3702ca0003c24cb541d16a4dc33b7101477a2ce678f73",
+        "size_in_bytes": 17014
+      },
+      {
+        "_path": "include/parquet/bloom_filter_reader.h",
+        "path_type": "hardlink",
+        "sha256": "51db3e9d285f980334bf2343c963ed47c3937862ad2b781e3b867e1e90458021",
+        "size_in_bytes": 2890
+      },
+      {
+        "_path": "include/parquet/bloom_filter_writer.h",
+        "path_type": "hardlink",
+        "sha256": "e36023b66d2e39221ca04d7ee587a1e03f0d8f5f32c39aad3ba8be1b0a0cf54a",
+        "size_in_bytes": 4341
+      },
+      {
+        "_path": "include/parquet/column_page.h",
+        "path_type": "hardlink",
+        "sha256": "2ec82759d27d3c5b6d0601dcc9f5cd6fbfb199b73c2e2cf767d5d5d4083ac8d6",
+        "size_in_bytes": 6999
+      },
+      {
+        "_path": "include/parquet/column_reader.h",
+        "path_type": "hardlink",
+        "sha256": "5344a1e5b70de203805f4d04fd78629da6cbc1519d5a19d893a29e782c8e80f2",
+        "size_in_bytes": 20547
+      },
+      {
+        "_path": "include/parquet/column_scanner.h",
+        "path_type": "hardlink",
+        "sha256": "1de701be1fb3d27ff51c9b03f8621d7061d002f0ce1ca94bce9a41f5106c0fdb",
+        "size_in_bytes": 8863
+      },
+      {
+        "_path": "include/parquet/column_writer.h",
+        "path_type": "hardlink",
+        "sha256": "49badba74d455b8510884f52112f56384188ebb1e090b97966be311f40df15cc",
+        "size_in_bytes": 12989
+      },
+      {
+        "_path": "include/parquet/encoding.h",
+        "path_type": "hardlink",
+        "sha256": "9e5b80079bc1ca480d321a9b16ad70300e29c6aae1cd77dbf2ee154284742ad0",
+        "size_in_bytes": 18189
+      },
+      {
+        "_path": "include/parquet/exception.h",
+        "path_type": "hardlink",
+        "sha256": "4c96f1e97fe487157a7bad6b51f1d8d0fafae44a31293bb6c69bce01d87d04ca",
+        "size_in_bytes": 6104
+      },
+      {
+        "_path": "include/parquet/file_reader.h",
+        "path_type": "hardlink",
+        "sha256": "67546238fef863db4cbfb919ec5597d39211d39ab381239344aad8ef5a4b3891",
+        "size_in_bytes": 11185
+      },
+      {
+        "_path": "include/parquet/file_writer.h",
+        "path_type": "hardlink",
+        "sha256": "b1a923c95c7304c85a4333b7241b6061d18fecd8284e6892d09c1d69606be496",
+        "size_in_bytes": 9940
+      },
+      {
+        "_path": "include/parquet/hasher.h",
+        "path_type": "hardlink",
+        "sha256": "af2e589975fd1148321fcd96f5cfbdb85d5f925bec94ae54dbcbbac156df1ed3",
+        "size_in_bytes": 5428
+      },
+      {
+        "_path": "include/parquet/index_location.h",
+        "path_type": "hardlink",
+        "sha256": "1a0f11e05bfede967f78cad0846040e1d6300379091e8daf5bef89b774887196",
+        "size_in_bytes": 1477
+      },
+      {
+        "_path": "include/parquet/level_comparison.h",
+        "path_type": "hardlink",
+        "sha256": "e73e1f50924f5aaf56eb49760ac008ed3ec4d9ab86603ee6d1fa51e6b7cb9acc",
+        "size_in_bytes": 1306
+      },
+      {
+        "_path": "include/parquet/level_comparison_inc.h",
+        "path_type": "hardlink",
+        "sha256": "af6d3fe91bf92fb52614627af1ff89699e612d76fcef0bd96bcd2164d42817e2",
+        "size_in_bytes": 2494
+      },
+      {
+        "_path": "include/parquet/level_conversion.h",
+        "path_type": "hardlink",
+        "sha256": "584f98c84ab9de56d1d2eb66775123ddb769ad7b6a41f59ea1330017de2fed48",
+        "size_in_bytes": 8801
+      },
+      {
+        "_path": "include/parquet/level_conversion_inc.h",
+        "path_type": "hardlink",
+        "sha256": "328354fad6c9dce7dccab90938e61be4d8f10c408c73ee79d896d241f2585021",
+        "size_in_bytes": 14218
+      },
+      {
+        "_path": "include/parquet/metadata.h",
+        "path_type": "hardlink",
+        "sha256": "e422459efe4d71a0e7a0ceb1d816c719f38fab7f85f20d247fa3f07d31d90e97",
+        "size_in_bytes": 21069
+      },
+      {
+        "_path": "include/parquet/page_index.h",
+        "path_type": "hardlink",
+        "sha256": "294e7d7b51afad66762ad6c0d9ff5ccdbd55d4d4291338c7f8655c7dbdbc267a",
+        "size_in_bytes": 17379
+      },
+      {
+        "_path": "include/parquet/parquet_version.h",
+        "path_type": "hardlink",
+        "sha256": "b979f2bb5da10b808161b59ef00c61235dc44515a59ff005b6e65242233caed5",
+        "size_in_bytes": 1164
+      },
+      {
+        "_path": "include/parquet/platform.h",
+        "path_type": "hardlink",
+        "sha256": "0f5ad73fa5ac65577afe99583cab1fbb83d97bad94a1329519edb35563ea96e1",
+        "size_in_bytes": 3939
+      },
+      {
+        "_path": "include/parquet/printer.h",
+        "path_type": "hardlink",
+        "sha256": "857ab3c2e8f9a75a0a6366b066454eabba97c7e46ca28e903c7d684c4f780075",
+        "size_in_bytes": 1548
+      },
+      {
+        "_path": "include/parquet/properties.h",
+        "path_type": "hardlink",
+        "sha256": "2101af2f529f470f9a978ddad39cc7d2f64fbcf64f0dea2184d9c8ae4e923040",
+        "size_in_bytes": 65850
+      },
+      {
+        "_path": "include/parquet/schema.h",
+        "path_type": "hardlink",
+        "sha256": "d29614d362f31241238999b8309e41c4d5ceecaa7807303c9220ac5de7b3e978",
+        "size_in_bytes": 18877
+      },
+      {
+        "_path": "include/parquet/size_statistics.h",
+        "path_type": "hardlink",
+        "sha256": "ef30ef1d54039f0babbb8ead472ac4b9b401297e7c93bef6b5277d695d00ae91",
+        "size_in_bytes": 4268
+      },
+      {
+        "_path": "include/parquet/statistics.h",
+        "path_type": "hardlink",
+        "sha256": "cb5594231dff15256b4afeb9564e39d76b6e6ad38afe785dde46b6cad4454c36",
+        "size_in_bytes": 18195
+      },
+      {
+        "_path": "include/parquet/stream_reader.h",
+        "path_type": "hardlink",
+        "sha256": "5a8ca61f56b1ba9ba5537c86f17c8294b98ce649a45723d52840eca6a76e041c",
+        "size_in_bytes": 8856
+      },
+      {
+        "_path": "include/parquet/stream_writer.h",
+        "path_type": "hardlink",
+        "sha256": "37c255def637cbfebb4b81ee88ed813645ba94b8e31bc012789e2a299ed5d77f",
+        "size_in_bytes": 7807
+      },
+      {
+        "_path": "include/parquet/test_util.h",
+        "path_type": "hardlink",
+        "sha256": "74193212d2d8e4d9f83d36f4e693261f9cf8552cc2a7444576db6cfc80c8d85d",
+        "size_in_bytes": 33106
+      },
+      {
+        "_path": "include/parquet/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "37f2ed8c4712f49d83578ca50e25f376694a45395cc3563393366ef36322cdfb",
+        "size_in_bytes": 3128
+      },
+      {
+        "_path": "include/parquet/types.h",
+        "path_type": "hardlink",
+        "sha256": "088dc4ac084624affc4c9ae2ee0dd1e26d8ada0ce252f0818695382a817de4f6",
+        "size_in_bytes": 27720
+      },
+      {
+        "_path": "include/parquet/visit_type_inline.h",
+        "path_type": "hardlink",
+        "sha256": "18d804dbfbd8205465b9679d423339e465c9ea1569f2a7580c1634280b6ebe0e",
+        "size_in_bytes": 2321
+      },
+      {
+        "_path": "include/parquet/windows_compatibility.h",
+        "path_type": "hardlink",
+        "sha256": "c481061d6df9e144607483fd038577d374c92fc035224084be9d3c6cc2ac1d35",
+        "size_in_bytes": 897
+      },
+      {
+        "_path": "include/parquet/windows_fixup.h",
+        "path_type": "hardlink",
+        "sha256": "0e9c960b2c31f1822aa2eba7e8125c80cac714c4c2060a3059d2759a7267436b",
+        "size_in_bytes": 1052
+      },
+      {
+        "_path": "include/parquet/xxhasher.h",
+        "path_type": "hardlink",
+        "sha256": "79f7a4ef66718840b3ba95e3e67fac504d463defcd21c7d8e6ab4389ee981d9a",
+        "size_in_bytes": 2130
+      },
+      {
+        "_path": "include/arrow/io/api.h",
+        "path_type": "hardlink",
+        "sha256": "45fafa9493105886f7b03af3158b50cfb28f2c09dd6aca9f6c6b37d7ed69bd3a",
+        "size_in_bytes": 969
+      },
+      {
+        "_path": "include/arrow/io/buffered.h",
+        "path_type": "hardlink",
+        "sha256": "3c768cc0231a5eedef023843a59302db1b7984aa2825755e31f7e1a03cd3c4d7",
+        "size_in_bytes": 5912
+      },
+      {
+        "_path": "include/arrow/io/caching.h",
+        "path_type": "hardlink",
+        "sha256": "0008e8c8ac10d3a9b65e2825152e8287f71d836a78fb0900ec66a4188fde5f51",
+        "size_in_bytes": 6708
+      },
+      {
+        "_path": "include/arrow/io/compressed.h",
+        "path_type": "hardlink",
+        "sha256": "dc9c483a8d6af15863204adfc1533964b564c3040a5ddf854f9e75ee3e7c7ad0",
+        "size_in_bytes": 3774
+      },
+      {
+        "_path": "include/arrow/io/concurrency.h",
+        "path_type": "hardlink",
+        "sha256": "aec7990727daa74367e803b39f3a1c517301aa6dfb838700a5d4c008f80a8bd6",
+        "size_in_bytes": 8386
+      },
+      {
+        "_path": "include/arrow/io/file.h",
+        "path_type": "hardlink",
+        "sha256": "09f3689ec188c3b0a7e496241215781f2d014e7c90cafba8144ba7261551bdec",
+        "size_in_bytes": 7741
+      },
+      {
+        "_path": "include/arrow/io/interfaces.h",
+        "path_type": "hardlink",
+        "sha256": "23622040e12d04a9eb58b0a6dceabf6673dc6fc4eef4567d02e6c8d040f40cd8",
+        "size_in_bytes": 15149
+      },
+      {
+        "_path": "include/arrow/io/memory.h",
+        "path_type": "hardlink",
+        "sha256": "98cd5dd2b1f3e8e1816bfc6e7035ea1f201fd118ca2a90a29b0e324efc7ed6f2",
+        "size_in_bytes": 6654
+      },
+      {
+        "_path": "include/arrow/io/mman.h",
+        "path_type": "hardlink",
+        "sha256": "aa82c100615cbe9613cbde866bb14d58324a4f7ba1c6914017785b5c86834a26",
+        "size_in_bytes": 4111
+      },
+      {
+        "_path": "include/arrow/io/slow.h",
+        "path_type": "hardlink",
+        "sha256": "8110650397faf02aaee3d8ae3bc80cb03bde1f0ee08f01b2bab088c6ab6fd477",
+        "size_in_bytes": 4219
+      },
+      {
+        "_path": "include/arrow/io/stdio.h",
+        "path_type": "hardlink",
+        "sha256": "76a3131e825b9a25dcc8d6b67cdeb4b52590b31d063e98595422dd1a264db7c2",
+        "size_in_bytes": 2095
+      },
+      {
+        "_path": "include/arrow/io/test_common.h",
+        "path_type": "hardlink",
+        "sha256": "485e7da1d6f4137aed1a3bb98c006c43365c522f609794f01ee2a0e1fd044396",
+        "size_in_bytes": 2146
+      },
+      {
+        "_path": "include/arrow/io/transform.h",
+        "path_type": "hardlink",
+        "sha256": "5bd5d6a27c3af55ca6400690a6d7d6ee30feeabcbb542a5f3d796407b699cce1",
+        "size_in_bytes": 1890
+      },
+      {
+        "_path": "include/arrow/io/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "2c4937e892de1b98cfe73d8346259a999ef95a89efcb32b5520e87062ab1b403",
+        "size_in_bytes": 2333
+      },
+      {
+        "_path": "include/parquet/geospatial/statistics.h",
+        "path_type": "hardlink",
+        "sha256": "efb89e2b141c638e8507b8e0099864d377dad86fc9d92f4d27c474fc953ea86b",
+        "size_in_bytes": 8892
+      },
+      {
+        "_path": "include/arrow/engine/api.h",
+        "path_type": "hardlink",
+        "sha256": "3913343392907aeae3106f04a1ae48795fd980a0513e55b289ccafdce4569006",
+        "size_in_bytes": 886
+      },
+      {
+        "_path": "include/arrow/util/algorithm.h",
+        "path_type": "hardlink",
+        "sha256": "d38e44573b02f6b4e1951545682a019a6b56666172e72dbc3d1f726a99fdb176",
+        "size_in_bytes": 1229
+      },
+      {
+        "_path": "include/arrow/util/align_util.h",
+        "path_type": "hardlink",
+        "sha256": "9cb2517f8aca881a3ba61081cf9da2c2af7db5e2e0c7937cd4b9639c141aa96e",
+        "size_in_bytes": 11077
+      },
+      {
+        "_path": "include/arrow/util/aligned_storage.h",
+        "path_type": "hardlink",
+        "sha256": "933807235bede742b14d38e9963fad120a9f33b6c7603a7f8397a7d757f35bd1",
+        "size_in_bytes": 4355
+      },
+      {
+        "_path": "include/arrow/util/async_generator.h",
+        "path_type": "hardlink",
+        "sha256": "c32db7dd1ddff7f9746ede0b89eab2d00b97d9ee977f915182998862c3299f47",
+        "size_in_bytes": 82765
+      },
+      {
+        "_path": "include/arrow/util/async_generator_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "43cb2e798656c1dc646950da6ee8251ccdd7b8ffbe35ead882af14c6c5478056",
+        "size_in_bytes": 1728
+      },
+      {
+        "_path": "include/arrow/util/async_util.h",
+        "path_type": "hardlink",
+        "sha256": "d679c0259db688aef04b39af643a373cc86e5aa248b76a8a7655f34f286808ae",
+        "size_in_bytes": 19759
+      },
+      {
+        "_path": "include/arrow/util/base64.h",
+        "path_type": "hardlink",
+        "sha256": "7a35bf0d9a13c14f147bd11b70c1eb6123b67b26f8271e404a939061e3b0feb3",
+        "size_in_bytes": 1136
+      },
+      {
+        "_path": "include/arrow/util/basic_decimal.h",
+        "path_type": "hardlink",
+        "sha256": "b07fa37506263f4bec1264d2f4967209e4b4a89328c427ae43fcffdec1934b7e",
+        "size_in_bytes": 33707
+      },
+      {
+        "_path": "include/arrow/util/benchmark_util.h",
+        "path_type": "hardlink",
+        "sha256": "486de07f013ec06359030a4bdd3bdf7e74a2646336733b55e714419dbab2d8cc",
+        "size_in_bytes": 7641
+      },
+      {
+        "_path": "include/arrow/util/binary_view_util.h",
+        "path_type": "hardlink",
+        "sha256": "75ee10688264caace66c59af7e34d19f06d449e0add2513d764f2c6895fd7eb9",
+        "size_in_bytes": 4596
+      },
+      {
+        "_path": "include/arrow/util/bit_block_counter.h",
+        "path_type": "hardlink",
+        "sha256": "8b7f8f715e86e8fe904b1f51fa58fc29e6da899e686a8dea6e62286c70b50d53",
+        "size_in_bytes": 20022
+      },
+      {
+        "_path": "include/arrow/util/bit_run_reader.h",
+        "path_type": "hardlink",
+        "sha256": "b8124a645a30995e40ee72c15a6b5954beda40e656c87cde082e94931706ae1b",
+        "size_in_bytes": 20888
+      },
+      {
+        "_path": "include/arrow/util/bit_util.h",
+        "path_type": "hardlink",
+        "sha256": "73c6641a5955df0ed03485377c3dd58d2c23a3460ee8f653a8ed1d57eae54620",
+        "size_in_bytes": 13605
+      },
+      {
+        "_path": "include/arrow/util/bitmap.h",
+        "path_type": "hardlink",
+        "sha256": "457370ce8a96d80f6ed4b2eb6fecf1f7426c99bb72d5c9835ac1d04f6ed509bb",
+        "size_in_bytes": 17352
+      },
+      {
+        "_path": "include/arrow/util/bitmap_builders.h",
+        "path_type": "hardlink",
+        "sha256": "d4f3ae93a303db148dcff31edbafa7135db2d839b6b74280bb31bd71b9e9bf01",
+        "size_in_bytes": 1582
+      },
+      {
+        "_path": "include/arrow/util/bitmap_generate.h",
+        "path_type": "hardlink",
+        "sha256": "9ba66c370c751a1b0492d42beb73715c74245f607b36d8b4d755d8b0f836c5fa",
+        "size_in_bytes": 3661
+      },
+      {
+        "_path": "include/arrow/util/bitmap_ops.h",
+        "path_type": "hardlink",
+        "sha256": "b3f9cdad3357f2bce33d3fdfc194bfb18e4a51b1d92f8ca58203c10e71169524",
+        "size_in_bytes": 12151
+      },
+      {
+        "_path": "include/arrow/util/bitmap_reader.h",
+        "path_type": "hardlink",
+        "sha256": "f8478f0590c9ca817518340b1e2e5af462baacf43e351652f22659512c3a5a61",
+        "size_in_bytes": 8392
+      },
+      {
+        "_path": "include/arrow/util/bitmap_visit.h",
+        "path_type": "hardlink",
+        "sha256": "9b29fc93ae95aef6672fa47a556e880cf4df3baf15c636c9f14a7922e4a314be",
+        "size_in_bytes": 3470
+      },
+      {
+        "_path": "include/arrow/util/bitmap_writer.h",
+        "path_type": "hardlink",
+        "sha256": "2663dade852c98a9cf2795b35f34f25fc424c70de23779be84268c01e2a62125",
+        "size_in_bytes": 9386
+      },
+      {
+        "_path": "include/arrow/util/byte_size.h",
+        "path_type": "hardlink",
+        "sha256": "3ddd9cff76b421e48e51ebe13c89573640e6828074ea0e1cf580acb91c3048a3",
+        "size_in_bytes": 3997
+      },
+      {
+        "_path": "include/arrow/util/cancel.h",
+        "path_type": "hardlink",
+        "sha256": "4a0032e52d130484a70b2a69e11fce23e8cf510f7deeab6c2ce49d5e8f25e5b3",
+        "size_in_bytes": 3659
+      },
+      {
+        "_path": "include/arrow/util/checked_cast.h",
+        "path_type": "hardlink",
+        "sha256": "491f5083c36e2d2049c36c3551f81e1af09f4fc93bc2b6cdec1cc00d03997c05",
+        "size_in_bytes": 2076
+      },
+      {
+        "_path": "include/arrow/util/compare.h",
+        "path_type": "hardlink",
+        "sha256": "84d7c89c94eabbe945d651c6874d0f8c180d1827a558bd9b0854810d34221da0",
+        "size_in_bytes": 1982
+      },
+      {
+        "_path": "include/arrow/util/compression.h",
+        "path_type": "hardlink",
+        "sha256": "a6b3087074256e3c153fdc01b6c70dc2dc433fa3520aa049396c958de7d8f49c",
+        "size_in_bytes": 8859
+      },
+      {
+        "_path": "include/arrow/util/concurrent_map.h",
+        "path_type": "hardlink",
+        "sha256": "c0c8bd5831df46e27f6921607093e9b15c0627dbc82796a0699deb55497019ee",
+        "size_in_bytes": 1775
+      },
+      {
+        "_path": "include/arrow/util/config.h",
+        "path_type": "hardlink",
+        "sha256": "56cb97ba9ab4454f0586f6b2dcc61c6a977ff1f1080d9109e1455fdf93300edd",
+        "size_in_bytes": 2065
+      },
+      {
+        "_path": "include/arrow/util/converter.h",
+        "path_type": "hardlink",
+        "sha256": "e6eb192e740275b55bf024d6f458eee5e589eddd3bdc2163170df158b3016509",
+        "size_in_bytes": 14717
+      },
+      {
+        "_path": "include/arrow/util/cpu_info.h",
+        "path_type": "hardlink",
+        "sha256": "351cb66803854a20505c8f4a2d4bfcf1feeff650cb8e999f9adba50ddbc6d4e5",
+        "size_in_bytes": 4506
+      },
+      {
+        "_path": "include/arrow/util/crc32.h",
+        "path_type": "hardlink",
+        "sha256": "e2037433e4919f168629c8b60133db316646d931b76142d78da4e969d57451d9",
+        "size_in_bytes": 1337
+      },
+      {
+        "_path": "include/arrow/util/debug.h",
+        "path_type": "hardlink",
+        "sha256": "08f07fa033ae67fbbcf5ef7033c6c69fcf261af0a581f6bb503c43a61eaff6c6",
+        "size_in_bytes": 971
+      },
+      {
+        "_path": "include/arrow/util/decimal.h",
+        "path_type": "hardlink",
+        "sha256": "7044111f9c7990dfcc02c58d38f08b8f3e7b4235b812b7e9a4c1c6e1bfb410e0",
+        "size_in_bytes": 20291
+      },
+      {
+        "_path": "include/arrow/util/delimiting.h",
+        "path_type": "hardlink",
+        "sha256": "2587bd61c58c7854ff212ba88f1fd5815a8e60bbd9d938a2476b0d9fe59d7814",
+        "size_in_bytes": 7317
+      },
+      {
+        "_path": "include/arrow/util/endian.h",
+        "path_type": "hardlink",
+        "sha256": "3cf6a2f6283c0ed195a2e2a4b234eaec7fda9e6d018e0a1331a55391694c2966",
+        "size_in_bytes": 8236
+      },
+      {
+        "_path": "include/arrow/util/float16.h",
+        "path_type": "hardlink",
+        "sha256": "dd17d6a10d2c20f0a4db25e7888630fa0ed7f841266a8b3f206f73f1c9d70a64",
+        "size_in_bytes": 7454
+      },
+      {
+        "_path": "include/arrow/util/formatting.h",
+        "path_type": "hardlink",
+        "sha256": "dc3d3113bb1370947a5c451bd762ca4aa2fe0376d7fcfca9d685643d27230b04",
+        "size_in_bytes": 22516
+      },
+      {
+        "_path": "include/arrow/util/functional.h",
+        "path_type": "hardlink",
+        "sha256": "a50f98ed39c3cf0b5abefd158b5a57e947d94bede9f17d5b35b4ea0299facb9e",
+        "size_in_bytes": 2420
+      },
+      {
+        "_path": "include/arrow/util/future.h",
+        "path_type": "hardlink",
+        "sha256": "ec89d5211d1319213746b061c4d2de30dbfb3931246cc3cc0b04f360c2e708d3",
+        "size_in_bytes": 31636
+      },
+      {
+        "_path": "include/arrow/util/hash_util.h",
+        "path_type": "hardlink",
+        "sha256": "da818ec6c5c2a27b0b076ef15fcfbcd4c2718fdfc2bfb7c0606b3c27524cbec4",
+        "size_in_bytes": 1918
+      },
+      {
+        "_path": "include/arrow/util/hashing.h",
+        "path_type": "hardlink",
+        "sha256": "414f2a0ca1b14e0b83707079af72ede61102f44ad4f3c4921bb931ed5fb25f7b",
+        "size_in_bytes": 34574
+      },
+      {
+        "_path": "include/arrow/util/int_util.h",
+        "path_type": "hardlink",
+        "sha256": "cd3380ab9ecce2951ee3af56a675ba23984db717b7bc64479595a19e00350f33",
+        "size_in_bytes": 4859
+      },
+      {
+        "_path": "include/arrow/util/int_util_overflow.h",
+        "path_type": "hardlink",
+        "sha256": "89ada01a06d48c1f5a7e7b0a43d58e9dcc818cb06b94cd099a14355a4224a634",
+        "size_in_bytes": 8772
+      },
+      {
+        "_path": "include/arrow/util/io_util.h",
+        "path_type": "hardlink",
+        "sha256": "0bca3e830898004307b056b92d36c2ef491a1d8650c5af19a72de5c3ee289024",
+        "size_in_bytes": 14098
+      },
+      {
+        "_path": "include/arrow/util/iterator.h",
+        "path_type": "hardlink",
+        "sha256": "e611d3b1780b18f545087c18a785c16ed05f8971c7277d53324ba7c76ca8689a",
+        "size_in_bytes": 18033
+      },
+      {
+        "_path": "include/arrow/util/key_value_metadata.h",
+        "path_type": "hardlink",
+        "sha256": "c2353ab9019c4a6cbe605a8cb3aaf02cfec4e17fb42050633eb599b2d8acb734",
+        "size_in_bytes": 3590
+      },
+      {
+        "_path": "include/arrow/util/launder.h",
+        "path_type": "hardlink",
+        "sha256": "0b7acd051878adeb94a7c62e45d19053de563dcf2f9786c063ecf92d78038ae0",
+        "size_in_bytes": 1046
+      },
+      {
+        "_path": "include/arrow/util/list_util.h",
+        "path_type": "hardlink",
+        "sha256": "fce9adb03a9efa69d9ffbb555b1076c8776008986988c13f44fde75c7cca6dd2",
+        "size_in_bytes": 2028
+      },
+      {
+        "_path": "include/arrow/util/logger.h",
+        "path_type": "hardlink",
+        "sha256": "a7d8b874d8277b7e8b5a91663526016204d0e241526a8db4749e342e045164a4",
+        "size_in_bytes": 6693
+      },
+      {
+        "_path": "include/arrow/util/logging.h",
+        "path_type": "hardlink",
+        "sha256": "eb7c259ceba0d7349dd6eafb71a0e9d05d33d881bb4231db505182844f1ffa70",
+        "size_in_bytes": 9139
+      },
+      {
+        "_path": "include/arrow/util/macros.h",
+        "path_type": "hardlink",
+        "sha256": "dbb3834f043027ccd3026a2cea1484e47d84783a485868b91d8491a22aea1a90",
+        "size_in_bytes": 9301
+      },
+      {
+        "_path": "include/arrow/util/math_constants.h",
+        "path_type": "hardlink",
+        "sha256": "dac7d6a1573cb321f3f17dba5e00667a3cd74ad97b866bca88e87deb6da85190",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "include/arrow/util/mutex.h",
+        "path_type": "hardlink",
+        "sha256": "f4b2fba3ad8c2b3168f36d1d55858a401dfc68166b4009b0f36f341e97608644",
+        "size_in_bytes": 1833
+      },
+      {
+        "_path": "include/arrow/util/parallel.h",
+        "path_type": "hardlink",
+        "sha256": "60f740efcfb5b1bf108fcfdbe5b8afa599316a89ffd7469a38704328ec8a4279",
+        "size_in_bytes": 3793
+      },
+      {
+        "_path": "include/arrow/util/pcg_random.h",
+        "path_type": "hardlink",
+        "sha256": "9db5e8c1f089162cb81a355f17d23c56f07a7f1932479ccd07514a76716c6134",
+        "size_in_bytes": 1252
+      },
+      {
+        "_path": "include/arrow/util/prefetch.h",
+        "path_type": "hardlink",
+        "sha256": "bda13814f76c71bb4ed1c3dbce5f05d4fcc1d4d0ced7ccad6251266421c38c7b",
+        "size_in_bytes": 1251
+      },
+      {
+        "_path": "include/arrow/util/queue.h",
+        "path_type": "hardlink",
+        "sha256": "5fdbd16505f760bfdad8bcf07becdc34d1e0b91ec5a066260fe4344c7aac0813",
+        "size_in_bytes": 1017
+      },
+      {
+        "_path": "include/arrow/util/range.h",
+        "path_type": "hardlink",
+        "sha256": "589d6fe01690e2230bba1f9f81d1b25aa63cf2bcd1e99f6ba83423e510bce171",
+        "size_in_bytes": 8725
+      },
+      {
+        "_path": "include/arrow/util/ree_util.h",
+        "path_type": "hardlink",
+        "sha256": "cce2341bcbdcb76ca84aa319b6694b49af698501c7363dbde18cbb63237d9c80",
+        "size_in_bytes": 22778
+      },
+      {
+        "_path": "include/arrow/util/regex.h",
+        "path_type": "hardlink",
+        "sha256": "4e3f760adb4e8761f14b410a43ff7eb3130102c42b0ce50a34fd2780824574ff",
+        "size_in_bytes": 1742
+      },
+      {
+        "_path": "include/arrow/util/rows_to_batches.h",
+        "path_type": "hardlink",
+        "sha256": "3d93682de3027c925d78756f527cb450773902d4b485cb540a2ef3533b49a5e1",
+        "size_in_bytes": 7120
+      },
+      {
+        "_path": "include/arrow/util/secure_string.h",
+        "path_type": "hardlink",
+        "sha256": "387158708b238e76eb057264fee1d266b1aeed5f4feccf40ad1b6372530d5623",
+        "size_in_bytes": 2473
+      },
+      {
+        "_path": "include/arrow/util/simd.h",
+        "path_type": "hardlink",
+        "sha256": "3e92a6f9a5a96582183f4367c86ad071e38ef66dffec96cde2eae8d088484fdc",
+        "size_in_bytes": 1679
+      },
+      {
+        "_path": "include/arrow/util/small_vector.h",
+        "path_type": "hardlink",
+        "sha256": "85792e10c38da1877bbc54bfea52cfc0fe3d495741a4085296f30afb57773eb1",
+        "size_in_bytes": 14439
+      },
+      {
+        "_path": "include/arrow/util/string.h",
+        "path_type": "hardlink",
+        "sha256": "512b50959dc59219b09b921c283b1b5000443434678d5d5c5397515e712ff084",
+        "size_in_bytes": 5296
+      },
+      {
+        "_path": "include/arrow/util/string_util.h",
+        "path_type": "hardlink",
+        "sha256": "88400ff5747428e0fecf01eeb6c81519e3b0f9f4aa0afee9e1ec553c8361b92f",
+        "size_in_bytes": 2382
+      },
+      {
+        "_path": "include/arrow/util/task_group.h",
+        "path_type": "hardlink",
+        "sha256": "7c8df7d0da094fcbbce0011403aa52c56ac4ed404a9f62da3380df3c5a1a96a0",
+        "size_in_bytes": 4362
+      },
+      {
+        "_path": "include/arrow/util/test_common.h",
+        "path_type": "hardlink",
+        "sha256": "3aa856c8e1159966f386bd897e268c9f57e50bce2953a9072f9bd8655d5b8543",
+        "size_in_bytes": 2981
+      },
+      {
+        "_path": "include/arrow/util/thread_pool.h",
+        "path_type": "hardlink",
+        "sha256": "f9d25ce193c2e4a461e54203bdf7379fe448f2d2475c8f79a512b1e6ec677a2b",
+        "size_in_bytes": 25591
+      },
+      {
+        "_path": "include/arrow/util/time.h",
+        "path_type": "hardlink",
+        "sha256": "feceb2c9e4cd90d3e22e3b5a59c788b720fcff2193c7618c8978f5202565cf25",
+        "size_in_bytes": 3439
+      },
+      {
+        "_path": "include/arrow/util/tracing.h",
+        "path_type": "hardlink",
+        "sha256": "b157c2fd18f683091629548a4f497414e3b9736106b1f630964657e1df677310",
+        "size_in_bytes": 1286
+      },
+      {
+        "_path": "include/arrow/util/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "25e6759ae22254ac477005f306290c0a693fed2c45cff22a9b3b93eb263517e0",
+        "size_in_bytes": 1803
+      },
+      {
+        "_path": "include/arrow/util/type_traits.h",
+        "path_type": "hardlink",
+        "sha256": "9252d237b19671e48c3c4fc15e56cafd3b05b071017b6f64c358303a0a3611ec",
+        "size_in_bytes": 2277
+      },
+      {
+        "_path": "include/arrow/util/ubsan.h",
+        "path_type": "hardlink",
+        "sha256": "bbd00b3d4d8accfd3111c6b346abfa23848a5fe9370016eb5cb0cd481701c116",
+        "size_in_bytes": 3215
+      },
+      {
+        "_path": "include/arrow/util/union_util.h",
+        "path_type": "hardlink",
+        "sha256": "d37e9489cb7686fa9961990980cbe3c826096b421cc0b87c9dcace9c3c708bcc",
+        "size_in_bytes": 1984
+      },
+      {
+        "_path": "include/arrow/util/unreachable.h",
+        "path_type": "hardlink",
+        "sha256": "3b54c6e28cc2613dffc6f0e9268b8a5ab945003204a487a6436f32e03a88c2ee",
+        "size_in_bytes": 1070
+      },
+      {
+        "_path": "include/arrow/util/uri.h",
+        "path_type": "hardlink",
+        "sha256": "0f6e3379b6b315caca1adee21a991c190f3b0ee17ed806e33ca5640e5abd36e9",
+        "size_in_bytes": 3886
+      },
+      {
+        "_path": "include/arrow/util/utf8.h",
+        "path_type": "hardlink",
+        "sha256": "7e5199efcea41e8df75e0ff3c34cd503d1804fc8d874f5074d58483c71a33a3f",
+        "size_in_bytes": 2031
+      },
+      {
+        "_path": "include/arrow/util/value_parsing.h",
+        "path_type": "hardlink",
+        "sha256": "a7fee9fdf514c378df5248959ca0037476f7282749ed78362509dcdfdb901cc2",
+        "size_in_bytes": 30654
+      },
+      {
+        "_path": "include/arrow/util/vector.h",
+        "path_type": "hardlink",
+        "sha256": "bf5c53a81ee67d69d5eff5373fd907f7a03ea08210c5a055a3b5301628c9060f",
+        "size_in_bytes": 5489
+      },
+      {
+        "_path": "include/arrow/util/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "cee1cb4f035c477e0b702b5b863d585f37cd2fc3713bedd71d8fd48142607596",
+        "size_in_bytes": 3238
+      },
+      {
+        "_path": "include/arrow/util/windows_compatibility.h",
+        "path_type": "hardlink",
+        "sha256": "0a199ef5f591a984737c86cbc3b57fc9e88859ddc5e1d15e1ba2261c7af85eac",
+        "size_in_bytes": 1255
+      },
+      {
+        "_path": "include/arrow/util/windows_fixup.h",
+        "path_type": "hardlink",
+        "sha256": "863a21eb3bc1f2ef0e55442a2ed75cae6a21333a00a0bcba5c914bc5c7c584ad",
+        "size_in_bytes": 1435
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-acero.pc",
+        "path_type": "hardlink",
+        "sha256": "b195bc7fa5492161a41e0ca5ea9c5b711cb31544d522676b64a1f4d25371bb31",
+        "sha256_in_prefix": "ffee92e8eedfd082cd5e6ab0b6a7480c52bbdf8f54cbef7a727496905c6e30b5",
+        "size_in_bytes": 1047,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-compute.pc",
+        "path_type": "hardlink",
+        "sha256": "cc3ca78a9ed748cf1ff07ccc859bc189238f552324b66b9dc9061c24dcd64c6c",
+        "sha256_in_prefix": "ef74de7a9e75ccb018c1558466b36c4c060fed88b1ae84e84002917ecb95e1aa",
+        "size_in_bytes": 1047,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-csv.pc",
+        "path_type": "hardlink",
+        "sha256": "f971375a25d784d4055d3e8a09eb9d5cd2953695935e75baee53d4d407cbf9af",
+        "sha256_in_prefix": "722e8205c9008ae27cbd96b685e948415de66c0dd8a76aee9e338460dcd2d35f",
+        "size_in_bytes": 980,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-cuda.pc",
+        "path_type": "hardlink",
+        "sha256": "ccc250800d5ac44bc00d69459c0b6526c8f22a95bb49e4be00287a0434f64286",
+        "sha256_in_prefix": "608476bc58592859c5bbec6783b39e6654d1c09aa0f694c79ae5e50501bb1704",
+        "size_in_bytes": 1064,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-dataset.pc",
+        "path_type": "hardlink",
+        "sha256": "7d80b911afdd07ab51687b11d765e1b6f15072612e1d17d2f34d57cc4a4d1801",
+        "sha256_in_prefix": "6a1953fd8f916a3323b686ce5eb9fbeb0954f1213a84ea8173ca62eef6da2fc8",
+        "size_in_bytes": 1151,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-filesystem.pc",
+        "path_type": "hardlink",
+        "sha256": "862ff65767d3fac7f05393220457a9b70494ebf356bf6da60dc2868670e28a1e",
+        "sha256_in_prefix": "0cbfc9912a6a4aabe2eca474d64df518216e51e8acd2d6a7baa31049071e718e",
+        "size_in_bytes": 1010,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-flight-sql.pc",
+        "path_type": "hardlink",
+        "sha256": "35a24f6dd4c6f934cea104e96359d1d8be81aaf254cc60ecf86d68b15fa3bbb6",
+        "sha256_in_prefix": "b4341d0bcd49ce2412a647a9a315e6ec68d1b4f885df29da02576e612f513869",
+        "size_in_bytes": 1054,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-flight.pc",
+        "path_type": "hardlink",
+        "sha256": "710baebd5e083ca85ff30ab5d092efd90df66e0576b5deb0570146e61f46335c",
+        "sha256_in_prefix": "99ca3e2223d4c59b2dd49d73a283c9adb0011be825e3eb07ff1e6bee968c78b0",
+        "size_in_bytes": 1063,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-json.pc",
+        "path_type": "hardlink",
+        "sha256": "63b55eff3d44f87a711137dab2a2bd2402c08bf91e11fe199db071203bcfe834",
+        "sha256_in_prefix": "92e4a26c09dddc336e3be5df33614637322fd401000db01b66402926bf218e9a",
+        "size_in_bytes": 982,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-orc.pc",
+        "path_type": "hardlink",
+        "sha256": "98d1ac7c5bb305ee2539feb658ac9f75288bbf404c9123322ca58fe90dfaba7c",
+        "sha256_in_prefix": "933428abb18c47283de9041841fbec361187f10d38f01f759c8c26ed1ecb6471",
+        "size_in_bytes": 974,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-s3.pc",
+        "path_type": "hardlink",
+        "sha256": "60b0045c20e693281df1eb8c9db5c636705c2fcf34050d6c8c9b92f05b4640a6",
+        "sha256_in_prefix": "385b9190850f9f0f60946aa6322e92fc6fe33834e320a4073c2ec1986e70a65e",
+        "size_in_bytes": 1074,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow-substrait.pc",
+        "path_type": "hardlink",
+        "sha256": "fda9a6e7a5bc64afaa89ba4d9835a1d2c6d57c8b3d426dd991c5f993ad61285e",
+        "sha256_in_prefix": "6d171b68df4dce26f82e025485336b48d15183b97b755e7b429dc7733a68d494",
+        "size_in_bytes": 1063,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/arrow.pc",
+        "path_type": "hardlink",
+        "sha256": "d48790e3bac04f16ae0012d31a6086f3596a9ac2f0564a42ffda692d62618e18",
+        "sha256_in_prefix": "c674ede4635be7d025c537415e6b76f9535dbfe8a7f97ec3f33311bb5ebacf1b",
+        "size_in_bytes": 1197,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/pkgconfig/parquet.pc",
+        "path_type": "hardlink",
+        "sha256": "97576a7851c459fd01a59416937e4e59646812e609c3c5967095fea8ed23387b",
+        "sha256_in_prefix": "433f509494d99e6627cee927f1726970d12f1f19e779fd454d20c900e5526f0e",
+        "size_in_bytes": 1133,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "share/arrow/gdb/gdb_arrow.py",
+        "path_type": "hardlink",
+        "sha256": "99ec654952a75beb9cd473ada288c7df1b3234d12fa7d53b95918c79c8a9c65a",
+        "size_in_bytes": 70771
+      },
+      {
+        "_path": "include/parquet/arrow/reader.h",
+        "path_type": "hardlink",
+        "sha256": "1387fd3959ae35c92ac84c62ced5c760db66a5545e1f89cf9d94fb758582ffa5",
+        "size_in_bytes": 15566
+      },
+      {
+        "_path": "include/parquet/arrow/schema.h",
+        "path_type": "hardlink",
+        "sha256": "322e7aba5ee2b4d4ba3436cca4a3890ae7e31d5a9a498e7fadbb0d44d2c4e7ad",
+        "size_in_bytes": 6204
+      },
+      {
+        "_path": "include/parquet/arrow/test_util.h",
+        "path_type": "hardlink",
+        "sha256": "ffff880783360cec828fb63fa19e6ae48aef2f2ad29530e0794d86fc3d6b451e",
+        "size_in_bytes": 18842
+      },
+      {
+        "_path": "include/parquet/arrow/writer.h",
+        "path_type": "hardlink",
+        "sha256": "d1e771d1f832cdeeaec538290f269c4a58ca3146b2f3aa51aaf21143b019a579",
+        "size_in_bytes": 7005
+      },
+      {
+        "_path": "include/arrow/adapters/orc/adapter.h",
+        "path_type": "hardlink",
+        "sha256": "1b949218660c4911082c2e3792a2f97eaa3de1ce2d2a0ba48ad3b5e66db5eed6",
+        "size_in_bytes": 11031
+      },
+      {
+        "_path": "include/arrow/adapters/orc/options.h",
+        "path_type": "hardlink",
+        "sha256": "14cc5d6b9612b2446b07a87d16f700b8cc65e6a75abd6acd6073e56a78ed938f",
+        "size_in_bytes": 3696
+      },
+      {
+        "_path": "include/arrow/extension/bool8.h",
+        "path_type": "hardlink",
+        "sha256": "56c1d3b55cabaa4e942a0be27da77b2e8bae89ea0066e66cfee56f7a0746ab84",
+        "size_in_bytes": 2145
+      },
+      {
+        "_path": "include/arrow/extension/fixed_shape_tensor.h",
+        "path_type": "hardlink",
+        "sha256": "7d7b2c54a522c52cc85cb893c6c2570f80d538dc3182709d8e34b68cb7ae9c0f",
+        "size_in_bytes": 5687
+      },
+      {
+        "_path": "include/arrow/extension/json.h",
+        "path_type": "hardlink",
+        "sha256": "6cd87a47d68fdcc2beadb4ce37c233567ec522df5118c9941c6a5090519f38cc",
+        "size_in_bytes": 2026
+      },
+      {
+        "_path": "include/arrow/extension/opaque.h",
+        "path_type": "hardlink",
+        "sha256": "b8c56a49271ecbfd771e8e95f3abdf92ea01c999e2f6e7e1e4118a817e1b4d99",
+        "size_in_bytes": 2920
+      },
+      {
+        "_path": "include/arrow/extension/parquet_variant.h",
+        "path_type": "hardlink",
+        "sha256": "ec922bdfc9dc6aef175a4a97e570327cddf26b57887955bcbea4cf22e2ea9b4e",
+        "size_in_bytes": 2889
+      },
+      {
+        "_path": "include/arrow/extension/uuid.h",
+        "path_type": "hardlink",
+        "sha256": "0c1cd30fcdcc877a1a71f6737d4e9f42e182f3b82fb67186683b9ef2cf4cd16b",
+        "size_in_bytes": 2364
+      },
+      {
+        "_path": "include/arrow/extension/variable_shape_tensor.h",
+        "path_type": "hardlink",
+        "sha256": "bea4f64e9371b208c950bef4fb2dc48cb8ef66f01c236b487759b304db8a5869",
+        "size_in_bytes": 4494
+      },
+      {
+        "_path": "include/arrow/array/array_base.h",
+        "path_type": "hardlink",
+        "sha256": "31906d3ef854f8cf34784d6c143f3f4ef6b6f23816a427bbbc8104c158159786",
+        "size_in_bytes": 13076
+      },
+      {
+        "_path": "include/arrow/array/array_binary.h",
+        "path_type": "hardlink",
+        "sha256": "26fb41f03a11d3fb6a7d2152ffd9cc46b277f65b757139b9c9787e0cb921aa35",
+        "size_in_bytes": 11247
+      },
+      {
+        "_path": "include/arrow/array/array_decimal.h",
+        "path_type": "hardlink",
+        "sha256": "c517eb6752053b4f449a41c4a250b0ac9e25b178cba390d775f1f9fefda04b2c",
+        "size_in_bytes": 3105
+      },
+      {
+        "_path": "include/arrow/array/array_dict.h",
+        "path_type": "hardlink",
+        "sha256": "7675c3953f8c86e487a13c8a332500ab985e50117023bb34057960ff1c9e4f16",
+        "size_in_bytes": 7746
+      },
+      {
+        "_path": "include/arrow/array/array_nested.h",
+        "path_type": "hardlink",
+        "sha256": "9a15f06862d6a6ecdc660005743ce59deb1167c7ff33f67fd3e71c12385688c4",
+        "size_in_bytes": 38126
+      },
+      {
+        "_path": "include/arrow/array/array_primitive.h",
+        "path_type": "hardlink",
+        "sha256": "e5f57b0c0705c7030cca49c23027f4e48e9c20082eefb01fee8ab5b4730813e3",
+        "size_in_bytes": 8925
+      },
+      {
+        "_path": "include/arrow/array/array_run_end.h",
+        "path_type": "hardlink",
+        "sha256": "e33b37b5c52b2200ce85210ecb0275bc663696c1fee50b84067f3b9b19c36e2f",
+        "size_in_bytes": 5101
+      },
+      {
+        "_path": "include/arrow/array/builder_adaptive.h",
+        "path_type": "hardlink",
+        "sha256": "f760e98886435d223fc8eacc7ed8fb3fad339422e3366c1f18ce6e6dd6d758ce",
+        "size_in_bytes": 6861
+      },
+      {
+        "_path": "include/arrow/array/builder_base.h",
+        "path_type": "hardlink",
+        "sha256": "188db4b4bf322a16f4aed33994eb0eda53087c72ad1d57ffa3a91e87a1983520",
+        "size_in_bytes": 13346
+      },
+      {
+        "_path": "include/arrow/array/builder_binary.h",
+        "path_type": "hardlink",
+        "sha256": "cbfe9fd46767e6136356c6eb774ea5e2669b27184f10c47fe04c54d6c9697d3e",
+        "size_in_bytes": 34237
+      },
+      {
+        "_path": "include/arrow/array/builder_decimal.h",
+        "path_type": "hardlink",
+        "sha256": "0c5c72165a73591652f7374186c8c82397c550e318f5b5c79f7108ac8be638ca",
+        "size_in_bytes": 5051
+      },
+      {
+        "_path": "include/arrow/array/builder_dict.h",
+        "path_type": "hardlink",
+        "sha256": "6a87924b953cc3c918e3bbcc9473f9467b451cf5086e813c3b13eee4cab7f28f",
+        "size_in_bytes": 30579
+      },
+      {
+        "_path": "include/arrow/array/builder_nested.h",
+        "path_type": "hardlink",
+        "sha256": "fd507d1146a61d073142d24cd05892cbc46ce2f873a4ebaa14c45f29ae2a1395",
+        "size_in_bytes": 31231
+      },
+      {
+        "_path": "include/arrow/array/builder_primitive.h",
+        "path_type": "hardlink",
+        "sha256": "597ff763e15e0af4eda04da41c9f4bd9c7b0fc83795b8bb24057e3b09da530b9",
+        "size_in_bytes": 26031
+      },
+      {
+        "_path": "include/arrow/array/builder_run_end.h",
+        "path_type": "hardlink",
+        "sha256": "49921db1428ad6a01cf697689cf19fd00fda8a4647731c7389c7b344647984bb",
+        "size_in_bytes": 11416
+      },
+      {
+        "_path": "include/arrow/array/builder_time.h",
+        "path_type": "hardlink",
+        "sha256": "78b85ced43fdb6d3490db4de0ddb1ffa284c14e464b2687b03449c03984b44e2",
+        "size_in_bytes": 2503
+      },
+      {
+        "_path": "include/arrow/array/builder_union.h",
+        "path_type": "hardlink",
+        "sha256": "f01179df6b0031cec9c5621b48dfb25fa67d7ea63d8e69ac21ad39e033ef6d61",
+        "size_in_bytes": 10144
+      },
+      {
+        "_path": "include/arrow/array/concatenate.h",
+        "path_type": "hardlink",
+        "sha256": "c01cbe0814f3f4c7910a67277d71af9179ef491029bcf39c7c27fae00e36cacf",
+        "size_in_bytes": 2059
+      },
+      {
+        "_path": "include/arrow/array/data.h",
+        "path_type": "hardlink",
+        "sha256": "d1caa75c6bfef972903576d01a29c7a4a83ac23c2ad2fa7265b906d9939820a8",
+        "size_in_bytes": 30510
+      },
+      {
+        "_path": "include/arrow/array/diff.h",
+        "path_type": "hardlink",
+        "sha256": "6d834acb6a0b031b6de956035af09fab66e725354d8c6e4a313b0697e813fe43",
+        "size_in_bytes": 3344
+      },
+      {
+        "_path": "include/arrow/array/statistics.h",
+        "path_type": "hardlink",
+        "sha256": "7f4ff89c9ca4f52bbeeeee01f8747a95fc8a2deedee44f49d4736a8609d1536f",
+        "size_in_bytes": 6914
+      },
+      {
+        "_path": "include/arrow/array/util.h",
+        "path_type": "hardlink",
+        "sha256": "a951ef09a56500bcfc589c008f2330b019b927688df3d092823ecda669aa9642",
+        "size_in_bytes": 3652
+      },
+      {
+        "_path": "include/arrow/array/validate.h",
+        "path_type": "hardlink",
+        "sha256": "25d0dbdd7260e139807e9bffce0bb62137cbd87f67a35d13422b7e1cf8fd332c",
+        "size_in_bytes": 1710
+      },
+      {
+        "_path": "include/arrow/gpu/cuda_api.h",
+        "path_type": "hardlink",
+        "sha256": "305515dcb559b948ce593ea1e6e9f74450c9f33b9eb8b3590c033b7ce7056e4c",
+        "size_in_bytes": 961
+      },
+      {
+        "_path": "include/arrow/gpu/cuda_arrow_ipc.h",
+        "path_type": "hardlink",
+        "sha256": "f06134948196143fc00d7b7cf580f20415890fffa3b162fc3e62c608d6bda453",
+        "size_in_bytes": 2350
+      },
+      {
+        "_path": "include/arrow/gpu/cuda_context.h",
+        "path_type": "hardlink",
+        "sha256": "7d31ffc19168267a2ac312b2b600657008e7598b0febb2bf71d10ba26c73c5a9",
+        "size_in_bytes": 15627
+      },
+      {
+        "_path": "include/arrow/gpu/cuda_memory.h",
+        "path_type": "hardlink",
+        "sha256": "a8339e340473b06322b0b198bf3e7703e988a211e2fe54595270eb30afaa4beb",
+        "size_in_bytes": 9389
+      },
+      {
+        "_path": "include/arrow/gpu/cuda_version.h",
+        "path_type": "hardlink",
+        "sha256": "add6fc29120f492cca458ef63047852434cb79970a549ca3d19a680c83361f92",
+        "size_in_bytes": 1031
+      },
+      {
+        "_path": "include/arrow/gpu/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "4e10088c81cc96c4fc827e54ae390bd7da0a5be18df87a4fcbc86a2c1c1cabb7",
+        "size_in_bytes": 1567
+      },
+      {
+        "_path": "include/arrow/vendored/datetime/date.h",
+        "path_type": "hardlink",
+        "sha256": "7f14301de39e09c37852cf03ffa8b8723445e0464e4a7e7f7ceaa042fdddc305",
+        "size_in_bytes": 237853
+      },
+      {
+        "_path": "include/arrow/vendored/datetime/ios.h",
+        "path_type": "hardlink",
+        "sha256": "ba272b8ff2c6039d776b630840ba467cd69fe11d5d8a54be6d76a7eea9033785",
+        "size_in_bytes": 1686
+      },
+      {
+        "_path": "include/arrow/vendored/datetime/tz.h",
+        "path_type": "hardlink",
+        "sha256": "ca6998cde10d01712c52f41641ffaedff9fb014ed6a50fc7d1fc844a9a3bcf53",
+        "size_in_bytes": 85392
+      },
+      {
+        "_path": "include/arrow/vendored/datetime/tz_private.h",
+        "path_type": "hardlink",
+        "sha256": "e4075f87ec0a9fd63775569b6b7bd26c8226578c63a24ff6934a0b4302863b59",
+        "size_in_bytes": 10751
+      },
+      {
+        "_path": "include/arrow/vendored/datetime/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "54218ace140e80bd73c065ca97fee52d42df4b2d0eb0fb7c14b587c00e2c3ad5",
+        "size_in_bytes": 1002
+      },
+      {
+        "_path": "include/arrow/json/api.h",
+        "path_type": "hardlink",
+        "sha256": "5d15b57cfe37cd5ab0cb5c9a6da29cb4d2bd30366a9f19281c31f57f1e41dd8e",
+        "size_in_bytes": 879
+      },
+      {
+        "_path": "include/arrow/json/chunked_builder.h",
+        "path_type": "hardlink",
+        "sha256": "0c3b8cc2b2263040b0e8c85f9dc9f6c4c3a390570a515d4ed79f7bfdf485480b",
+        "size_in_bytes": 2365
+      },
+      {
+        "_path": "include/arrow/json/chunker.h",
+        "path_type": "hardlink",
+        "sha256": "adb1ed1a553186aebda10f9d375ae4d353921a245b7e30bf901263075f6e251d",
+        "size_in_bytes": 1226
+      },
+      {
+        "_path": "include/arrow/json/converter.h",
+        "path_type": "hardlink",
+        "sha256": "de55ec3f70527692cf224140267616f6f3fc05b5f79de55847f5b4cc5282950d",
+        "size_in_bytes": 3134
+      },
+      {
+        "_path": "include/arrow/json/from_string.h",
+        "path_type": "hardlink",
+        "sha256": "cbef802b4f1ef848af6eb8a548653ac6d3c7d55a6a04d64862f08c513dbf57f1",
+        "size_in_bytes": 4106
+      },
+      {
+        "_path": "include/arrow/json/options.h",
+        "path_type": "hardlink",
+        "sha256": "132a50803c0b6506eb3e7021e399d23dfa46198af1bcb81fa757801bf974a774",
+        "size_in_bytes": 2227
+      },
+      {
+        "_path": "include/arrow/json/parser.h",
+        "path_type": "hardlink",
+        "sha256": "de82333b9914b364da91ceedfdde661fb6e9d6e21c73533ea9bb8798fa12237e",
+        "size_in_bytes": 3383
+      },
+      {
+        "_path": "include/arrow/json/rapidjson_defs.h",
+        "path_type": "hardlink",
+        "sha256": "9412657ee61621e410f1ac0f7776e4e2325cf3579faff2b32b01bc2a5c3bb75b",
+        "size_in_bytes": 1474
+      },
+      {
+        "_path": "include/arrow/json/reader.h",
+        "path_type": "hardlink",
+        "sha256": "28d3bd742c9cd9166ced6c544845bb6e9098061fe1d42dd4e766076310673f43",
+        "size_in_bytes": 5212
+      },
+      {
+        "_path": "include/arrow/json/test_common.h",
+        "path_type": "hardlink",
+        "sha256": "aceccb083fd224a633a9b89469b302347cc843f3c613b0940b261787ce10eaae",
+        "size_in_bytes": 10539
+      },
+      {
+        "_path": "include/arrow/json/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "a3d6a2801e65a2c92724515e8b5936e690d56198240b67a5991317d42e9a4e3a",
+        "size_in_bytes": 942
+      },
+      {
+        "_path": "include/arrow/testing/async_test_util.h",
+        "path_type": "hardlink",
+        "sha256": "22b1d67cf788ca1ae079318750f2edf762ddb287e6157ea48639e05ac66fddd6",
+        "size_in_bytes": 2262
+      },
+      {
+        "_path": "include/arrow/testing/builder.h",
+        "path_type": "hardlink",
+        "sha256": "1ce929abdaa57daeb277940fb59af46a10aef0c009cc1d7f2cb1466462d3aac8",
+        "size_in_bytes": 9816
+      },
+      {
+        "_path": "include/arrow/testing/examplefs.h",
+        "path_type": "hardlink",
+        "sha256": "5dcb0080a039c93f389aa1fd41b4ba8cc2017354802b75df04c6b2355e3fc95a",
+        "size_in_bytes": 981
+      },
+      {
+        "_path": "include/arrow/testing/executor_util.h",
+        "path_type": "hardlink",
+        "sha256": "dfcfeb17e57ff73175b6d24cb2990f888fb7e155354438e0d400c14bc9541479",
+        "size_in_bytes": 1885
+      },
+      {
+        "_path": "include/arrow/testing/extension_type.h",
+        "path_type": "hardlink",
+        "sha256": "d33900d7500290408399d29ad72eb6f43d94def0cc3433b6f93c7e3dd0a3506f",
+        "size_in_bytes": 9576
+      },
+      {
+        "_path": "include/arrow/testing/fixed_width_test_util.h",
+        "path_type": "hardlink",
+        "sha256": "83ac81ed1933894ec71213499f13a1927da71391de5da157ded6c15f7abdfec1",
+        "size_in_bytes": 3091
+      },
+      {
+        "_path": "include/arrow/testing/future_util.h",
+        "path_type": "hardlink",
+        "sha256": "a88862e35ece18c5923144831e39064d877e8a165bab0f19488470274d6f6ca8",
+        "size_in_bytes": 6246
+      },
+      {
+        "_path": "include/arrow/testing/generator.h",
+        "path_type": "hardlink",
+        "sha256": "cf0108fd94be9f1388a186545bf5fd544d3083920b93c3f30697a8ea4a975033",
+        "size_in_bytes": 13525
+      },
+      {
+        "_path": "include/arrow/testing/gtest_compat.h",
+        "path_type": "hardlink",
+        "sha256": "d0da87dfd9b2ee6d45329b2b4189f1431e1b744135d1209765acac37aca34050",
+        "size_in_bytes": 1311
+      },
+      {
+        "_path": "include/arrow/testing/gtest_util.h",
+        "path_type": "hardlink",
+        "sha256": "c1098d3efdcce5e9a4e639702bc88cce44a7ca2b3f6ea0ba84dd49e3b816e89a",
+        "size_in_bytes": 24786
+      },
+      {
+        "_path": "include/arrow/testing/matchers.h",
+        "path_type": "hardlink",
+        "sha256": "67a8c95b87c696fb6973ba16a4f971e729cb936b672f017e761bf97d021cbea7",
+        "size_in_bytes": 16832
+      },
+      {
+        "_path": "include/arrow/testing/math.h",
+        "path_type": "hardlink",
+        "sha256": "b55ef935fbd9124486eb74260e293b2f05cc7b07e234f2cedf483bb4bb4a0b6c",
+        "size_in_bytes": 1195
+      },
+      {
+        "_path": "include/arrow/testing/process.h",
+        "path_type": "hardlink",
+        "sha256": "0333d6dcb876478b139be454522e0e7776926daf73a0b712ff31c1c73b6fe332",
+        "size_in_bytes": 1372
+      },
+      {
+        "_path": "include/arrow/testing/random.h",
+        "path_type": "hardlink",
+        "sha256": "04341e22f4c8a3ef7cbaf13e62c72fb1798eb278c9516afbe2de5ae58bad090f",
+        "size_in_bytes": 38623
+      },
+      {
+        "_path": "include/arrow/testing/uniform_real.h",
+        "path_type": "hardlink",
+        "sha256": "99568ab05b433ee41b6b05dab41df0bc9b5da1a7ab911b528ca8ea5d0aff030d",
+        "size_in_bytes": 2938
+      },
+      {
+        "_path": "include/arrow/testing/util.h",
+        "path_type": "hardlink",
+        "sha256": "b6177cb39966a74e6080c3b3fb944ac6c4fc9ddb527838d09239b268d7d9ea40",
+        "size_in_bytes": 6224
+      },
+      {
+        "_path": "include/arrow/testing/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "fb08dcd3440887281725aeed9276c82faf39010d709f208fafe12d5739339aad",
+        "size_in_bytes": 1606
+      },
+      {
+        "_path": "include/arrow/acero/accumulation_queue.h",
+        "path_type": "hardlink",
+        "sha256": "7f3d28907eac66a712a41976c37bce53dc126bd425388017ce29266f798834f1",
+        "size_in_bytes": 5985
+      },
+      {
+        "_path": "include/arrow/acero/aggregate_node.h",
+        "path_type": "hardlink",
+        "sha256": "f5f866050194a61b2a2ddedb36688e25a120e4d271572580e511acf54693c51d",
+        "size_in_bytes": 2201
+      },
+      {
+        "_path": "include/arrow/acero/api.h",
+        "path_type": "hardlink",
+        "sha256": "7d1b8a1076ca0d85910b04872dceef483fba9906afc8eb33b65b8247b7af1429",
+        "size_in_bytes": 1151
+      },
+      {
+        "_path": "include/arrow/acero/asof_join_node.h",
+        "path_type": "hardlink",
+        "sha256": "2a8eabd700e3c60d35144f7ec4a92db71ed6cc20337f8dc6c5ba6f18780a669f",
+        "size_in_bytes": 1490
+      },
+      {
+        "_path": "include/arrow/acero/backpressure_handler.h",
+        "path_type": "hardlink",
+        "sha256": "99b258558785310960e348ff93b7f48c55d9f24463a3996b136767742e7867bb",
+        "size_in_bytes": 2395
+      },
+      {
+        "_path": "include/arrow/acero/benchmark_util.h",
+        "path_type": "hardlink",
+        "sha256": "4f96cd69b1754c3029dbc4bb57fbedfd52039fa97905ed3339508785c4dc15ff",
+        "size_in_bytes": 1943
+      },
+      {
+        "_path": "include/arrow/acero/bloom_filter.h",
+        "path_type": "hardlink",
+        "sha256": "6c5cf303342bb3d78fa76b423d022e93539af601bf372a7bd8cfc73347616a43",
+        "size_in_bytes": 11978
+      },
+      {
+        "_path": "include/arrow/acero/exec_plan.h",
+        "path_type": "hardlink",
+        "sha256": "534280ded9cdbd56fbe46d174052d56c6cd708675d746c91856df331af285897",
+        "size_in_bytes": 35909
+      },
+      {
+        "_path": "include/arrow/acero/hash_join.h",
+        "path_type": "hardlink",
+        "sha256": "ce39635231f6010948e78573dbfee1bc92008d381a4f404f0bf2d50fbc4d7769",
+        "size_in_bytes": 3022
+      },
+      {
+        "_path": "include/arrow/acero/hash_join_dict.h",
+        "path_type": "hardlink",
+        "sha256": "fc128998add9fca749b981e1e0a402b93ff5ad7954a21aed12018bb442787e04",
+        "size_in_bytes": 15360
+      },
+      {
+        "_path": "include/arrow/acero/hash_join_node.h",
+        "path_type": "hardlink",
+        "sha256": "1574fe69e5cbee7353b95ef97fda1781d1b2a8c2bfef61a7a86526f5c9819e4a",
+        "size_in_bytes": 4378
+      },
+      {
+        "_path": "include/arrow/acero/map_node.h",
+        "path_type": "hardlink",
+        "sha256": "05dd47716d0de5ace8215b61d804de1f181329df579a6124cf8d9804dc3978ad",
+        "size_in_bytes": 2628
+      },
+      {
+        "_path": "include/arrow/acero/options.h",
+        "path_type": "hardlink",
+        "sha256": "3c4cb4fbf55711314842a7d13a368bb1b71ac0b997c62cf45116d61405a03daa",
+        "size_in_bytes": 37827
+      },
+      {
+        "_path": "include/arrow/acero/order_by_impl.h",
+        "path_type": "hardlink",
+        "sha256": "750aa994ff806563d944a8a8f0b9938d85a5098cfd5665bebac52bb5a2e977fc",
+        "size_in_bytes": 1691
+      },
+      {
+        "_path": "include/arrow/acero/partition_util.h",
+        "path_type": "hardlink",
+        "sha256": "c52f216b2b934629b2ace1f37f5c519b52158e4c887950865d8efc076ac96897",
+        "size_in_bytes": 7437
+      },
+      {
+        "_path": "include/arrow/acero/query_context.h",
+        "path_type": "hardlink",
+        "sha256": "0f7eb8686452dee59ef25818a823518d5bece6c29eb4b38e5f3002769e4665e8",
+        "size_in_bytes": 6212
+      },
+      {
+        "_path": "include/arrow/acero/schema_util.h",
+        "path_type": "hardlink",
+        "sha256": "280fe1576c72d9345c70cca4b12cd0add1fdfeb746a37b50c87388beb5966014",
+        "size_in_bytes": 7961
+      },
+      {
+        "_path": "include/arrow/acero/task_util.h",
+        "path_type": "hardlink",
+        "sha256": "ea9a882ee61f715c2df47a958517d7155268382f90fddb64f264394b18e0c1b6",
+        "size_in_bytes": 3706
+      },
+      {
+        "_path": "include/arrow/acero/test_nodes.h",
+        "path_type": "hardlink",
+        "sha256": "c4a78b599642f22a24bde5573e3b1e3b530ebd631c6f2fb4c623084b2d2ac3c1",
+        "size_in_bytes": 2877
+      },
+      {
+        "_path": "include/arrow/acero/time_series_util.h",
+        "path_type": "hardlink",
+        "sha256": "5bdcb3a1a4c6901da3b589bcc360989274b0d448cc6ec7537e612eb8bdb332d9",
+        "size_in_bytes": 1210
+      },
+      {
+        "_path": "include/arrow/acero/tpch_node.h",
+        "path_type": "hardlink",
+        "sha256": "977ce87311d37c69974e3cb0271c285c2224f6d8f351181675829281293c0c04",
+        "size_in_bytes": 2671
+      },
+      {
+        "_path": "include/arrow/acero/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "e332e1b4b25fffb3125e0ae140865519e2f18d3ec9ac40c09fdc96ef90d31657",
+        "size_in_bytes": 1103
+      },
+      {
+        "_path": "include/arrow/acero/util.h",
+        "path_type": "hardlink",
+        "sha256": "6f284c123e57a00532fbddc08cbaf1fe9f7f89465d627e6e27f703902250b794",
+        "size_in_bytes": 6121
+      },
+      {
+        "_path": "include/arrow/acero/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "13ee06d8ee05d9869b5e714d2589ec23655b568281b4eec05ea87f48fb898ba9",
+        "size_in_bytes": 1616
+      },
+      {
+        "_path": "lib/cmake/ArrowSubstrait/ArrowSubstraitConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "97c977532a7e614c4096a57717cf5068155fc0d36c8f4a98fbc059bcecbb1091",
+        "size_in_bytes": 2471
+      },
+      {
+        "_path": "lib/cmake/ArrowSubstrait/ArrowSubstraitConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowSubstrait/ArrowSubstraitTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "22d614b8c661a5e7c78d46838b6c653b523ae3e5d13eb4969806ccda5f384520",
+        "size_in_bytes": 1006
+      },
+      {
+        "_path": "lib/cmake/ArrowSubstrait/ArrowSubstraitTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "02b3689b38f6573a8ab80cdc9e1033fba2cbd01695b42f8deaf47571491296ea",
+        "size_in_bytes": 4287
+      },
+      {
+        "_path": "include/arrow/compute/row/grouper.h",
+        "path_type": "hardlink",
+        "sha256": "203f6c16315ac2e9500b94ff7fe4d0b6dbe8861b120263641c88f5897cc363ed",
+        "size_in_bytes": 7520
+      },
+      {
+        "_path": "include/arrow/filesystem/api.h",
+        "path_type": "hardlink",
+        "sha256": "5e0cb618e66d055c038d36973c3c8f3e54bd070b7d8235979b923f41bc916c5a",
+        "size_in_bytes": 1383
+      },
+      {
+        "_path": "include/arrow/filesystem/azurefs.h",
+        "path_type": "hardlink",
+        "sha256": "272275d5e1f73c196da21a6ae38cc13ce0dc6a7dc2987c22847a0d8646dda8b8",
+        "size_in_bytes": 15588
+      },
+      {
+        "_path": "include/arrow/filesystem/filesystem.h",
+        "path_type": "hardlink",
+        "sha256": "bcf1d1dc3e04fd50c073cbc11c9602e822e93e644d8be02907633c8f05beb2a7",
+        "size_in_bytes": 33547
+      },
+      {
+        "_path": "include/arrow/filesystem/filesystem_library.h",
+        "path_type": "hardlink",
+        "sha256": "7f6fe9e0e773beaef3acc78fc0d7161457adf28a259c323c485d2de7967a4ff6",
+        "size_in_bytes": 1765
+      },
+      {
+        "_path": "include/arrow/filesystem/gcsfs.h",
+        "path_type": "hardlink",
+        "sha256": "e47487a80f5ad53db356764ed6b3592a75e32d5caad5a026e8346642683fbf9c",
+        "size_in_bytes": 10372
+      },
+      {
+        "_path": "include/arrow/filesystem/hdfs.h",
+        "path_type": "hardlink",
+        "sha256": "78a8253a4208c114600070606eb35ade7fc2cab269799e9ab4f813d7d59157a8",
+        "size_in_bytes": 4419
+      },
+      {
+        "_path": "include/arrow/filesystem/localfs.h",
+        "path_type": "hardlink",
+        "sha256": "78884fae900185e433db5584f38e542e579393cddee04b499c44b88c02d6ea63",
+        "size_in_bytes": 4972
+      },
+      {
+        "_path": "include/arrow/filesystem/mockfs.h",
+        "path_type": "hardlink",
+        "sha256": "92886eeecf6cf71b5def9b064c4d8afebb075bcf6cc033ad492485c418b131c7",
+        "size_in_bytes": 4768
+      },
+      {
+        "_path": "include/arrow/filesystem/path_util.h",
+        "path_type": "hardlink",
+        "sha256": "86b0d51e4e05f4cee8180041e31db029f40c8d29520084b421a2d5bf68c7ae5e",
+        "size_in_bytes": 5698
+      },
+      {
+        "_path": "include/arrow/filesystem/s3_test_util.h",
+        "path_type": "hardlink",
+        "sha256": "a76b4388dbc30c6b30162685a2629a606ab794314a668ef176d4875ea5104e9d",
+        "size_in_bytes": 3050
+      },
+      {
+        "_path": "include/arrow/filesystem/s3_visibility.h",
+        "path_type": "hardlink",
+        "sha256": "23bba1016aaed9edf7b98a7bd97d81486417bc206c6b39be8c5c835479135f7f",
+        "size_in_bytes": 1547
+      },
+      {
+        "_path": "include/arrow/filesystem/s3fs.h",
+        "path_type": "hardlink",
+        "sha256": "d0edb6421deb57ee8aec3dda66dcf194a9766a1eafc59b797e3f4462c022a5df",
+        "size_in_bytes": 19393
+      },
+      {
+        "_path": "include/arrow/filesystem/test_util.h",
+        "path_type": "hardlink",
+        "sha256": "21c7576f3f245da643bd43cde8e73bed4a562363ecbf57ff08a67107750683e2",
+        "size_in_bytes": 11738
+      },
+      {
+        "_path": "include/arrow/filesystem/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "cf3b43111e7959bb78ad59e477e45e7833be627ae97a67ed15e16d67b64689d6",
+        "size_in_bytes": 1462
+      },
+      {
+        "_path": "include/arrow/flight/api.h",
+        "path_type": "hardlink",
+        "sha256": "628b4b4d09fe28297acb904883c72810567d9fb3ccb49d36972ecf7398265fb5",
+        "size_in_bytes": 1257
+      },
+      {
+        "_path": "include/arrow/flight/client.h",
+        "path_type": "hardlink",
+        "sha256": "31d1e0b9b3bb131716829f12f823fd07851f27f6912e02dab74cb3d295d011d8",
+        "size_in_bytes": 17936
+      },
+      {
+        "_path": "include/arrow/flight/client_auth.h",
+        "path_type": "hardlink",
+        "sha256": "6b70e49bf8cf3aeab336c0c0e1e7a3b8c53008404c6af33cb92ef0f358a16d16",
+        "size_in_bytes": 2216
+      },
+      {
+        "_path": "include/arrow/flight/client_cookie_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "e739023f64b130542e4d7f0df4d1f13af7b927f79fdab14eebec58e137e7ca09",
+        "size_in_bytes": 1204
+      },
+      {
+        "_path": "include/arrow/flight/client_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "68067009a86e88184ff3988c3deef1356be274147d29e1c6b68d9802a262a08e",
+        "size_in_bytes": 2948
+      },
+      {
+        "_path": "include/arrow/flight/client_tracing_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "774b1399439fab933d14c96220a2be7e526447afbbafaf4d8d4d93a7185fa96a",
+        "size_in_bytes": 1217
+      },
+      {
+        "_path": "include/arrow/flight/middleware.h",
+        "path_type": "hardlink",
+        "sha256": "24f41df099c855cc234c7eb2381724e01591f9657de5fa6701d847c8462f7ca1",
+        "size_in_bytes": 2254
+      },
+      {
+        "_path": "include/arrow/flight/otel_logging.h",
+        "path_type": "hardlink",
+        "sha256": "ae24bdb193360b7987e9531b1128b327a9469ae76a74985f74263dfdc249a8c0",
+        "size_in_bytes": 1139
+      },
+      {
+        "_path": "include/arrow/flight/platform.h",
+        "path_type": "hardlink",
+        "sha256": "d597f355aa25940668b06c87ff526fcc403c88d474862f5c506cf97b22d3d737",
+        "size_in_bytes": 1209
+      },
+      {
+        "_path": "include/arrow/flight/server.h",
+        "path_type": "hardlink",
+        "sha256": "180715d3e4c7b81ba3f9b5dfc2a62b6753f66f06602904892dbbbc4e896d46f5",
+        "size_in_bytes": 13185
+      },
+      {
+        "_path": "include/arrow/flight/server_auth.h",
+        "path_type": "hardlink",
+        "sha256": "c57928b7f7e69c4674c971c406689ecc0402c4ceef41e9b5568d55d2f130716e",
+        "size_in_bytes": 4457
+      },
+      {
+        "_path": "include/arrow/flight/server_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "9115e6d797359a33ddba84bb37ad66d131bc9c622137f89e96c8caf72165b20b",
+        "size_in_bytes": 3155
+      },
+      {
+        "_path": "include/arrow/flight/server_tracing_middleware.h",
+        "path_type": "hardlink",
+        "sha256": "373cae7ea4f0cdc4d9df614db98fabc2c7b82a61fcce8ca873546167150cc05b",
+        "size_in_bytes": 2186
+      },
+      {
+        "_path": "include/arrow/flight/test_auth_handlers.h",
+        "path_type": "hardlink",
+        "sha256": "5e4bcc5ae72ff4642396ddadb6f631b21ca6e2452e6d474c87eb629a5408b752",
+        "size_in_bytes": 3315
+      },
+      {
+        "_path": "include/arrow/flight/test_definitions.h",
+        "path_type": "hardlink",
+        "sha256": "53f1e106735d3599a88eb698cc8081981bee79fd1b4d3e5e633157a7c8861737",
+        "size_in_bytes": 13110
+      },
+      {
+        "_path": "include/arrow/flight/test_flight_server.h",
+        "path_type": "hardlink",
+        "sha256": "49b46164fd14e082e76e0ee5610bc67979af3ccfc1e9b6a2d7615333f1c3e114",
+        "size_in_bytes": 3930
+      },
+      {
+        "_path": "include/arrow/flight/test_util.h",
+        "path_type": "hardlink",
+        "sha256": "d53bf4625e65b61da3ddf2194fb888f27fe47b1cc68091c6c69955e317aeed31",
+        "size_in_bytes": 6668
+      },
+      {
+        "_path": "include/arrow/flight/transport.h",
+        "path_type": "hardlink",
+        "sha256": "d0551514ce73721fcd29f0591092f0ca4b20eb74caca38cb5cd42b52a968f45f",
+        "size_in_bytes": 12201
+      },
+      {
+        "_path": "include/arrow/flight/transport_server.h",
+        "path_type": "hardlink",
+        "sha256": "8957579ab6f6a5e9a1e28e81c70bc1ece64057851ea16adb85ee1e3d9e4f8b8b",
+        "size_in_bytes": 5268
+      },
+      {
+        "_path": "include/arrow/flight/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "b5014033740d28f77307856a5067445058cd3d85d564b029c069d2bacd86431f",
+        "size_in_bytes": 1797
+      },
+      {
+        "_path": "include/arrow/flight/types.h",
+        "path_type": "hardlink",
+        "sha256": "9597521a6fc36487af57fbf2303d465b9d65815509361ac1ac238fad738105d0",
+        "size_in_bytes": 47502
+      },
+      {
+        "_path": "include/arrow/flight/types_async.h",
+        "path_type": "hardlink",
+        "sha256": "de7210ab00983b822bdccb766c6ec1367b57c6e34761034da73f9897711a1534",
+        "size_in_bytes": 2599
+      },
+      {
+        "_path": "include/arrow/flight/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "37593be1cc3246f39a6056bfb428dd8148e249d3c1866cb6d14b951aed304e0d",
+        "size_in_bytes": 1596
+      },
+      {
+        "_path": "lib/cmake/ArrowCUDA/ArrowCUDAConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "48669362b09563a94496931f25b3bcf3b440f56a4adcd7b350a6e67bf0debc29",
+        "size_in_bytes": 2686
+      },
+      {
+        "_path": "lib/cmake/ArrowCUDA/ArrowCUDAConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowCUDA/ArrowCUDATargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "4a171569c01bb322ffcf86b39743d4785769688f6b99c59eef44724e72260c81",
+        "size_in_bytes": 941
+      },
+      {
+        "_path": "lib/cmake/ArrowCUDA/ArrowCUDATargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "85e9732667dd109e11222092d47b77f7ec325dccef1ed741da60aca89851b57f",
+        "size_in_bytes": 4245
+      },
+      {
+        "_path": "lib/libarrow.so",
+        "path_type": "softlink",
+        "sha256": "dd3517ea18ff3704a951e5c82636a94e605e59e4c5ea7089d69f59b990d3eb57",
+        "sha256_in_prefix": "24591b081d9d42f90aa92b24d7be6483a5f229eaa189c0b1bf08174fa4ef7f7b",
+        "size_in_bytes": 26075576
+      },
+      {
+        "_path": "lib/libarrow.so.2600",
+        "path_type": "softlink",
+        "sha256": "dd3517ea18ff3704a951e5c82636a94e605e59e4c5ea7089d69f59b990d3eb57",
+        "sha256_in_prefix": "24591b081d9d42f90aa92b24d7be6483a5f229eaa189c0b1bf08174fa4ef7f7b",
+        "size_in_bytes": 26075576
+      },
+      {
+        "_path": "lib/libarrow.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "dd3517ea18ff3704a951e5c82636a94e605e59e4c5ea7089d69f59b990d3eb57",
+        "sha256_in_prefix": "9c900d750fbff725e8bc29a6a686285b0fed860ed7df26b463bed7643075fd8c",
+        "size_in_bytes": 26075576,
+        "file_mode": "binary",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/libarrow_acero.so",
+        "path_type": "softlink",
+        "sha256": "64a47bf0fed07bf85d4f64dea2eadaa198d4aae0871775ca56e0f3574ca41f49",
+        "sha256_in_prefix": "54723a6242d0f694fd364d5e12b1161f05ed47971600ab023cf715aede1c4c1f",
+        "size_in_bytes": 2206712
+      },
+      {
+        "_path": "lib/libarrow_acero.so.2600",
+        "path_type": "softlink",
+        "sha256": "64a47bf0fed07bf85d4f64dea2eadaa198d4aae0871775ca56e0f3574ca41f49",
+        "sha256_in_prefix": "54723a6242d0f694fd364d5e12b1161f05ed47971600ab023cf715aede1c4c1f",
+        "size_in_bytes": 2206712
+      },
+      {
+        "_path": "lib/libarrow_acero.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "64a47bf0fed07bf85d4f64dea2eadaa198d4aae0871775ca56e0f3574ca41f49",
+        "size_in_bytes": 2206712
+      },
+      {
+        "_path": "lib/libarrow_compute.so",
+        "path_type": "softlink",
+        "sha256": "8a770de7213d2423fd3243e73fedae9016e94dad12cc23c64a8859c4493c2d46",
+        "sha256_in_prefix": "94bd9b517c145e27f72463dd7865457fa127b1463a5b5be6b5fc7eb2fe7b4fb1",
+        "size_in_bytes": 18519488
+      },
+      {
+        "_path": "lib/libarrow_compute.so.2600",
+        "path_type": "softlink",
+        "sha256": "8a770de7213d2423fd3243e73fedae9016e94dad12cc23c64a8859c4493c2d46",
+        "sha256_in_prefix": "94bd9b517c145e27f72463dd7865457fa127b1463a5b5be6b5fc7eb2fe7b4fb1",
+        "size_in_bytes": 18519488
+      },
+      {
+        "_path": "lib/libarrow_compute.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "8a770de7213d2423fd3243e73fedae9016e94dad12cc23c64a8859c4493c2d46",
+        "size_in_bytes": 18519488
+      },
+      {
+        "_path": "lib/libarrow_cuda.so",
+        "path_type": "softlink",
+        "sha256": "58a7fff77541350a23fb6d32bc824de8b4af074a8b8c78eeface1b1f5cfc1778",
+        "sha256_in_prefix": "0afb493d43fccba4d23d388c6d6c75779dd1cebb119b96222466b8e6c21c0ef4",
+        "size_in_bytes": 274264
+      },
+      {
+        "_path": "lib/libarrow_cuda.so.2600",
+        "path_type": "softlink",
+        "sha256": "58a7fff77541350a23fb6d32bc824de8b4af074a8b8c78eeface1b1f5cfc1778",
+        "sha256_in_prefix": "0afb493d43fccba4d23d388c6d6c75779dd1cebb119b96222466b8e6c21c0ef4",
+        "size_in_bytes": 274264
+      },
+      {
+        "_path": "lib/libarrow_cuda.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "58a7fff77541350a23fb6d32bc824de8b4af074a8b8c78eeface1b1f5cfc1778",
+        "size_in_bytes": 274264
+      },
+      {
+        "_path": "lib/libarrow_dataset.so",
+        "path_type": "softlink",
+        "sha256": "2e06a32a68aa14f45d5efa5a7afc1513093e26f44339ef66b0859c2042152082",
+        "sha256_in_prefix": "119b3e6c7a9f77d5990a0c98eeb5f68732ba5be557fb2fb87edf3c832be1f7f5",
+        "size_in_bytes": 2575144
+      },
+      {
+        "_path": "lib/libarrow_dataset.so.2600",
+        "path_type": "softlink",
+        "sha256": "2e06a32a68aa14f45d5efa5a7afc1513093e26f44339ef66b0859c2042152082",
+        "sha256_in_prefix": "119b3e6c7a9f77d5990a0c98eeb5f68732ba5be557fb2fb87edf3c832be1f7f5",
+        "size_in_bytes": 2575144
+      },
+      {
+        "_path": "lib/libarrow_dataset.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "2e06a32a68aa14f45d5efa5a7afc1513093e26f44339ef66b0859c2042152082",
+        "size_in_bytes": 2575144
+      },
+      {
+        "_path": "lib/libarrow_flight.so",
+        "path_type": "softlink",
+        "sha256": "097d08b0efe11945d24e23aa59714ce63cf1bf1e84e7e85125e4bb7cb60a8565",
+        "sha256_in_prefix": "d3d72d3790316bff62665de4b5309a95aba37e7fcfc591e1c9ed8b9bbcc877d7",
+        "size_in_bytes": 2072760
+      },
+      {
+        "_path": "lib/libarrow_flight.so.2600",
+        "path_type": "softlink",
+        "sha256": "097d08b0efe11945d24e23aa59714ce63cf1bf1e84e7e85125e4bb7cb60a8565",
+        "sha256_in_prefix": "d3d72d3790316bff62665de4b5309a95aba37e7fcfc591e1c9ed8b9bbcc877d7",
+        "size_in_bytes": 2072760
+      },
+      {
+        "_path": "lib/libarrow_flight.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "097d08b0efe11945d24e23aa59714ce63cf1bf1e84e7e85125e4bb7cb60a8565",
+        "sha256_in_prefix": "8e490063bbd873aad0f452e30ac62f299844a9b4fc245463af26478bcb9fb8f1",
+        "size_in_bytes": 2072760,
+        "file_mode": "binary",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/libarrow_flight_sql.so",
+        "path_type": "softlink",
+        "sha256": "60e160507d07bfb09332f8f948ac39e3f3f16e3b2f9b18742375c07829b78980",
+        "sha256_in_prefix": "e8c6cf07b9c3861472c52a6634b1780a64edb19074cfe122fdc32db5d6c2fc75",
+        "size_in_bytes": 881272
+      },
+      {
+        "_path": "lib/libarrow_flight_sql.so.2600",
+        "path_type": "softlink",
+        "sha256": "60e160507d07bfb09332f8f948ac39e3f3f16e3b2f9b18742375c07829b78980",
+        "sha256_in_prefix": "e8c6cf07b9c3861472c52a6634b1780a64edb19074cfe122fdc32db5d6c2fc75",
+        "size_in_bytes": 881272
+      },
+      {
+        "_path": "lib/libarrow_flight_sql.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "60e160507d07bfb09332f8f948ac39e3f3f16e3b2f9b18742375c07829b78980",
+        "size_in_bytes": 881272
+      },
+      {
+        "_path": "lib/libarrow_s3.so",
+        "path_type": "softlink",
+        "sha256": "af8db17304e54eb763b455775bfa933a13cb6fad5ea1764c68225f0a34ef278e",
+        "sha256_in_prefix": "741045ceab74edf53cd103a6bac3734c9464f92b6a9802815e70a1b712b35ce4",
+        "size_in_bytes": 845992
+      },
+      {
+        "_path": "lib/libarrow_s3.so.2600",
+        "path_type": "softlink",
+        "sha256": "af8db17304e54eb763b455775bfa933a13cb6fad5ea1764c68225f0a34ef278e",
+        "sha256_in_prefix": "741045ceab74edf53cd103a6bac3734c9464f92b6a9802815e70a1b712b35ce4",
+        "size_in_bytes": 845992
+      },
+      {
+        "_path": "lib/libarrow_s3.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "af8db17304e54eb763b455775bfa933a13cb6fad5ea1764c68225f0a34ef278e",
+        "size_in_bytes": 845992
+      },
+      {
+        "_path": "lib/libarrow_substrait.so",
+        "path_type": "softlink",
+        "sha256": "0803491f41d44003513e5a5c21cb51fa3d8a206b262b9c4f666ccfd156ad93d1",
+        "sha256_in_prefix": "c6cd082646f742f8a1b6cfcd1ab587bcb8afd4e64c9ccb9a2dd18f1e901b5121",
+        "size_in_bytes": 2170432
+      },
+      {
+        "_path": "lib/libarrow_substrait.so.2600",
+        "path_type": "softlink",
+        "sha256": "0803491f41d44003513e5a5c21cb51fa3d8a206b262b9c4f666ccfd156ad93d1",
+        "sha256_in_prefix": "c6cd082646f742f8a1b6cfcd1ab587bcb8afd4e64c9ccb9a2dd18f1e901b5121",
+        "size_in_bytes": 2170432
+      },
+      {
+        "_path": "lib/libarrow_substrait.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "0803491f41d44003513e5a5c21cb51fa3d8a206b262b9c4f666ccfd156ad93d1",
+        "size_in_bytes": 2170432
+      },
+      {
+        "_path": "lib/libparquet.so",
+        "path_type": "softlink",
+        "sha256": "9eb4c67e912b0fbe7941acdd3893c3dfdccc229deaba9aafa76e0835abcad365",
+        "sha256_in_prefix": "366ee77a36803e5ea99b4f7ecdc3f01a71e81efe4bc0c0d9da464b5abe2b859e",
+        "size_in_bytes": 6103168
+      },
+      {
+        "_path": "lib/libparquet.so.2600",
+        "path_type": "softlink",
+        "sha256": "9eb4c67e912b0fbe7941acdd3893c3dfdccc229deaba9aafa76e0835abcad365",
+        "sha256_in_prefix": "366ee77a36803e5ea99b4f7ecdc3f01a71e81efe4bc0c0d9da464b5abe2b859e",
+        "size_in_bytes": 6103168
+      },
+      {
+        "_path": "lib/libparquet.so.2600.0.0",
+        "path_type": "hardlink",
+        "sha256": "9eb4c67e912b0fbe7941acdd3893c3dfdccc229deaba9aafa76e0835abcad365",
+        "size_in_bytes": 6103168
+      },
+      {
+        "_path": "include/arrow/ipc/api.h",
+        "path_type": "hardlink",
+        "sha256": "b1b6dbfae60766da84e7d0149703670335243f8d61dc4b7d467bb6d2034a9bdc",
+        "size_in_bytes": 972
+      },
+      {
+        "_path": "include/arrow/ipc/dictionary.h",
+        "path_type": "hardlink",
+        "sha256": "5138d93c81bc98b64e93d216d909d1f51646af59e97b164ea75d377eff8eef41",
+        "size_in_bytes": 6104
+      },
+      {
+        "_path": "include/arrow/ipc/feather.h",
+        "path_type": "hardlink",
+        "sha256": "aa42f9abce40ef394586a05c9f2182dc7084dbb93505894b10170276981c1268",
+        "size_in_bytes": 6033
+      },
+      {
+        "_path": "include/arrow/ipc/message.h",
+        "path_type": "hardlink",
+        "sha256": "390b25ee274442dbddbf3ae220ee410920cf69e59933e21219138ea4f0dac742",
+        "size_in_bytes": 21243
+      },
+      {
+        "_path": "include/arrow/ipc/options.h",
+        "path_type": "hardlink",
+        "sha256": "12568acf23ac47c82225e21cd8d606c65050ed9a280af99e29629c1f3ac3e6f6",
+        "size_in_bytes": 7910
+      },
+      {
+        "_path": "include/arrow/ipc/reader.h",
+        "path_type": "hardlink",
+        "sha256": "6230360fc0623f5e8cff98bc57af15aabd8774c0f8b22263fb47d153001b3603",
+        "size_in_bytes": 24885
+      },
+      {
+        "_path": "include/arrow/ipc/test_common.h",
+        "path_type": "hardlink",
+        "sha256": "a4a44e17819c075f81b6475cdcc479bf3cecadce3852388eb0b4e456c44781d6",
+        "size_in_bytes": 6738
+      },
+      {
+        "_path": "include/arrow/ipc/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "4f2f044fb9cb238249793a833323f4a441fd4158fdc6cec1a49919ae7ae968f6",
+        "size_in_bytes": 1440
+      },
+      {
+        "_path": "include/arrow/ipc/util.h",
+        "path_type": "hardlink",
+        "sha256": "c1391f0bd605299940023cb396641565c5bdd283a3fc96ad8c3378ab3d08c478",
+        "size_in_bytes": 1414
+      },
+      {
+        "_path": "include/arrow/ipc/writer.h",
+        "path_type": "hardlink",
+        "sha256": "ddd866d8950ead3bb67e5bf3a8fe399049236f379936b163d009b53a50e36537",
+        "size_in_bytes": 19488
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/bignum-dtoa.h",
+        "path_type": "hardlink",
+        "sha256": "8a61a1720d11cb032c14d3184eaa7aae55f0d8764220095af120bf9fdda00aa1",
+        "size_in_bytes": 4358
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/bignum.h",
+        "path_type": "hardlink",
+        "sha256": "46743608f2fc3ede9f5421a1ffc543175d5efc6cabaf03b4207d2e3274dcb04b",
+        "size_in_bytes": 5949
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/cached-powers.h",
+        "path_type": "hardlink",
+        "sha256": "8e3c1f4776ee7bb98d944e656d3ac54762a582345ec363a49a305aee840ed108",
+        "size_in_bytes": 3079
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/diy-fp.h",
+        "path_type": "hardlink",
+        "sha256": "27e460a87dbb8eca53e546ed87da5303d340647e9eee7d4e561c4ca1d822f127",
+        "size_in_bytes": 5088
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/double-conversion.h",
+        "path_type": "hardlink",
+        "sha256": "2754e5e7ef1a158d00f529da03dcf943dd239ccc70e798a594f22e13e8dd0f94",
+        "size_in_bytes": 1804
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/double-to-string.h",
+        "path_type": "hardlink",
+        "sha256": "0beb4a462d08b8bc9c5e04ba082d68885902ae83a8ffe00ed153a399f7b4b651",
+        "size_in_bytes": 23925
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/fast-dtoa.h",
+        "path_type": "hardlink",
+        "sha256": "640868db97ea78fdedd913345e0a9f85305740822270008ba5dc871cc457dc95",
+        "size_in_bytes": 4122
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/fixed-dtoa.h",
+        "path_type": "hardlink",
+        "sha256": "1cb9e9c641e32a5766f850620d16c00d89632414986d018fe06cfeb156e24895",
+        "size_in_bytes": 2828
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/ieee.h",
+        "path_type": "hardlink",
+        "sha256": "095280f515d28efe19ca0a831cc885f87da1521dd01d0be9d466580b73008641",
+        "size_in_bytes": 15281
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/string-to-double.h",
+        "path_type": "hardlink",
+        "sha256": "525e9bfb6474a6351a01634cdca8b8907f77dcbaab5bafd77cfcf8052884daff",
+        "size_in_bytes": 10906
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/strtod.h",
+        "path_type": "hardlink",
+        "sha256": "eb10919b8eef99c821609ba0e668614d56ec6779b763ab507cc7a1132559371d",
+        "size_in_bytes": 3096
+      },
+      {
+        "_path": "include/arrow/vendored/double-conversion/utils.h",
+        "path_type": "hardlink",
+        "sha256": "c0545be5c1800623685120a7bca99dbff28831c06d5f53d7f3db4f15fbe06d02",
+        "size_in_bytes": 15614
+      },
+      {
+        "_path": "lib/cmake/Parquet/FindThriftAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "b1f23078d7ba308077d6dcfcb34cb3b6699d99e0c32e8dc415b5d9393ecd1d7d",
+        "size_in_bytes": 6572
+      },
+      {
+        "_path": "lib/cmake/Parquet/ParquetConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "fcc1fa72247463f54cd2041e380dd6ddc38b562da56eea2485911cc954a630c9",
+        "size_in_bytes": 2710
+      },
+      {
+        "_path": "lib/cmake/Parquet/ParquetConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/Parquet/ParquetTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "db9251c786acdcdfebc56b50f68e84859fc5147ca948ee97f2b430fd596b54bd",
+        "size_in_bytes": 987
+      },
+      {
+        "_path": "lib/cmake/Parquet/ParquetTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "5c18416a509b4dd11456fd70c1fe3bc67a202b3753ffa707095b408d47c55a72",
+        "size_in_bytes": 4205
+      },
+      {
+        "_path": "include/arrow/vendored/xxhash/xxhash.h",
+        "path_type": "hardlink",
+        "sha256": "3c31621e634be2e978034c2248b0e963d252ac34bbdd132e96bd56f5a3445bcb",
+        "size_in_bytes": 279426
+      },
+      {
+        "_path": "include/arrow/vendored/portable-snippets/debug-trap.h",
+        "path_type": "hardlink",
+        "sha256": "f4aa6127d811b434fd0d747d899eda4b6df16b64fcb4b98bb05109320d292c34",
+        "size_in_bytes": 3081
+      },
+      {
+        "_path": "share/gdb/auto-load/replace_this_section_with_absolute_slashed_path_to_CONDA_PREFIX/lib/libarrow.so.2600.0.0-gdb.py",
+        "path_type": "hardlink",
+        "sha256": "2b579ea91be7acf80fde6bb5dccb6ef78883fb8b4391199df82a183c73132dec",
+        "sha256_in_prefix": "728b8cac15634824b25f862449b6c9c067b7f7c65cf4002924f8f014d3b6babd",
+        "size_in_bytes": 975,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179269550553096/croot/arrow-cpp_1792695589812/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p"
+      },
+      {
+        "_path": "lib/cmake/ArrowFlight/ArrowFlightConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "ba20fe605c696f0454dfcf3d19ae8cec7ae84a6a8e14ce40ed4d816e03588318",
+        "size_in_bytes": 2474
+      },
+      {
+        "_path": "lib/cmake/ArrowFlight/ArrowFlightConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowFlight/ArrowFlightTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "b0f1ba9d5aa8ed509c9ce4e65433c871bf3f1f14b3c28339a866c537a9544f41",
+        "size_in_bytes": 967
+      },
+      {
+        "_path": "lib/cmake/ArrowFlight/ArrowFlightTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "c9c862d68e7a5bd26c78a1f83c96ed4e28a9877223c1868d710ef0e854db7c5f",
+        "size_in_bytes": 4245
+      },
+      {
+        "_path": "lib/cmake/ArrowFlight/FindgRPCAlt.cmake",
+        "path_type": "hardlink",
+        "sha256": "a638cf633a1e354c02d4fb916655d95835d327c6252108d3a2d082f1801deef9",
+        "size_in_bytes": 4311
+      },
+      {
+        "_path": "include/arrow/vendored/ProducerConsumerQueue.h",
+        "path_type": "hardlink",
+        "sha256": "073d64b373438175cb7d3f13314904dfc46930e4b029146dc14d5edfb635094c",
+        "size_in_bytes": 6101
+      },
+      {
+        "_path": "include/arrow/vendored/datetime.h",
+        "path_type": "hardlink",
+        "sha256": "b6c15bcfc2ca045cd1cd310e00a6725916dd14b7e70a765108af53ca2d4f00db",
+        "size_in_bytes": 1103
+      },
+      {
+        "_path": "include/arrow/vendored/strptime.h",
+        "path_type": "hardlink",
+        "sha256": "ab52198b90afc94a7f3cdcdb438fd72eba00576e15128bc1133d93929c1427d7",
+        "size_in_bytes": 1212
+      },
+      {
+        "_path": "include/arrow/vendored/xxhash.h",
+        "path_type": "hardlink",
+        "sha256": "314c2dcb3bbbc63931f6605c4bae526837022bbb607aa4208fe29810cc5c1d67",
+        "size_in_bytes": 844
+      },
+      {
+        "_path": "etc/conda/activate.d/arrow-cpp_activate.sh",
+        "path_type": "hardlink",
+        "sha256": "bd5638943324f5cda6244737a027a49d08179ac6384b074bd1c15bbdee7c6ea8",
+        "size_in_bytes": 3883
+      },
+      {
+        "_path": "lib/cmake/ArrowDataset/ArrowDatasetConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "80ddb23ab3dbc10e81e10660b2295d9515e5974a551c39bb731c6fe483164f21",
+        "size_in_bytes": 2793
+      },
+      {
+        "_path": "lib/cmake/ArrowDataset/ArrowDatasetConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowDataset/ArrowDatasetTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "a218ad91d86e3a1ff09930092444dddfdf17ef6fdbe9f2a49c9f7ced97bf1694",
+        "size_in_bytes": 980
+      },
+      {
+        "_path": "lib/cmake/ArrowDataset/ArrowDatasetTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "53fb68501f388edb08dfdffed6722dbaae35020f1f264adabf30f1e51bd21e2b",
+        "size_in_bytes": 4289
+      },
+      {
+        "_path": "lib/cmake/ArrowFlightSql/ArrowFlightSqlConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "477cc8f0821546e2c6e4995ebef636acab36370a0fe829349100f1bc57db59b5",
+        "size_in_bytes": 2378
+      },
+      {
+        "_path": "lib/cmake/ArrowFlightSql/ArrowFlightSqlConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowFlightSql/ArrowFlightSqlTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "39f5c153e01525e33317b424de7b2328aa8ee3de5aedf8afd5f56826df3d50fc",
+        "size_in_bytes": 1014
+      },
+      {
+        "_path": "lib/cmake/ArrowFlightSql/ArrowFlightSqlTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "98e1a7fa2fc179e81d0fa30df759652fe99f43460e8ea23d946a1a6b16cf1b72",
+        "size_in_bytes": 4289
+      },
+      {
+        "_path": "share/doc/arrow/LICENSE.txt",
+        "path_type": "hardlink",
+        "sha256": "cd03925a27219d326d622609fbcae6567279af8b8885c33d5969a9e4ef5d7525",
+        "size_in_bytes": 110383
+      },
+      {
+        "_path": "share/doc/arrow/NOTICE.txt",
+        "path_type": "hardlink",
+        "sha256": "afd895d61a00101f6d5a41cf518c83865d815e8109e956f512a0ce4ea9738c06",
+        "size_in_bytes": 2916
+      },
+      {
+        "_path": "share/doc/arrow/README.md",
+        "path_type": "hardlink",
+        "sha256": "3dba4ca71048c6f5827561c8a22dc10691572c174c817b45eb65757d25bc93cc",
+        "size_in_bytes": 1247
+      },
+      {
+        "_path": "include/parquet/api/io.h",
+        "path_type": "hardlink",
+        "sha256": "46272ad1dd91e105c78866426e3c59ff417f4262aad08adf4e274dbb93685cf2",
+        "size_in_bytes": 847
+      },
+      {
+        "_path": "include/parquet/api/reader.h",
+        "path_type": "hardlink",
+        "sha256": "be73395c33e7d5356c0c993848381bdd95364dae2f76b4730a90d63bdd2b6079",
+        "size_in_bytes": 1204
+      },
+      {
+        "_path": "include/parquet/api/schema.h",
+        "path_type": "hardlink",
+        "sha256": "2ac349e76f69121edb1946b4acb50271f6a723dad6dae4938ab829bcaab485d7",
+        "size_in_bytes": 855
+      },
+      {
+        "_path": "include/parquet/api/writer.h",
+        "path_type": "hardlink",
+        "sha256": "50965b63c40655132d026a33ce3a0cf539c8e20b2caa534550a097070d887ee2",
+        "size_in_bytes": 1007
+      },
+      {
+        "_path": "include/arrow/tensor/converter.h",
+        "path_type": "hardlink",
+        "sha256": "459ab44ebcbf922674f39fddfc2be17b032c779ec89c66f64c27a2bde69ff8ea",
+        "size_in_bytes": 2891
+      },
+      {
+        "_path": "include/arrow/vendored/safeint/safe_math.h",
+        "path_type": "hardlink",
+        "sha256": "1e0707badf40f55646a197ba03eebaf6ebf537cc9d30913d6b76c9cd988ec050",
+        "size_in_bytes": 78099
+      },
+      {
+        "_path": "include/arrow/vendored/safeint/safe_math_impl.h",
+        "path_type": "hardlink",
+        "sha256": "c3323802f8a32ebb4483d693b6aa18d5240d399d57c6c3f91b2b8dde3b82e8ae",
+        "size_in_bytes": 61119
+      },
+      {
+        "_path": "include/arrow/c/abi.h",
+        "path_type": "hardlink",
+        "sha256": "1828f1ce60368cd590d19595910fa19db09b30728f8a43b5f89933623f7a7276",
+        "size_in_bytes": 20318
+      },
+      {
+        "_path": "include/arrow/c/bridge.h",
+        "path_type": "hardlink",
+        "sha256": "e9ee99a08b06fa913c150e5a5389d127bd6f54bdd4f64ebdee0ecf60a0ec573e",
+        "size_in_bytes": 21789
+      },
+      {
+        "_path": "include/arrow/c/dlpack.h",
+        "path_type": "hardlink",
+        "sha256": "ca06d127c7bec52885449143ac96d2ef214b0b1f55a6124c5a1cc855a41ae41c",
+        "size_in_bytes": 4990
+      },
+      {
+        "_path": "include/arrow/c/dlpack_abi.h",
+        "path_type": "hardlink",
+        "sha256": "21e733afe4a173f130bcd21b7e02fb99b296c4c96dbc1c775d06a6daed76cf3b",
+        "size_in_bytes": 23325
+      },
+      {
+        "_path": "include/arrow/c/helpers.h",
+        "path_type": "hardlink",
+        "sha256": "7f4439d7d3f0a258851e9c6c1e9f90bdb3fa7e954c3761dadf94e4f9104ae96b",
+        "size_in_bytes": 6279
+      },
+      {
+        "_path": "include/arrow/dataset/api.h",
+        "path_type": "hardlink",
+        "sha256": "a7b8be6e77092e199f0647e32564bbebce2f0fd2e47b59bab5bec742aed3a67e",
+        "size_in_bytes": 1322
+      },
+      {
+        "_path": "include/arrow/dataset/dataset.h",
+        "path_type": "hardlink",
+        "sha256": "36c5dd48562b3b8069252115d9ee32251acdfa174bc4c25ea70032caa156b7ed",
+        "size_in_bytes": 20327
+      },
+      {
+        "_path": "include/arrow/dataset/dataset_writer.h",
+        "path_type": "hardlink",
+        "sha256": "4d057be5bfd48a07c68c8a419cf93cb5e3a770ce56ae829f295d79a227014516",
+        "size_in_bytes": 4589
+      },
+      {
+        "_path": "include/arrow/dataset/discovery.h",
+        "path_type": "hardlink",
+        "sha256": "c7bfb934103211e4161a559a9c90cb640a1692c2a233033dead943c7f33a9f97",
+        "size_in_bytes": 11236
+      },
+      {
+        "_path": "include/arrow/dataset/file_base.h",
+        "path_type": "hardlink",
+        "sha256": "b1f9e3b6e505b6bcc946b1f2d6a2141599baee0ad52fc7ca7f0c7b2b5b21c277",
+        "size_in_bytes": 20431
+      },
+      {
+        "_path": "include/arrow/dataset/file_csv.h",
+        "path_type": "hardlink",
+        "sha256": "ecf96f416ff6149e5144df951f8f8e070e5c67a9e4774284d2c8f54d0bc265ea",
+        "size_in_bytes": 5016
+      },
+      {
+        "_path": "include/arrow/dataset/file_ipc.h",
+        "path_type": "hardlink",
+        "sha256": "ebe6edbd785f959b001fdd13df0324c33664b5ee93e22c737821149ffe6e616f",
+        "size_in_bytes": 4083
+      },
+      {
+        "_path": "include/arrow/dataset/file_json.h",
+        "path_type": "hardlink",
+        "sha256": "b0f8ce78c3ad6d965bbce8af9ce75be0cbd828796da539d8f1f38d92107d3d9b",
+        "size_in_bytes": 3523
+      },
+      {
+        "_path": "include/arrow/dataset/file_orc.h",
+        "path_type": "hardlink",
+        "sha256": "3fb9c00fd9da7159e00c48c7f0285046dd004260e0e19d70071dfad0b0cea128",
+        "size_in_bytes": 2452
+      },
+      {
+        "_path": "include/arrow/dataset/file_parquet.h",
+        "path_type": "hardlink",
+        "sha256": "fe68690abacb1a7f573ca4adf65b1d6c6e30a2c3ce90c8aa9235c3cfed83fd2a",
+        "size_in_bytes": 16935
+      },
+      {
+        "_path": "include/arrow/dataset/parquet_encryption_config.h",
+        "path_type": "hardlink",
+        "sha256": "529a349393228d968c6916633e9e5783c4d1b75a7c670876736b5d8a68d57b50",
+        "size_in_bytes": 3425
+      },
+      {
+        "_path": "include/arrow/dataset/partition.h",
+        "path_type": "hardlink",
+        "sha256": "df0acd7a40fff9f3ced585bdd596be4f89ae09f41e017ed265121cb0237f7332",
+        "size_in_bytes": 16815
+      },
+      {
+        "_path": "include/arrow/dataset/plan.h",
+        "path_type": "hardlink",
+        "sha256": "223b91f4adac583f39ff61e9555a09fb76140aafbe50f6e51d4e3a7b15f9a918",
+        "size_in_bytes": 1181
+      },
+      {
+        "_path": "include/arrow/dataset/projector.h",
+        "path_type": "hardlink",
+        "sha256": "29f6628ead3d1edd19d9c247b2b8e0fac1374a26784ca6a29df95178afb7f5c8",
+        "size_in_bytes": 1135
+      },
+      {
+        "_path": "include/arrow/dataset/scanner.h",
+        "path_type": "hardlink",
+        "sha256": "584026674b9e7afaa3e675e3c52a1f673ef4ea44ce80ffeb9b014762edc10e10",
+        "size_in_bytes": 26199
+      },
+      {
+        "_path": "include/arrow/dataset/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "60e51247074d0255c9ee67852e896900543f99294e6ecd85f35cdc3b2d03a08e",
+        "size_in_bytes": 3170
+      },
+      {
+        "_path": "include/arrow/dataset/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "72499ffec108d16068e16ec32201f542b3aaf36b24387b6892c97d077c98bf35",
+        "size_in_bytes": 1586
+      },
+      {
+        "_path": "include/arrow/api.h",
+        "path_type": "hardlink",
+        "sha256": "1ace8789105853937bf9aefd8634e5f5631275ae79d577542a95ad845636bf5b",
+        "size_in_bytes": 2491
+      },
+      {
+        "_path": "include/arrow/array.h",
+        "path_type": "hardlink",
+        "sha256": "3f9a16ea1bc3da3f7b6cb6924c4e3f507b95e98dfc0d3c09570c3711bdf17534",
+        "size_in_bytes": 1981
+      },
+      {
+        "_path": "include/arrow/buffer.h",
+        "path_type": "hardlink",
+        "sha256": "cb72f643da65f45a4b3521ddc31fe0b215963acc0d6d8d4a3ad7f45296b56c95",
+        "size_in_bytes": 25358
+      },
+      {
+        "_path": "include/arrow/buffer_builder.h",
+        "path_type": "hardlink",
+        "sha256": "a9a3202ca6f270e4ac9f97b9fe794e8f7b5d3c7bb48b8e627fbf19ac53762e67",
+        "size_in_bytes": 17468
+      },
+      {
+        "_path": "include/arrow/builder.h",
+        "path_type": "hardlink",
+        "sha256": "981c4c928dbbd6527b5db92ed210a2c63f78dd8c7e7768b84391e6d967f08863",
+        "size_in_bytes": 1546
+      },
+      {
+        "_path": "include/arrow/chunk_resolver.h",
+        "path_type": "hardlink",
+        "sha256": "6ad196b9b3e7a7cb42c8cc2968d8b3ead07ba8e9f6d461991cb07ac36155e24c",
+        "size_in_bytes": 12827
+      },
+      {
+        "_path": "include/arrow/chunked_array.h",
+        "path_type": "hardlink",
+        "sha256": "5feb0655c7500ddba636962f28e8a4b9e5d7e48a03e3da2af022c8847f1b54a4",
+        "size_in_bytes": 11245
+      },
+      {
+        "_path": "include/arrow/compare.h",
+        "path_type": "hardlink",
+        "sha256": "50dc959aa62bbb6e35c2a296ea80da02d8402d5f4086e53051af3e83949e5d2c",
+        "size_in_bytes": 9662
+      },
+      {
+        "_path": "include/arrow/config.h",
+        "path_type": "hardlink",
+        "sha256": "cf756545e4b663607d943d9f3f2d77cb4ae5b4666dfddc8f75649a380bb5dc23",
+        "size_in_bytes": 3964
+      },
+      {
+        "_path": "include/arrow/datum.h",
+        "path_type": "hardlink",
+        "sha256": "56ad09fc492966f5d644260de906a10b61533b5f0be83fb4e2e4d90c57f77c65",
+        "size_in_bytes": 12031
+      },
+      {
+        "_path": "include/arrow/device.h",
+        "path_type": "hardlink",
+        "sha256": "98bcfdf6d6fbe15763c57b4ab7a45909828943c4d8cfddee682149d59888b4cc",
+        "size_in_bytes": 15344
+      },
+      {
+        "_path": "include/arrow/device_allocation_type_set.h",
+        "path_type": "hardlink",
+        "sha256": "ca7a19f97c8594e023874d4f53e475d6613f10ec6ec37c7373de2fe4e5dad2ee",
+        "size_in_bytes": 3306
+      },
+      {
+        "_path": "include/arrow/extension_type.h",
+        "path_type": "hardlink",
+        "sha256": "614bd4ccfcfed10886fa33a3b3ffd37f23c4a6c1d61a418ee4f3151b5bcc8e46",
+        "size_in_bytes": 6639
+      },
+      {
+        "_path": "include/arrow/memory_pool.h",
+        "path_type": "hardlink",
+        "sha256": "b0a05dbbe022766fd7dea6cf9dfa6eaf92d7ee7bb096c9c2ada3ec191d94a7bd",
+        "size_in_bytes": 12911
+      },
+      {
+        "_path": "include/arrow/memory_pool_test.h",
+        "path_type": "hardlink",
+        "sha256": "cbdb9eb6494465bc48db73fc3189691e90bfc05d6d591738bb6a2c01d7635ce8",
+        "size_in_bytes": 3604
+      },
+      {
+        "_path": "include/arrow/pretty_print.h",
+        "path_type": "hardlink",
+        "sha256": "677e8eed1a77c29f20086e7560787ec7ccadaeb10d0e915948f992497b3d4c0a",
+        "size_in_bytes": 5716
+      },
+      {
+        "_path": "include/arrow/record_batch.h",
+        "path_type": "hardlink",
+        "sha256": "8b34648ff7f29a14cc45953a6ded6961989d78bf8e326c59252226d2838bef5c",
+        "size_in_bytes": 19039
+      },
+      {
+        "_path": "include/arrow/result.h",
+        "path_type": "hardlink",
+        "sha256": "278160ca6052cd41affabb77feee361fb9a411b1ba20d8f8de6ef2cfeaf357b0",
+        "size_in_bytes": 18425
+      },
+      {
+        "_path": "include/arrow/scalar.h",
+        "path_type": "hardlink",
+        "sha256": "1ccd846277301882f5112b93286dd260c5005610c84b98cbe1d4335521a71daa",
+        "size_in_bytes": 38364
+      },
+      {
+        "_path": "include/arrow/sparse_tensor.h",
+        "path_type": "hardlink",
+        "sha256": "89d1f37619088be3a7e21b0099f4b513e9eb0bcd66f69be0273aa6a7fc8b142b",
+        "size_in_bytes": 25517
+      },
+      {
+        "_path": "include/arrow/status.h",
+        "path_type": "hardlink",
+        "sha256": "313d45686c21217cc7620dda95e34a529314f542e1324b6e57c56d5f518fa695",
+        "size_in_bytes": 17352
+      },
+      {
+        "_path": "include/arrow/stl.h",
+        "path_type": "hardlink",
+        "sha256": "d8f11bfcdfd9396af00499c559a87de86b8b98405ce55978fc8170b3d3421769",
+        "size_in_bytes": 19343
+      },
+      {
+        "_path": "include/arrow/stl_allocator.h",
+        "path_type": "hardlink",
+        "sha256": "9c744edf2e1ed97cca9932bec9d808f687b3c0c7ddc2d0539bc399dc48e2e6b5",
+        "size_in_bytes": 5207
+      },
+      {
+        "_path": "include/arrow/stl_iterator.h",
+        "path_type": "hardlink",
+        "sha256": "45e94d42b0031eea4a593b850420a4a95972b861d7537c81ea072c0e9429adaf",
+        "size_in_bytes": 9953
+      },
+      {
+        "_path": "include/arrow/table.h",
+        "path_type": "hardlink",
+        "sha256": "582e11767ffce496b44d60e2dbf766580270acb6cb7c7ec41fa8d8685a44dcc1",
+        "size_in_bytes": 15781
+      },
+      {
+        "_path": "include/arrow/table_builder.h",
+        "path_type": "hardlink",
+        "sha256": "2d170b08bda252b8fabc5e1ff408cfb30563aadaa5330ef3ffc54101f509782a",
+        "size_in_bytes": 3763
+      },
+      {
+        "_path": "include/arrow/tensor.h",
+        "path_type": "hardlink",
+        "sha256": "ce28367b186d26f880cd88e1770807df4dd2e59830c6365a031862d068608533",
+        "size_in_bytes": 10017
+      },
+      {
+        "_path": "include/arrow/type.h",
+        "path_type": "hardlink",
+        "sha256": "ab4c568110faadd4620588f0b64fad3fbcd01cb8a02f85940bcab591d1ceb4e1",
+        "size_in_bytes": 97566
+      },
+      {
+        "_path": "include/arrow/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "b8c00749af9f9ecb108af77fb21ab3282ebd6166f0ac5e9b761a8e37a2509585",
+        "size_in_bytes": 23281
+      },
+      {
+        "_path": "include/arrow/type_traits.h",
+        "path_type": "hardlink",
+        "sha256": "6fbc8b9db67abe6153469745036244cc8ab50b3af169305f0ecfaee062a1dff3",
+        "size_in_bytes": 56534
+      },
+      {
+        "_path": "include/arrow/visit_array_inline.h",
+        "path_type": "hardlink",
+        "sha256": "5ee423b8c13c5d9789a7b5bce98b82b2ea15560986d4dba55c0034289926981d",
+        "size_in_bytes": 2446
+      },
+      {
+        "_path": "include/arrow/visit_data_inline.h",
+        "path_type": "hardlink",
+        "sha256": "75188bdd4d527b4a2bb5e3876a44b425178d47df90d6455f5722177f4619c1bc",
+        "size_in_bytes": 12665
+      },
+      {
+        "_path": "include/arrow/visit_scalar_inline.h",
+        "path_type": "hardlink",
+        "sha256": "2af358d23f2713d82cffcd392d7315dc04e0bf1bd4a96e1478aa57531477acc0",
+        "size_in_bytes": 2419
+      },
+      {
+        "_path": "include/arrow/visit_type_inline.h",
+        "path_type": "hardlink",
+        "sha256": "8f33670a7feb70e8bf4ad27c76b18fbef6d0f4d79b1b1f71f7a283ae5e2c3d28",
+        "size_in_bytes": 5456
+      },
+      {
+        "_path": "include/arrow/visitor.h",
+        "path_type": "hardlink",
+        "sha256": "34aa2cf7c8f9e2e63db5d5f372d23f9ff9f0151ad734ec1a9f12c3a8364e370e",
+        "size_in_bytes": 8690
+      },
+      {
+        "_path": "include/arrow/visitor_generate.h",
+        "path_type": "hardlink",
+        "sha256": "9f660a656fb9858ec80904b01140592188767a0f59a137c3e785d177d3a5343a",
+        "size_in_bytes": 3324
+      },
+      {
+        "_path": "include/arrow/vendored/pcg/pcg_extras.hpp",
+        "path_type": "hardlink",
+        "sha256": "144633abc345c4f7dd2722ece2456d4c12e4683ea23bbd48373f442676b14dd7",
+        "size_in_bytes": 19784
+      },
+      {
+        "_path": "include/arrow/vendored/pcg/pcg_random.hpp",
+        "path_type": "hardlink",
+        "sha256": "ed3695de7661730a5fe97c6567a72877519a5b9826fa2527ebbb767e230f35b0",
+        "size_in_bytes": 73501
+      },
+      {
+        "_path": "include/arrow/vendored/pcg/pcg_uint128.hpp",
+        "path_type": "hardlink",
+        "sha256": "0f26af98a82af686f5df3fbe2de7bc58a7e230193572f2a1919943c50c9034e0",
+        "size_in_bytes": 28750
+      },
+      {
+        "_path": "include/arrow/engine/substrait/api.h",
+        "path_type": "hardlink",
+        "sha256": "5bd341d51026d19571ced457600f860fb1fc5cb40d5c5a184fb4dd1851e83531",
+        "size_in_bytes": 1079
+      },
+      {
+        "_path": "include/arrow/engine/substrait/extension_set.h",
+        "path_type": "hardlink",
+        "sha256": "cf52084157786dab799119e083dd48ca81395184efedb6abd49439724eb761b6",
+        "size_in_bytes": 21552
+      },
+      {
+        "_path": "include/arrow/engine/substrait/extension_types.h",
+        "path_type": "hardlink",
+        "sha256": "c79648bb29cd87a585b77c118d6fbecd4b2e0b749e0cb935a9183dff186cc163",
+        "size_in_bytes": 3075
+      },
+      {
+        "_path": "include/arrow/engine/substrait/options.h",
+        "path_type": "hardlink",
+        "sha256": "76dbd4b72ff3a0399c17055f969a620f37a562478e8423bbe2e445ea2cd04b39",
+        "size_in_bytes": 5820
+      },
+      {
+        "_path": "include/arrow/engine/substrait/relation.h",
+        "path_type": "hardlink",
+        "sha256": "57754a1650dd13ad5ed4e4bc2db262c2f9b9c34baae5bcc12e12aa9a098a6b0b",
+        "size_in_bytes": 2385
+      },
+      {
+        "_path": "include/arrow/engine/substrait/serde.h",
+        "path_type": "hardlink",
+        "sha256": "9a3c5fb85a3868f8428b079fa4a0093089649c5e143874abea0594fffd52c027",
+        "size_in_bytes": 16528
+      },
+      {
+        "_path": "include/arrow/engine/substrait/test_plan_builder.h",
+        "path_type": "hardlink",
+        "sha256": "44415aefd0f500e2088e9d887b3ef78b0e60127cc6f5169cf6df16c2218bb2e2",
+        "size_in_bytes": 3003
+      },
+      {
+        "_path": "include/arrow/engine/substrait/test_util.h",
+        "path_type": "hardlink",
+        "sha256": "20765e62b939d12c7d6a725f0b6e4358fe977ac22d284cb00d652abd425c8c44",
+        "size_in_bytes": 1517
+      },
+      {
+        "_path": "include/arrow/engine/substrait/type_fwd.h",
+        "path_type": "hardlink",
+        "sha256": "3fd6118c04294a0a088c30b4b22632c6843370f568debf72f39aa388cb6e741b",
+        "size_in_bytes": 1028
+      },
+      {
+        "_path": "include/arrow/engine/substrait/util.h",
+        "path_type": "hardlink",
+        "sha256": "fdd46240168831635bb181bb92e5e1b3774c938748eb7fa9334b92c583cebe01",
+        "size_in_bytes": 3570
+      },
+      {
+        "_path": "include/arrow/engine/substrait/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "191cc7e94f9408f4fc77ad1ccb03a415f71a9cf4a08992820cfe97dab2296ccb",
+        "size_in_bytes": 1740
+      },
+      {
+        "_path": "lib/cmake/ArrowAcero/ArrowAceroConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "b1e562dc69f824c953be61f4e5b6f85aa0b1441583daaf2b04c20e78c0ad2d5c",
+        "size_in_bytes": 2456
+      },
+      {
+        "_path": "lib/cmake/ArrowAcero/ArrowAceroConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "98c8a617a1556061925dd2e8aa2c7f3c6fbc739bc0db980d76f81d996b6f889b",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/ArrowAcero/ArrowAceroTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "3f363208c79f948aca0ce1edd29af08ee6f471f837d38bf0b135ed2cd0dc0478",
+        "size_in_bytes": 954
+      },
+      {
+        "_path": "lib/cmake/ArrowAcero/ArrowAceroTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "6b75a1982397b1e5173315ffcf1e85a527e3654e625aa865026eb22fe3ddc240",
+        "size_in_bytes": 4271
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/arrow-cpp-26.0.0-cuda130_ha4d7c89_100",
+    "type": 1
+  }
+}

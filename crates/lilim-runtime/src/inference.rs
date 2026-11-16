@@ -1,15 +1,15 @@
 // lilim-runtime: Inference routing handler
 //
-// This module bridges the Rust inference engine (Candle Phi-3.5-mini) with the
+// This module bridges the Rust inference engine (mistral.rs Phi-4-mini) with the
 // Python brain's routing decisions.
 //
 // Flow for POST /chat:
 //   1. Ask Python brain's /route endpoint: "local or remote?"
-//   2a. If local + engine available → stream via Candle Phi-3.5-mini directly
+//   2a. If local + engine available → stream via mistral.rs Phi-4-mini directly
 //   2b. If remote OR local engine unavailable → proxy to Python brain /chat (litellm)
 //
 // SSE format (same in both cases):
-//   data: {"type":"meta","model":"phi-3.5-mini","source":"local"}
+//   data: {"type":"meta","model":"phi-4-mini","source":"local"}
 //   data: {"type":"token","text":"Hello"}
 //   ...
 //   data: {"type":"done"}
@@ -46,7 +46,7 @@ pub async fn handle_internal_generate(
 
     if let Some(ref engine) = state.inference_engine {
         if engine.is_available() {
-            info!("Local Phi-3.5-mini engine generating {} tokens", max_tokens);
+            info!("Local Phi-4-mini engine generating {} tokens", max_tokens);
             return stream_local_inference(engine, &prompt, max_tokens).await;
         }
     }
@@ -87,11 +87,11 @@ async fn get_route_decision(state: &AppState, message: &str, session_id: &str) -
     }
 }
 
-/// Build a compact prompt for local Phi-3.5-mini inference.
+/// Build a compact prompt for local Phi-4-mini inference.
 ///
 /// Memory context and enhanced messages from the Python brain are designed
 /// for large online models (GPT-4, Claude) that handle long contexts quickly.
-/// For local Phi-3.5-mini Q4_K_M on CPU, prompt length affects TTFT:
+/// For local Phi-4-mini Q4_K_M on CPU, prompt length affects TTFT:
 ///   282-token prompt → 64s before first token
 ///   20-token prompt  → ~5s before first token
 ///
@@ -108,7 +108,7 @@ fn build_local_prompt(route: &Option<Value>, original_message: &str) -> String {
         .to_string()
 }
 
-/// Stream inference from the local Candle Phi-3.5-mini engine as SSE.
+/// Stream inference from the local mistral.rs Phi-4-mini engine as SSE.
 async fn stream_local_inference(
     engine: &lilim_inference::InferenceEngine,
     prompt: &str,
@@ -117,7 +117,7 @@ async fn stream_local_inference(
     // Meta event
     let meta_event = format!(
         "data: {}\n\n",
-        serde_json::json!({"type": "meta", "model": "phi-3.5-mini", "source": "local"})
+        serde_json::json!({"type": "meta", "model": "phi-4-mini", "source": "local"})
     );
 
     let prompt = prompt.to_string();

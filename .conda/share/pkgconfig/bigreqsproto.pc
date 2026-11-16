@@ -1,0 +1,7 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+includedir=${prefix}/include
+
+Name: BigReqsProto
+Description: BigReqs extension headers
+Version: 1.1.2
+Cflags: -I${includedir}

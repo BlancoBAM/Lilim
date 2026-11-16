@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_flags_usage_internal
+Description: Abseil flags_usage_internal library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_config = 20260526, absl_flags_config = 20260526, absl_flags = 20260526, absl_flags_commandlineflag = 20260526, absl_flags_internal = 20260526, absl_flags_path_util = 20260526, absl_flags_private_handle_accessor = 20260526, absl_flags_program_name = 20260526, absl_flags_reflection = 20260526, absl_strings = 20260526, absl_synchronization = 20260526
+Libs: -L${libdir}  -labsl_flags_usage_internal 
+Cflags: -I${includedir} -DNOMINMAX

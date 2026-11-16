@@ -1,0 +1,87 @@
+{
+  "build": "hbcba0ee_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libgcc >=14"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "fa3f5a347af7dc8c8db48c54fe5a2ae2",
+  "name": "jansson",
+  "sha256": "f00270fce560124e2ac09e83130d0128b510d4bfb7143fd85ea70bea6b828d86",
+  "size": 66361,
+  "subdir": "linux-64",
+  "timestamp": 1779458360191,
+  "version": "2.15.0",
+  "fn": "jansson-2.15.0-hbcba0ee_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/jansson-2.15.0-hbcba0ee_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/jansson-2.15.0-hbcba0ee_0",
+  "requested_specs": [],
+  "files": [
+    "lib/pkgconfig/jansson.pc",
+    "lib/libjansson.so",
+    "lib/libjansson.so.4",
+    "lib/libjansson.so.4.15.0",
+    "lib/cmake/jansson/janssonConfig.cmake",
+    "include/jansson.h",
+    "include/jansson_config.h"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/jansson.pc",
+        "path_type": "hardlink",
+        "sha256": "f3c67c7429f559df07f81ba94230e00ac0591937a50f0179613dad76c2bc8c7d",
+        "sha256_in_prefix": "6956170654434fa1c0eddb26f311040aa1ebfe03badb92cf0303499f72029d41",
+        "size_in_bytes": 271,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_177945828478666/croot/jansson_1779458334313/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla"
+      },
+      {
+        "_path": "lib/libjansson.so",
+        "path_type": "softlink",
+        "sha256": "c9c53bb319a5093445f8316548f5990f5c09d3a690d483f9edc94e7d1a900b22",
+        "sha256_in_prefix": "394559b5fbf1584c8a77d853f62e10ef7456b7032a05cfa050876e6618b7537b",
+        "size_in_bytes": 123464
+      },
+      {
+        "_path": "lib/libjansson.so.4",
+        "path_type": "softlink",
+        "sha256": "c9c53bb319a5093445f8316548f5990f5c09d3a690d483f9edc94e7d1a900b22",
+        "sha256_in_prefix": "394559b5fbf1584c8a77d853f62e10ef7456b7032a05cfa050876e6618b7537b",
+        "size_in_bytes": 123464
+      },
+      {
+        "_path": "lib/libjansson.so.4.15.0",
+        "path_type": "hardlink",
+        "sha256": "c9c53bb319a5093445f8316548f5990f5c09d3a690d483f9edc94e7d1a900b22",
+        "size_in_bytes": 123464
+      },
+      {
+        "_path": "lib/cmake/jansson/janssonConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "ead513a86b17b1fb8226b1f5b1f68d6f68f0e5805130f11da0360ae1a63df5c8",
+        "size_in_bytes": 784
+      },
+      {
+        "_path": "include/jansson.h",
+        "path_type": "hardlink",
+        "sha256": "ec078fa923c91ac28b4bddb378b8f22ebc41d95b68b1999d63e41ccfbbd029f6",
+        "size_in_bytes": 16645
+      },
+      {
+        "_path": "include/jansson_config.h",
+        "path_type": "hardlink",
+        "sha256": "e73bb56652077335e06d53df5751dc3e4e70aa8d98d0af9869a42f5fdfe5663e",
+        "size_in_bytes": 1513
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/jansson-2.15.0-hbcba0ee_0",
+    "type": 1
+  }
+}

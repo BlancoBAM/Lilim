@@ -1,0 +1,48 @@
+{
+  "build": "h59cdc77_0",
+  "build_number": 0,
+  "depends": [
+    "__unix"
+  ],
+  "license": "MPL-2.0",
+  "license_family": "Other",
+  "md5": "96a88c504da0ec1460d1a162e2476d91",
+  "name": "ca-certificates",
+  "noarch": "generic",
+  "sha256": "9ef98b182fb749f7f7682758c0f361a35a3e733a559006b0ddb7dafb82a0e233",
+  "size": 115860,
+  "subdir": "noarch",
+  "timestamp": 1794325388089,
+  "version": "2026.11.5",
+  "fn": "ca-certificates-2026.11.5-h59cdc77_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/ca-certificates-2026.11.5-h59cdc77_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/ca-certificates-2026.11.5-h59cdc77_0",
+  "requested_specs": [],
+  "files": [
+    "ssl/cacert.pem",
+    "ssl/cert.pem"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "ssl/cacert.pem",
+        "path_type": "hardlink",
+        "sha256": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285",
+        "size_in_bytes": 200116
+      },
+      {
+        "_path": "ssl/cert.pem",
+        "path_type": "softlink",
+        "sha256": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285",
+        "sha256_in_prefix": "0ebfd54889b22df75fcaac3a16c2262216c3036f967e7ecc2ed2bdf0956c16ee",
+        "size_in_bytes": 200116
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/ca-certificates-2026.11.5-h59cdc77_0",
+    "type": 1
+  }
+}

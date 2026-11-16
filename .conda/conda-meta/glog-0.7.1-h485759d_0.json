@@ -1,0 +1,156 @@
+{
+  "build": "h485759d_0",
+  "build_number": 0,
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "gflags >=2.3.0,<2.4.0a0",
+    "libgcc >=14",
+    "libstdcxx >=14"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "md5": "adf158177261472df9b77ef0f867613d",
+  "name": "glog",
+  "sha256": "c06f52a7a6702bb165dac7b924a1b9f1d6254842c8f4dbe5629fb5f2cba00f18",
+  "size": 146116,
+  "subdir": "linux-64",
+  "timestamp": 1774629849792,
+  "version": "0.7.1",
+  "fn": "glog-0.7.1-h485759d_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/glog-0.7.1-h485759d_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/glog-0.7.1-h485759d_0",
+  "requested_specs": [],
+  "files": [
+    "include/glog/export.h",
+    "include/glog/flags.h",
+    "include/glog/log_severity.h",
+    "include/glog/logging.h",
+    "include/glog/platform.h",
+    "include/glog/raw_logging.h",
+    "include/glog/stl_logging.h",
+    "include/glog/types.h",
+    "include/glog/vlog_is_on.h",
+    "lib/cmake/glog/glog-config-version.cmake",
+    "lib/cmake/glog/glog-config.cmake",
+    "lib/cmake/glog/glog-modules.cmake",
+    "lib/cmake/glog/glog-targets-release.cmake",
+    "lib/cmake/glog/glog-targets.cmake",
+    "lib/libglog.so",
+    "lib/libglog.so.0.7.1",
+    "lib/libglog.so.2"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "include/glog/export.h",
+        "path_type": "hardlink",
+        "sha256": "9c1436b75e2caa1d077e524ef325168cc11195456422b4ee72a97423687fb7e7",
+        "size_in_bytes": 1037
+      },
+      {
+        "_path": "include/glog/flags.h",
+        "path_type": "hardlink",
+        "sha256": "e649cbd1759d9446a53ac643266a2c8ae60c9d005ac2a12a425e50922321fab7",
+        "size_in_bytes": 5990
+      },
+      {
+        "_path": "include/glog/log_severity.h",
+        "path_type": "hardlink",
+        "sha256": "e1a6bc7b146d9bc0c54f3740b424561b421181052bad4b0253fc0de066e364ff",
+        "size_in_bytes": 4206
+      },
+      {
+        "_path": "include/glog/logging.h",
+        "path_type": "hardlink",
+        "sha256": "59882ed5221cec88eb43af93b60461d74abefe1225c321c8eed9a05e9117b032",
+        "size_in_bytes": 73016
+      },
+      {
+        "_path": "include/glog/platform.h",
+        "path_type": "hardlink",
+        "sha256": "941725dc507a8e741adada0af50f721221d96edf0896ce9d822ee0163d0d08e3",
+        "size_in_bytes": 2511
+      },
+      {
+        "_path": "include/glog/raw_logging.h",
+        "path_type": "hardlink",
+        "sha256": "af81c12092579db955c541c87a9b5ce54953e26c84346284f2ac92e7fc596baa",
+        "size_in_bytes": 7013
+      },
+      {
+        "_path": "include/glog/stl_logging.h",
+        "path_type": "hardlink",
+        "sha256": "4ba223f90ceab8ccb603117f920b3d5d2ad909d91236e00ce6aa22698fcf3f58",
+        "size_in_bytes": 6902
+      },
+      {
+        "_path": "include/glog/types.h",
+        "path_type": "hardlink",
+        "sha256": "225bf289f5145549f978a0c87b675d3f0073d1552ac832317d7952f51c3dc114",
+        "size_in_bytes": 2882
+      },
+      {
+        "_path": "include/glog/vlog_is_on.h",
+        "path_type": "hardlink",
+        "sha256": "e09f7cd8d599d6a0875d1e435303961fdac2975b5586b581b81d8ccd1229abd1",
+        "size_in_bytes": 6115
+      },
+      {
+        "_path": "lib/cmake/glog/glog-config-version.cmake",
+        "path_type": "hardlink",
+        "sha256": "b70fc4770c9fc76dad0be531f88453b59f5a0a64d9aecc07ea4d65fe4588e1df",
+        "size_in_bytes": 2762
+      },
+      {
+        "_path": "lib/cmake/glog/glog-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "4d503490aa55f6c66a568c991d14a3daf554de93de237e361b27753ea744e901",
+        "size_in_bytes": 973
+      },
+      {
+        "_path": "lib/cmake/glog/glog-modules.cmake",
+        "path_type": "hardlink",
+        "sha256": "c0f08312418396ab1648322985c33ce31d5db76ae2aa44af3a4c62dfb99e89ea",
+        "size_in_bytes": 712
+      },
+      {
+        "_path": "lib/cmake/glog/glog-targets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "0c6aef4f44911e1ae32e8b58f8df4f8158f4145273ec22affbb70351c6f1947f",
+        "size_in_bytes": 824
+      },
+      {
+        "_path": "lib/cmake/glog/glog-targets.cmake",
+        "path_type": "hardlink",
+        "sha256": "188c77e5023060cbfb4f15000cf5f59b562b8174ad5c964342d3d01d10165131",
+        "size_in_bytes": 4251
+      },
+      {
+        "_path": "lib/libglog.so",
+        "path_type": "softlink",
+        "sha256": "7618af7f214749b71f050b298e890c38a785dcad1ab98e8d1b16182d6c679142",
+        "sha256_in_prefix": "9e913346a12f39b154f5cde3f0e1b9dec97338c26f325f70689111e34e7c3367",
+        "size_in_bytes": 371944
+      },
+      {
+        "_path": "lib/libglog.so.0.7.1",
+        "path_type": "hardlink",
+        "sha256": "7618af7f214749b71f050b298e890c38a785dcad1ab98e8d1b16182d6c679142",
+        "size_in_bytes": 371944
+      },
+      {
+        "_path": "lib/libglog.so.2",
+        "path_type": "softlink",
+        "sha256": "7618af7f214749b71f050b298e890c38a785dcad1ab98e8d1b16182d6c679142",
+        "sha256_in_prefix": "9e913346a12f39b154f5cde3f0e1b9dec97338c26f325f70689111e34e7c3367",
+        "size_in_bytes": 371944
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/glog-0.7.1-h485759d_0",
+    "type": 1
+  }
+}

@@ -1,0 +1,438 @@
+#ifndef AWS_COMMON_FILE_H
+#define AWS_COMMON_FILE_H
+/**
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0.
+ */
+#include <aws/common/byte_buf.h>
+#include <aws/common/common.h>
+#include <aws/common/platform.h>
+#include <stdio.h>
+
+AWS_PUSH_SANE_WARNING_LEVEL
+
+#ifdef AWS_OS_WINDOWS
+#    define AWS_PATH_DELIM '\\'
+#    define AWS_PATH_DELIM_STR "\\"
+#else
+#    define AWS_PATH_DELIM '/'
+#    define AWS_PATH_DELIM_STR "/"
+#endif
+
+struct aws_string;
+struct aws_directory_iterator;
+
+enum aws_file_type {
+    AWS_FILE_TYPE_FILE = 1,
+    AWS_FILE_TYPE_SYM_LINK = 2,
+    AWS_FILE_TYPE_DIRECTORY = 4,
+};
+
+struct aws_directory_entry {
+    /**
+     * Absolute path to the entry from the current process root.
+     */
+    struct aws_byte_cursor path;
+    /**
+     * Path to the entry relative to the current working directory.
+     */
+    struct aws_byte_cursor relative_path;
+    /**
+     * Bit-field of enum aws_file_type
+     */
+    int file_type;
+    /**
+     * Size of the file on disk.
+     */
+    int64_t file_size;
+};
+
+/**
+ * Invoked during calls to aws_directory_traverse() as an entry is encountered. entry will contain
+ * the parsed directory entry info.
+ *
+ * Return true to continue the traversal, or alternatively, if you have a reason to abort the traversal, return false.
+ */
+typedef bool(aws_on_directory_entry)(const struct aws_directory_entry *entry, void *user_data);
+
+AWS_EXTERN_C_BEGIN
+
+/**
+ * Deprecated - Use aws_fopen_safe() instead, avoid const char * in public APIs.
+ * Opens file at file_path using mode. Returns the FILE pointer if successful.
+ * Otherwise, aws_last_error() will contain the error that occurred
+ */
+AWS_COMMON_API FILE *aws_fopen(const char *file_path, const char *mode);
+
+/**
+ * Opens file at file_path using mode. Returns the FILE pointer if successful.
+ * Otherwise, aws_last_error() will contain the error that occurred
+ */
+AWS_COMMON_API FILE *aws_fopen_safe(const struct aws_string *file_path, const struct aws_string *mode);
+
+/**
+ * Creates a directory if it doesn't currently exist. If the directory already exists, it's ignored and assumed
+ * successful.
+ *
+ * Returns AWS_OP_SUCCESS on success. Otherwise, check aws_last_error().
+ */
+AWS_COMMON_API int aws_directory_create(const struct aws_string *dir_path);
+/**
+ * Returns true if the directory currently exists. Otherwise, it returns false.
+ */
+AWS_COMMON_API bool aws_directory_exists(const struct aws_string *dir_path);
+/**
+ * Deletes a directory. If the directory is not empty, this will fail unless the recursive parameter is set to true.
+ * If recursive is true then the entire directory and all of its contents will be deleted. If it is set to false,
+ * the directory will be deleted only if it is empty. Returns AWS_OP_SUCCESS if the operation was successful. Otherwise,
+ * aws_last_error() will contain the error that occurred. If the directory doesn't exist, AWS_OP_SUCCESS is still
+ * returned.
+ */
+AWS_COMMON_API int aws_directory_delete(const struct aws_string *dir_path, bool recursive);
+/**
+ * Deletes a file. Returns AWS_OP_SUCCESS if the operation was successful. Otherwise,
+ * aws_last_error() will contain the error that occurred. If the file doesn't exist, AWS_OP_SUCCESS is still returned.
+ */
+AWS_COMMON_API int aws_file_delete(const struct aws_string *file_path);
+
+/**
+ * Moves directory at from to to.
+ * Returns AWS_OP_SUCCESS if the operation was successful. Otherwise,
+ * aws_last_error() will contain the error that occurred.
+ */
+AWS_COMMON_API int aws_directory_or_file_move(const struct aws_string *from, const struct aws_string *to);
+
+/**
+ * Traverse a directory starting at path.
+ *
+ * If you want the traversal to recurse the entire directory, pass recursive as true. Passing false for this parameter
+ * will only iterate the contents of the directory, but will not descend into any directories it encounters.
+ *
+ * If recursive is set to true, the traversal is performed post-order, depth-first
+ * (for practical reasons such as deleting a directory that contains subdirectories or files).
+ *
+ * returns AWS_OP_SUCCESS(0) on success.
+ */
+AWS_COMMON_API int aws_directory_traverse(
+    struct aws_allocator *allocator,
+    const struct aws_string *path,
+    bool recursive,
+    aws_on_directory_entry *on_entry,
+    void *user_data);
+
+/**
+ * Creates a read-only iterator of a directory starting at path. If path is invalid or there's any other error
+ * condition, NULL will be returned. Call aws_last_error() for the exact error in that case.
+ */
+AWS_COMMON_API struct aws_directory_iterator *aws_directory_entry_iterator_new(
+    struct aws_allocator *allocator,
+    const struct aws_string *path);
+
+/**
+ * Moves the iterator to the next entry. Returns AWS_OP_SUCCESS if another entry is available, or AWS_OP_ERR with
+ * AWS_ERROR_LIST_EMPTY as the value for aws_last_error() if no more entries are available.
+ */
+AWS_COMMON_API int aws_directory_entry_iterator_next(struct aws_directory_iterator *iterator);
+
+/**
+ * Moves the iterator to the previous entry. Returns AWS_OP_SUCCESS if another entry is available, or AWS_OP_ERR with
+ * AWS_ERROR_LIST_EMPTY as the value for aws_last_error() if no more entries are available.
+ */
+AWS_COMMON_API int aws_directory_entry_iterator_previous(struct aws_directory_iterator *iterator);
+
+/**
+ * Cleanup and deallocate iterator
+ */
+AWS_COMMON_API void aws_directory_entry_iterator_destroy(struct aws_directory_iterator *iterator);
+
+/**
+ * Gets the aws_directory_entry value for iterator at the current position. Returns NULL if the iterator contains no
+ * entries.
+ */
+AWS_COMMON_API const struct aws_directory_entry *aws_directory_entry_iterator_get_value(
+    const struct aws_directory_iterator *iterator);
+
+/**
+ * Returns true iff the character is a directory separator on ANY supported platform.
+ */
+AWS_COMMON_API
+bool aws_is_any_directory_separator(char value);
+
+/**
+ * Returns the directory separator used by the local platform
+ */
+AWS_COMMON_API
+char aws_get_platform_directory_separator(void);
+
+/**
+ * Normalizes the path by replacing any directory separator with the local platform's directory separator.
+ * @param path path to normalize. Must be writeable.
+ */
+AWS_COMMON_API
+void aws_normalize_directory_separator(struct aws_byte_buf *path);
+
+/**
+ * Returns the current user's home directory.
+ */
+AWS_COMMON_API
+struct aws_string *aws_get_home_directory(struct aws_allocator *allocator);
+
+/**
+ * Returns true if a file or path exists, otherwise, false.
+ */
+AWS_COMMON_API
+bool aws_path_exists(const struct aws_string *path);
+
+/*
+ * Wrapper for highest-resolution platform-dependent seek implementation.
+ * Maps to:
+ *
+ *   _fseeki64() on windows
+ *   fseeko() on linux
+ *
+ * whence can either be SEEK_SET or SEEK_END
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_fseek(FILE *file, int64_t offset, int whence);
+
+/*
+ * Wrapper for os-specific file length query.  We can't use fseek(END, 0)
+ * because support for it is not technically required.
+ *
+ * Unix flavors call fstat, while Windows variants use GetFileSize on a
+ * HANDLE queried from the libc FILE pointer.
+ */
+AWS_COMMON_API
+int aws_file_get_length(FILE *file, int64_t *length);
+
+/*
+ * Read from the file using the file path with DIRECT I/O, starting at offset to fill the output_buf or to the
+ * max_read_length.
+ * Using direct IO to bypass the OS cache. Helpful when the disk I/O outperform the kernel cache.
+ * If O_DIRECT is not supported, returns AWS_ERROR_UNSUPPORTED_OPERATION.
+ * Notes:
+ * - ONLY supports linux for now and raise AWS_ERROR_UNSUPPORTED_OPERATION on all other platforms (eg: FreeBSD).
+ * - check the NOTES for O_DIRECT in https://man7.org/linux/man-pages/man2/openat.2.html
+ * - The offset, length and output_buf->buffer all need to be aligned with the page size. Otherwise,
+ *  AWS_ERROR_INVALID_ARGUMENT will be raised.
+ *
+ * @param file_path         The file path to read from.
+ * @param offset            The offset in the file to start reading from.
+ * @param max_read_length   The maximum number of bytes to read.
+ * @param output_buf        The buffer read to.
+ * @param out_actual_read   The actual number of bytes read.
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_path_read_from_offset_direct_io(
+    const struct aws_string *file_path,
+    uint64_t offset,
+    size_t max_read_length,
+    struct aws_byte_buf *output_buf,
+    size_t *out_actual_read);
+
+/*
+ * Read from the file using the file path, starting at offset to fill the output_buf or to the
+ * max_read_length.
+ *
+ * @param file_path         The file path to read from.
+ * @param offset            The offset in the file to start reading from.
+ * @param max_read_length   The maximum number of bytes to read.
+ * @param output_buf        The buffer read to.
+ * @param out_actual_read   The actual number of bytes read.
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_path_read_from_offset(
+    const struct aws_string *file_path,
+    uint64_t offset,
+    size_t max_read_length,
+    struct aws_byte_buf *output_buf,
+    size_t *out_actual_read);
+
+/*
+ * The function serve the same purpose as `aws_file_path_read_from_offset_direct_io`.
+ * Please use `aws_file_path_read_from_offset_direct_io` directly.
+ */
+AWS_COMMON_API
+int aws_file_path_read_from_offset_direct_io_with_chunk_size(
+    const struct aws_string *file_path,
+    uint64_t offset,
+    size_t max_read_length,
+    size_t max_chunk_size,
+    struct aws_byte_buf *output_buf,
+    size_t *out_actual_read);
+
+/*
+ * Write to a file using DIRECT I/O at the given offset.
+ * Using direct IO to bypass the OS cache. Helpful when the disk I/O outperform the kernel cache.
+ * If O_DIRECT is not supported, returns AWS_ERROR_UNSUPPORTED_OPERATION.
+ *
+ * The file must already exist; the caller is responsible for creating it.
+ *
+ * For aligned writes (offset and length both aligned to page size), O_DIRECT is used for the
+ * entire write.
+ *
+ * Notes:
+ * - ONLY supports linux for now and raises AWS_ERROR_UNSUPPORTED_OPERATION on all other platforms.
+ * - The offset, data.len, and data.ptr all need to be aligned with the page size (a multiple of page size).
+ *      Otherwise, AWS_ERROR_INVALID_ARGUMENT will be raised.
+ * - check the NOTES for O_DIRECT in https://man7.org/linux/man-pages/man2/openat.2.html
+ *
+ * @param file_path         The file path to write to.
+ * @param offset            The offset in the file to start writing at.
+ * @param data              The buffer to write from (data.len bytes will be written).
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_path_write_to_offset_direct_io(
+    const struct aws_string *file_path,
+    uint64_t offset,
+    struct aws_byte_cursor data);
+
+/*
+ * Value representing "no descriptor", for use with the DIRECT I/O descriptor functions below.
+ */
+enum { AWS_FILE_INVALID_FD = -1 };
+
+/*
+ * Open a file for writing, producing a descriptor for aws_file_write_to_offset().
+ *
+ * A caller issuing many writes to the same file can hold one descriptor across all of them
+ * instead of paying an open/close pair per write.
+ *
+ * This is the buffered counterpart to aws_file_open_direct_io_for_write(): the descriptor goes
+ * through the OS page cache and carries no alignment requirements. Unlike that function, it is
+ * supported on every platform.
+ *
+ * The file must already exist; the caller is responsible for creating it.
+ *
+ * Notes:
+ * - Release the descriptor with aws_file_close_fd().
+ * - Opened in binary mode, so the bytes written are the bytes given.
+ *
+ * @param file_path         The file path to open.
+ * @param out_fd            Set to the open descriptor on success; left untouched on failure.
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API int aws_file_open_for_write(const struct aws_string *file_path, int *out_fd);
+
+/*
+ * Close a file descriptor
+ */
+AWS_COMMON_API
+void aws_file_close_fd(int fd);
+
+/*
+ * Write to an already-open descriptor at the given offset.
+ *
+ * The write carries its own offset and does not consult the descriptor's file position, so several
+ * threads may write concurrently through one descriptor as long as their ranges do not overlap.
+ * (Implemented with pwrite() on POSIX, and WriteFile() with an OVERLAPPED offset on Windows. The
+ * Windows call moves the descriptor's file position as a side effect; the offset written to is
+ * unaffected by it.)
+ *
+ * Unlike aws_file_write_to_offset_direct_io(), the offset, data.len, and data.ptr carry no
+ * alignment requirements.
+ *
+ * @param fd                A descriptor from aws_file_open_for_write().
+ * @param offset            The offset in the file to start writing at.
+ * @param data              The buffer to write from (data.len bytes will be written).
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_write_to_offset(int fd, uint64_t offset, struct aws_byte_cursor data);
+
+/*
+ * Open a file for writing with DIRECT I/O, producing a descriptor for
+ * aws_file_write_to_offset_direct_io().
+ *
+ * A caller issuing many writes to the same file can hold one descriptor across all of them
+ * instead of paying an open/close pair per write.
+ *
+ * The file must already exist; the caller is responsible for creating it.
+ *
+ * Notes:
+ * - ONLY supports linux for now and raises AWS_ERROR_UNSUPPORTED_OPERATION on all other platforms.
+ * - Release the descriptor with aws_file_close_fd().
+ *
+ * @param file_path         The file path to open.
+ * @param out_fd            Set to the open descriptor on success; left untouched on failure.
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_open_direct_io_for_write(const struct aws_string *file_path, int *out_fd);
+
+/*
+ * Write to an already-open DIRECT I/O descriptor at the given offset.
+ * Using direct IO to bypass the OS cache. Helpful when the disk I/O outperform the kernel cache.
+ * If O_DIRECT is not supported, returns AWS_ERROR_UNSUPPORTED_OPERATION.
+ *
+ * The write carries its own offset and does not consult or advance the descriptor's file
+ * position, so several threads may write concurrently through one descriptor as long as their
+ * ranges do not overlap.
+ *
+ * Notes:
+ * - ONLY supports linux for now and raises AWS_ERROR_UNSUPPORTED_OPERATION on all other platforms.
+ * - The offset, data.len, and data.ptr all need to be aligned with the page size (a multiple of page size).
+ *      Otherwise, AWS_ERROR_INVALID_ARGUMENT will be raised.
+ * - check the NOTES for O_DIRECT in https://man7.org/linux/man-pages/man2/openat.2.html
+ *
+ * @param fd                A descriptor from aws_file_open_direct_io_for_write().
+ * @param offset            The offset in the file to start writing at.
+ * @param data              The buffer to write from (data.len bytes will be written).
+ *
+ * Returns AWS_OP_SUCCESS, or AWS_OP_ERR (after an error has been raised).
+ */
+AWS_COMMON_API
+int aws_file_write_to_offset_direct_io(int fd, uint64_t offset, struct aws_byte_cursor data);
+
+/**
+ * Returns true if direct I/O (O_DIRECT) is supported on the current platform.
+ *
+ * Currently only Linux supports direct I/O. On unsupported platforms, the direct I/O read,
+ * write, and open functions declared above all raise AWS_ERROR_UNSUPPORTED_OPERATION.
+ *
+ * Use this to check at init time whether direct I/O is viable, rather than calling the
+ * read/write functions and handling the error reactively.
+ */
+AWS_COMMON_API
+bool aws_file_direct_io_is_supported(void);
+
+/*
+ * Gets the last modification time of an open file as nanoseconds since unix epoch.
+ *
+ * Unix flavors use fstat with nanosecond-precision fields (st_mtim on Linux/FreeBSD,
+ * st_mtimespec on Apple). Windows uses GetFileTime on the HANDLE queried from the
+ * libc FILE pointer (100-nanosecond FILETIME precision).
+ *
+ * Platform timestamp-visibility guarantees differ:
+ * - POSIX: st_mtime/st_mtim is updated by write(2) itself (see inode(7):
+ *   https://man7.org/linux/man-pages/man7/inode.7.html). Callers using buffered stdio
+ *   writes must fflush() or fclose() first so write(2) actually happens; once it has,
+ *   a subsequent stat()/fstat() sees the new timestamp immediately, no fsync needed
+ *   (fsync(2) confirms fdatasync() skips flushing st_mtime for this reason:
+ *   https://man7.org/linux/man-pages/man2/fsync.2.html).
+ * - Windows: the last write time is only guaranteed correct once all write handles are
+ *   closed; FlushFileBuffers() does not help. See "File Times":
+ *   https://learn.microsoft.com/en-us/windows/win32/sysinfo/file-times
+ *
+ * As a result, if a file was written to and you need to observe that write in its
+ * updated timestamp, close the write handle first, then open a new handle and call
+ * this function on that new handle. Calling this function on the (now-closed) write
+ * handle is not valid on any platform, since a closed FILE* cannot be used at all.
+ */
+AWS_COMMON_API
+int aws_file_get_last_modified_epoch(FILE *file, uint64_t *last_modified_ns);
+
+AWS_EXTERN_C_END AWS_POP_SANE_WARNING_LEVEL
+
+#endif /* AWS_COMMON_FILE_H */

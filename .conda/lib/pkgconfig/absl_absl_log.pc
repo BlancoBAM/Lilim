@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_absl_log
+Description: Abseil absl_log library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_log_internal_log_impl = 20260526
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

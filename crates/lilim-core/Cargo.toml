@@ -1,0 +1,86 @@
+[package]
+name = "lilim-core"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["BlancoBAM"]
+description = "Lilim Core - Pure Rust AI Agent Backend"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.40", features = ["full"] }
+async-trait = "0.1.77"
+
+# HTTP / Web framework
+axum = { version = "0.7", features = ["json", "ws", "multipart"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
+hyper = { version = "1.1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls", "gzip"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Configuration
+config = { version = "0.14", features = ["yaml", "toml"] }
+figment = { version = "0.10", features = ["yaml", "toml", "env"] }
+directories = "5.0"
+toml = "0.8"
+
+# Validation
+validator = { version = "0.19", features = ["derive"] }
+
+# Database (single embedded SQLite; async-safety via tokio::spawn_blocking)
+rusqlite = { version = "0.32", features = ["bundled", "modern_sqlite", "serde_json", "chrono"] }
+
+# Embeddings (shared CPU ONNX instance for classifier + memory)
+fastembed = "7"
+
+# AI/ML Providers
+rig-core = "0.16"
+litellm-rs = { version = "0.10", default-features = false, features = ["lite"] }
+
+# MCP host (official Rust MCP SDK; stdio via child process + streamable HTTP)
+rmcp = { version = "0.2", features = ["client", "server", "transport-child-process", "transport-streamable-http-client", "reqwest"] }
+
+# Token optimization
+# Stage 2: wrap outbound payloads
+ai_tokenopt = { version = "0.5" } # resolves to 0.5.10
+# Stage 1: `brokk-rtk` binary v0.42.4 bundled in packaging, invoked as subprocess (not a library dep)
+
+# Scheduling
+cron = "0.9"
+chrono = { version = "0.4", features = ["serde"] }
+
+# System integration
+systemd = "0.10"
+notify-rust = "4.10"
+
+# Utilities
+regex = "1"
+uuid = { version = "1.8", features = ["v4", "v7", "serde", "fast-rng"] }
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+once_cell = "1.19"
+parking_lot = "0.12"
+dashmap = "6.1"
+
+# Testing
+[dev-dependencies]
+httpmock = "0.9"
+# tokio-test = "0.4"
+# mockito = "1.2"
+# wiremock = "0.5"
+
+[build-dependencies]
+
+[features]
+default = []
+full = ["dev"]
+dev = []

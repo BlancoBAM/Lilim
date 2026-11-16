@@ -1,0 +1,31 @@
+{
+  "build": "5_cp314",
+  "build_number": 5,
+  "constrains": [
+    "python 3.14.* *_cp314"
+  ],
+  "depends": [],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "md5": "01a41109172881c5eff272c1634190f0",
+  "name": "python_abi",
+  "sha256": "777245bf267f80b25702489bdc626991ceb8621b6f6764c2998b909bac1274de",
+  "size": 5582,
+  "subdir": "linux-64",
+  "timestamp": 1790773276355,
+  "version": "3.14",
+  "fn": "python_abi-3.14-5_cp314.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/python_abi-3.14-5_cp314.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/python_abi-3.14-5_cp314",
+  "requested_specs": [],
+  "files": [],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": []
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/python_abi-3.14-5_cp314",
+    "type": 1
+  }
+}

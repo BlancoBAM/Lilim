@@ -1,24 +1,7 @@
-// lilim-runtime: main Axum server
+// lilim-runtime: Main Axum server using lilim-core
 //
-// The Rust gateway for Lilim AI assistant.
-//
-// Responsibilities:
-//   1. Spawn and supervise the Python brain (lilim_core/server.py)
-//   2. Serve the Tauri desktop UI via HTTP on :8080
-//   3. Proxy /chat requests to the Python brain (SSE streaming)
-//   4. Execute system tools with safety enforcement
-//   5. Handle task scheduling
-//   6. CORS for Tauri WebView origin
-//
-// All AI/LLM logic lives in Python. Rust handles: process management,
-// security enforcement, HTTP serving, tool execution, and scheduling.
-
-mod brain;
-mod config;
-mod inference;
-mod proxy;
-mod scheduler;
-mod tools;
+// The Rust gateway for Lilim AI assistant - now fully powered by lilim-core
+// (no Python brain needed).
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -30,7 +13,7 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use reqwest::Client;
+use lilim_core::{config::Config, LilimCore};
 use serde_json::{json, Value};
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
@@ -40,10 +23,8 @@ use tracing::{error, info};
 // ── Shared application state ──────────────────────────────────
 
 pub struct AppState {
-    pub brain_base_url: String,
-    pub http_client: reqwest::Client,
-    /// Local Candle Phi-3.5-mini inference engine (None if model not available)
-    pub inference_engine: Option<lilim_inference::InferenceEngine>,
+    pub core: Arc<LilimCore>,
+    pub config: Config,
 }
 
 // ── Entry point ───────────────────────────────────────────────
@@ -54,17 +35,17 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "lilim_runtime=info,tower_http=warn".into()),
+                .unwrap_or_else(|_| "lilim_runtime=info,lilim_core=info,tower_http=warn".into()),
         )
         .compact()
         .init();
 
     info!("══════════════════════════════════════");
-    info!("  Lilim Runtime v{}", env!("CARGO_PKG_VERSION"));
+    info!("  Lilim Runtime v{} (pure Rust)", env!("CARGO_PKG_VERSION"));
     info!("══════════════════════════════════════");
 
     // Load config
-    let mut cfg = config::load()?;
+    let mut cfg = Config::load()?;
 
     // Override port from CLI if present: --port <N>
     let args: Vec<String> = std::env::args().collect();
@@ -77,42 +58,17 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let bind_addr = format!("{}:{}", cfg.server.host, cfg.server.port);
-    let brain_port = cfg.brain.port;
-    let brain_base_url = format!("http://{}:{}", cfg.brain.host, brain_port);
 
-    // Spawn the Python brain
-    info!("Starting Python brain on port {brain_port}…");
-    let mut brain = brain::BrainProcess::new(brain_port);
-    if let Err(e) = brain.start() {
-        error!("Failed to start Python brain: {e}");
-        error!("Continuing without brain — only system tools will work.");
-        error!("Install FastAPI: pip install fastapi uvicorn litellm");
-    }
+    // Initialize lilim-core (replaces Python brain)
+    info!("Initializing Lilim Core…");
+    let core = Arc::new(LilimCore::new(cfg.clone()).await?);
+    core.start().await?;
 
-    // Initialize local inference engine (Phi-3.5-mini via Candle)
-    info!("Initializing local Phi-3.5-mini inference engine…");
-    let inference_config = lilim_inference::InferenceConfig::default();
-    let inference_engine = lilim_inference::InferenceEngine::new(inference_config).await;
-    let engine_available = inference_engine.is_available();
-    if engine_available {
-        info!("Local Phi-3.5-mini engine ready ✓");
-    } else {
-        info!("Local engine unavailable — all requests will route to online providers");
-    }
-
-    // Build shared HTTP client (for proxying to brain)
-    let http_client = Client::builder()
-        .timeout(Duration::from_secs(120)) // LLM calls can be slow
-        .build()?;
+    info!("Lilim Core initialized ✓");
 
     let state = Arc::new(AppState {
-        brain_base_url: brain_base_url.clone(),
-        http_client,
-        inference_engine: if engine_available {
-            Some(inference_engine)
-        } else {
-            None
-        },
+        core: core.clone(),
+        config: cfg.clone(),
     });
 
     // CORS — allow Tauri WebView and local dev origins
@@ -121,68 +77,28 @@ async fn main() -> anyhow::Result<()> {
         .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
         .allow_headers(Any);
 
-    // Router
-    let app = Router::new()
-        // ── Health ──────────────────────────────────────────────────
-        .route("/health", get(handle_health))
-        // ── Chat (smart local/remote routing) ─────────────────────
-        .route("/chat", post(handle_chat))
-        .route("/chat/sync", post(handle_chat_sync))
-        .route(
-            "/internal/generate",
-            post(inference::handle_internal_generate),
-        )
-        // ── Model status (for Settings panel) ───────────────────
-        .route("/model/status", get(handle_model_status))
-        .route("/providers/status", get(handle_providers_status))
-        // ── Memory (proxied to Python brain) ──────────────────
-        .route("/memory/search", post(handle_memory_search))
-        .route("/memory/stats", get(handle_memory_stats))
-        .route("/memory/context", get(handle_memory_context))
-        // ── MCP and browser integrations (proxied to the Python brain) ──
-        .route(
-            "/integrations/mcp",
-            get(handle_mcp_list).post(handle_mcp_add),
-        )
-        .route("/integrations/mcp/:name", delete(handle_mcp_remove))
-        .route("/integrations/mcp/call", post(handle_mcp_call))
-        .route("/tools/browser/launch", post(handle_browser_launch))
-        // ── System tools (Rust-native) ────────────────────────
-        .route("/tools/shell", post(tools::handle_shell))
-        .route("/tools/shell/sudo", post(handle_sudo_shell))
-        .route("/tools/file", get(tools::handle_file_read))
-        .route("/system/info", get(tools::handle_system_info))
-        // ── Scheduling (proxied to Python brain) ──────────────
-        .route("/schedule/once", post(scheduler::handle_schedule_once))
-        .route(
-            "/schedule/recurring",
-            post(scheduler::handle_schedule_recurring),
-        )
-        .route("/schedule/list", get(scheduler::handle_schedule_list))
-        .route("/schedule/:id", delete(scheduler::handle_schedule_cancel))
-        // ── Settings (write config, proxied to brain) ─────────
-        .route("/settings/model-config", post(handle_settings_model_config))
+    // Router - using lilim-core's gateway (state already baked in)
+    let app = core
+        .gateway
+        .router()
         .layer(cors)
-        .layer(TraceLayer::new_for_http())
-        .with_state(state);
-
+        .layer(TraceLayer::new_for_http());
+    let _state = state;
     info!("Gateway listening on http://{bind_addr}");
-    info!("Brain proxied at {brain_base_url}");
     info!("Press Ctrl+C to stop.");
 
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
     axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(shutdown_signal(core.clone()))
         .await?;
 
     info!("Lilim Runtime stopped.");
-    drop(brain); // Triggers BrainProcess::drop → stops Python process
     Ok(())
 }
 
 // ── Shutdown signal ───────────────────────────────────────────
 
-async fn shutdown_signal() {
+async fn shutdown_signal(core: Arc<LilimCore>) {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -204,228 +120,9 @@ async fn shutdown_signal() {
         _ = ctrl_c => info!("Received Ctrl+C"),
         _ = terminate => info!("Received SIGTERM"),
     }
-}
 
-// ── Health endpoint ───────────────────────────────────────────
-
-async fn handle_health(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let brain_ok = state
-        .http_client
-        .get(format!("{}/health", state.brain_base_url))
-        .timeout(Duration::from_secs(2))
-        .send()
-        .await
-        .map(|r| r.status().is_success())
-        .unwrap_or(false);
-
-    Json(json!({
-        "status": "ok",
-        "version": env!("CARGO_PKG_VERSION"),
-        "brain": if brain_ok { "healthy" } else { "unreachable" },
-        "ts": chrono::Utc::now().to_rfc3339(),
-    }))
-}
-
-// ── Chat endpoints ───────────────────────────────────────
-
-async fn handle_chat(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
-    // Smart routing: local Phi-3.5-mini or remote via Python brain + FreeRouter
-    inference::handle_chat_routed(State(state), body).await
-}
-
-async fn handle_chat_sync(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/chat/sync", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err((code, msg)) => (code, Json(json!({"error": msg}))),
-    }
-}
-
-// ── Model / Provider status endpoints ─────────────────────────
-
-async fn handle_model_status(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let cfg = lilim_inference::InferenceConfig::default();
-    let status = lilim_inference::downloader::model_status(&cfg);
-    Json(json!({
-        "local_engine": {
-            "available": state.inference_engine.is_some(),
-            "model": "phi-3.5-mini",
-            "device": state.inference_engine
-                .as_ref()
-                .map(|e| e.device_label())
-                .unwrap_or("none"),
-            "model_status": status,
-        }
-    }))
-}
-
-async fn handle_providers_status(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/providers/status", state.brain_base_url);
-    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err((code, msg)) => (code, Json(json!({"error": msg}))),
-    }
-}
-
-// ── Memory endpoints ──────────────────────────────────────────
-
-async fn handle_memory_search(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/memory/search", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err((code, msg)) => (code, Json(json!({"error": msg}))),
-    }
-}
-
-async fn handle_memory_stats(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/memory/stats", state.brain_base_url);
-    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err((code, msg)) => (code, Json(json!({"error": msg}))),
-    }
-}
-
-async fn handle_memory_context(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<std::collections::HashMap<String, String>>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/memory/context", state.brain_base_url);
-    match proxy::proxy_json_get(&url, &state.http_client, &params).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err((code, msg)) => (code, Json(json!({"error": msg}))),
-    }
-}
-
-async fn handle_mcp_list(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/integrations/mcp", state.brain_base_url);
-    match proxy::proxy_json_get(&url, &state.http_client, &Default::default()).await {
-        Ok(value) => (StatusCode::OK, Json(value)),
-        Err((code, message)) => (code, Json(json!({"error": message}))),
-    }
-}
-
-async fn handle_mcp_add(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/integrations/mcp", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(value) => (StatusCode::OK, Json(value)),
-        Err((code, message)) => (code, Json(json!({"error": message}))),
-    }
-}
-
-async fn handle_mcp_remove(
-    State(state): State<Arc<AppState>>,
-    AxumPath(name): AxumPath<String>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/integrations/mcp/{}", state.brain_base_url, name);
-    match state.http_client.delete(url).send().await {
-        Ok(response) => {
-            let status =
-                StatusCode::from_u16(response.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-            let value = response
-                .json::<Value>()
-                .await
-                .unwrap_or_else(|_| json!({"error": "Invalid brain response"}));
-            (status, Json(value))
-        }
-        Err(error) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"error": error.to_string()})),
-        ),
-    }
-}
-
-async fn handle_mcp_call(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/integrations/mcp/call", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(value) => (StatusCode::OK, Json(value)),
-        Err((code, message)) => (code, Json(json!({"error": message}))),
-    }
-}
-
-async fn handle_browser_launch(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let url = format!("{}/tools/browser/launch", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(value) => (StatusCode::OK, Json(value)),
-        Err((code, message)) => (code, Json(json!({"error": message}))),
-    }
-}
-
-// ── Settings endpoints ────────────────────────────────────────
-
-async fn handle_settings_model_config(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    // Write to the user config directory
-    let config_path = dirs::config_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
-        .join("lilim")
-        .join("model-config.json");
-
-    if let Some(parent) = config_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-
-    match serde_json::to_string_pretty(&body) {
-        Ok(json_str) => {
-            if let Err(e) = std::fs::write(&config_path, &json_str) {
-                error!("Failed to write model config: {e}");
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error": e.to_string()})),
-                );
-            }
-            info!("Model config updated at {}", config_path.display());
-        }
-        Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({"error": e.to_string()})),
-            )
-        }
-    }
-
-    // Also forward to brain so it reloads
-    let url = format!("{}/settings/model-config", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(v) => (StatusCode::OK, Json(v)),
-        Err(_) => (
-            StatusCode::OK,
-            Json(json!({"status": "saved", "brain_reload": "pending"})),
-        ),
-    }
-}
-
-async fn handle_sudo_shell(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    // The brain validates classification and confirmation and owns the
-    // short-lived in-memory credential token. Do not log this request body.
-    if body.get("confirmed").and_then(Value::as_bool) != Some(true) {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({"error": "Command not confirmed."})),
-        );
-    }
-    let url = format!("{}/tools/shell/sudo", state.brain_base_url);
-    match proxy::proxy_json_post(&url, &state.http_client, body).await {
-        Ok(value) => (StatusCode::OK, Json(value)),
-        Err((code, message)) => (code, Json(json!({"error": message}))),
+    // Graceful shutdown
+    if let Err(e) = core.shutdown().await {
+        error!("Error during shutdown: {}", e);
     }
 }

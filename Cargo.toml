@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/lilim-core",
     "crates/lilim-runtime",
     "crates/lilim-inference",
 ]

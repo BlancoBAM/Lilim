@@ -1,0 +1,12 @@
+prefix=/home/s8n/Lilim/b5bf2e54cb654f7b
+exec_prefix=${prefix}
+libdir=/home/s8n/Lilim/b5bf2e54cb654f7b/lib
+includedir=/home/s8n/Lilim/b5bf2e54cb654f7b/include
+
+Name: absl_int128
+Description: Abseil int128 library
+URL: https://abseil.io/
+Version: 20260526
+Requires: absl_compare = 20260526, absl_config = 20260526, absl_core_headers = 20260526, absl_bits = 20260526
+Libs: -L${libdir}  -labsl_int128 
+Cflags: -I${includedir} -DNOMINMAX

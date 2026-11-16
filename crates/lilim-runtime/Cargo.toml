@@ -10,36 +10,35 @@ name = "lilim-runtime"
 path = "src/main.rs"
 
 [dependencies]
-# Local inference engine (Candle Phi-3.5-mini)
+# Lilim Core - pure Rust AI backend
+lilim-core = { path = "../lilim-core" }
+
+# Local inference engine (mistral.rs Phi-4-mini)
 lilim-inference = { path = "../lilim-inference" }
 
-# Bytes for SSE stream construction
-bytes = "1.0"
 # Web framework
-axum = { version = "0.7" }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+axum = { version = "0.7", features = ["json", "ws", "multipart"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 
-# HTTP client (to proxy to Python brain)
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "blocking", "charset"] }
-
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# YAML config parsing
-serde_yaml = "0.9"
+# Config parsing
+config = { version = "0.14", features = ["yaml", "toml"] }
+figment = { version = "0.10", features = ["yaml", "toml"] }
 
 # Logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 
 # Config / paths
-dirs = "5.0"
+directories = "5.0"
 once_cell = "1.19"
 
 # Error handling

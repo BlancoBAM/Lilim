@@ -102,18 +102,20 @@ if [ ! -f /usr/bin/lilim ]; then
     done
 fi
 
-# Python brain
-sudo mkdir -p /usr/lib/lilim/lilim_core /etc/lilith
-sudo cp -r "$ROOT_DIR/lilim_core/"*.py /usr/lib/lilim/lilim_core/ 2>/dev/null || true
-sudo cp -r "$ROOT_DIR/config/"* /etc/lilith/ 2>/dev/null || true
-sudo install -m 0755 "$ROOT_DIR/bin/lilim-cli" /usr/bin/lilim-cli
-
-# Python venv
-if [ ! -f /usr/lib/lilim/venv/bin/python3 ]; then
-    echo "      Setting up Python virtual environment..."
-    sudo python3 -m venv /usr/lib/lilim/venv
+# Lilim Core binary (replaces Python brain)
+if [ ! -f /usr/bin/lilim-core ]; then
+    echo "      ⚠ Lilim Core binary missing from deb — copying directly..."
+    sudo cp "$ROOT_DIR/target/release/lilim-core" /usr/bin/lilim-core 2>/dev/null || \
+    sudo cp "$ROOT_DIR/target/release/lilim-runtime" /usr/bin/lilim-core
+    sudo chmod +x /usr/bin/lilim-core
 fi
-sudo /usr/lib/lilim/venv/bin/pip install --quiet fastapi uvicorn litellm apscheduler pyyaml httpx "beautifulsoup4>=4.12" "mcp>=1.19,<2"
+
+# Config files
+sudo mkdir -p /etc/lilith
+sudo cp -r "$ROOT_DIR/config/"* /etc/lilith/ 2>/dev/null || true
+
+# CLI wrapper
+sudo install -m 0755 "$ROOT_DIR/bin/lilim-cli" /usr/bin/lilim-cli
 
 # Service file (always sync from repo to pick up latest)
 sudo cp "$ROOT_DIR/systemd/system/lilith-ai.service" /lib/systemd/system/lilith-ai.service

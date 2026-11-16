@@ -1,0 +1,132 @@
+{
+  "build": "h7354ed3_0",
+  "build_number": 0,
+  "constrains": [
+    "expat 2.10.0.*"
+  ],
+  "depends": [
+    "__glibc >=2.28,<3.0.a0",
+    "libgcc >=14"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "e281b5956ecb304017b4519113d62e27",
+  "name": "libexpat",
+  "sha256": "1d29ff2965eae93da3520725b14f98e6c726b87cacbab817afe3c311c6a4f16b",
+  "size": 135103,
+  "subdir": "linux-64",
+  "timestamp": 1793730140265,
+  "version": "2.10.0",
+  "fn": "libexpat-2.10.0-h7354ed3_0.conda",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/libexpat-2.10.0-h7354ed3_0.conda",
+  "channel": "https://repo.anaconda.com/pkgs/main/",
+  "extracted_package_dir": "/home/s8n/.cache/rattler/cache/pkgs/libexpat-2.10.0-h7354ed3_0",
+  "requested_specs": [],
+  "files": [
+    "lib/pkgconfig/expat.pc",
+    "share/doc/expat/AUTHORS",
+    "share/doc/expat/changelog",
+    "lib/cmake/expat-2.10.0/expat-config-version.cmake",
+    "lib/cmake/expat-2.10.0/expat-config.cmake",
+    "lib/cmake/expat-2.10.0/expat-release.cmake",
+    "lib/cmake/expat-2.10.0/expat.cmake",
+    "include/expat.h",
+    "include/expat_config.h",
+    "include/expat_external.h",
+    "lib/libexpat.so",
+    "lib/libexpat.so.1",
+    "lib/libexpat.so.1.13.1"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/expat.pc",
+        "path_type": "hardlink",
+        "sha256": "dc91213610cd11b35b5d361336f1d59700fb1be1c577fa48c39fcd4fb692fcd6",
+        "sha256_in_prefix": "3d2646e9655bbe0b1502233cb203ffc9260ea9f30086b6ca90abbe0f9b7d0840",
+        "size_in_bytes": 306,
+        "file_mode": "text",
+        "prefix_placeholder": "/home/task_179372989473050/croot/expat-split_1793730096049/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold"
+      },
+      {
+        "_path": "share/doc/expat/AUTHORS",
+        "path_type": "hardlink",
+        "sha256": "59f14371c6b75912cfebb46e6247ee5146766e803a0365b124e5d3011e7d0877",
+        "size_in_bytes": 142
+      },
+      {
+        "_path": "share/doc/expat/changelog",
+        "path_type": "hardlink",
+        "sha256": "b200119004e21b89102f35b551bcdd26a479d0b882c98435e6b53e08ca75dd39",
+        "size_in_bytes": 124207
+      },
+      {
+        "_path": "lib/cmake/expat-2.10.0/expat-config-version.cmake",
+        "path_type": "hardlink",
+        "sha256": "16340598624a13427de6c92ac975369d2e2cd2abe5478ac30f921d366c41cadf",
+        "size_in_bytes": 2765
+      },
+      {
+        "_path": "lib/cmake/expat-2.10.0/expat-config.cmake",
+        "path_type": "hardlink",
+        "sha256": "dcf982cc550a6b23fcd7acd676a81cf986898dcf13b485df239a8435b33e4523",
+        "size_in_bytes": 3717
+      },
+      {
+        "_path": "lib/cmake/expat-2.10.0/expat-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "0fc69eb224e19231a1385f731bddb67e70689288a284676b354ad34657da1f1d",
+        "size_in_bytes": 839
+      },
+      {
+        "_path": "lib/cmake/expat-2.10.0/expat.cmake",
+        "path_type": "hardlink",
+        "sha256": "b360c0dca98a754b2ac3396187141fbd0e4cebe18bb032a1335cc85f2db4a2f4",
+        "size_in_bytes": 4134
+      },
+      {
+        "_path": "include/expat.h",
+        "path_type": "hardlink",
+        "sha256": "71be1f9e24a8edf1c27038a28441c947c3d75f19cf36d3a17ce59f8bb7298317",
+        "size_in_bytes": 47785
+      },
+      {
+        "_path": "include/expat_config.h",
+        "path_type": "hardlink",
+        "sha256": "fb67065b228edc5b5e36293266194c7a6950d8bc899e86ac64512e58d9ac23f6",
+        "size_in_bytes": 3255
+      },
+      {
+        "_path": "include/expat_external.h",
+        "path_type": "hardlink",
+        "sha256": "24bed28e7cbc1cbc5f1cda6b918b978f252495c12ddf83fd792c9d6e67bc7119",
+        "size_in_bytes": 6923
+      },
+      {
+        "_path": "lib/libexpat.so",
+        "path_type": "softlink",
+        "sha256": "90b6b8ef2cbcc0ed2d2f6c3eafcf3b73f2ea9d232eff4dcf7d4556ce6df7125d",
+        "sha256_in_prefix": "619f02bf13213c56a5df40dd88eea4540ebc534a701f13545512e458181268ce",
+        "size_in_bytes": 228640
+      },
+      {
+        "_path": "lib/libexpat.so.1",
+        "path_type": "softlink",
+        "sha256": "90b6b8ef2cbcc0ed2d2f6c3eafcf3b73f2ea9d232eff4dcf7d4556ce6df7125d",
+        "sha256_in_prefix": "619f02bf13213c56a5df40dd88eea4540ebc534a701f13545512e458181268ce",
+        "size_in_bytes": 228640
+      },
+      {
+        "_path": "lib/libexpat.so.1.13.1",
+        "path_type": "hardlink",
+        "sha256": "90b6b8ef2cbcc0ed2d2f6c3eafcf3b73f2ea9d232eff4dcf7d4556ce6df7125d",
+        "size_in_bytes": 228640
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/s8n/.cache/rattler/cache/pkgs/libexpat-2.10.0-h7354ed3_0",
+    "type": 1
+  }
+}
